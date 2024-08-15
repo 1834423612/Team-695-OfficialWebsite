@@ -2,9 +2,9 @@
     <div>
         <main class="flex-1">
             <section class="text-gray-600 body-font">
-                <div class="container px-5 py-24 mx-auto flex flex-col">
-                    <div class="lg:w-11/12 mx-auto">
-                        <div class="rounded-lg h-64 overflow-hidden">
+                <div class="container px-5 pb-24 pt-16 mx-auto flex flex-col">
+                    <div class="lg:w-5/6 h-full mx-auto">
+                        <div class="rounded-lg h-96 overflow-hidden">
                             <img
                                 :alt="mentor.name"
                                 class="object-cover object-center h-full w-full"
