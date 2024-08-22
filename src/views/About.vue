@@ -177,8 +177,8 @@ export default defineComponent({
         },
       ],
       stats: [
-        { label: 'Team members', value: '20+' },
-        { label: 'Weekly Open Hours During Season', value: '30+ Hrs' },
+        { label: 'Team members', value: '~20' },
+        { label: 'Weekly Open Hours During Season', value: '~30 Hrs' },
       ],
     };
   },
