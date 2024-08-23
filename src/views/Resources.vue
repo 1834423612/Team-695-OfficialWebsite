@@ -56,48 +56,11 @@ import {
     UsersIcon,
 } from '@heroicons/vue/24/outline';
 
-const actions = [
-    {
-        title: 'Test Resource Card 1',
-        href: '#',
-        icon: ClockIcon,
-        iconForeground: 'text-teal-700',
-        iconBackground: 'bg-teal-50',
-    },
-    {
-        title: 'Test Resource Card 2',
-        href: '#',
-        icon: CheckBadgeIcon,
-        iconForeground: 'text-purple-700',
-        iconBackground: 'bg-purple-50',
-    },
-    {
-        title: 'Test Resource Card 3',
-        href: '#',
-        icon: UsersIcon,
-        iconForeground: 'text-sky-700',
-        iconBackground: 'bg-sky-50',
-    },
-    {
-        title: 'Test Resource Card 4',
-        href: '#',
-        icon: BanknotesIcon,
-        iconForeground: 'text-yellow-700',
-        iconBackground: 'bg-yellow-50',
-    },
-    {
-        title: 'Test Resource Card 5',
-        href: '#',
-        icon: ReceiptRefundIcon,
-        iconForeground: 'text-rose-700',
-        iconBackground: 'bg-rose-50',
-    },
-    {
-        title: 'Test Resource Card 6',
-        href: '#',
-        icon: AcademicCapIcon,
-        iconForeground: 'text-indigo-700',
-        iconBackground: 'bg-indigo-50',
-    },
-];
+import { ref } from 'vue';
+import ResourcesList from '../Data/ResourceList.json';
+
+// Import the resources list JSON file
+const actions = ref(ResourcesList);
+
+
 </script>
