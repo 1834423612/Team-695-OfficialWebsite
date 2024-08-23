@@ -3,7 +3,10 @@
         <main class="flex-1">
             <section id="news" class="py-16 px-6">
                 <div class="container mx-auto max-w-6xl">
-                    <h2 class="text-3xl font-bold mb-8">Resources</h2>
+                    <div class="mb-8">
+                        <h2 class="text-3xl font-bold mb-1">Resources</h2>
+                        <span class="text-gray-500 mb-1">Feel free to request and add more, or visit the Documentation Website</span>
+                    </div>
                     <div class="space-y-6">
                         <!-- Resources Card Container -->
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
