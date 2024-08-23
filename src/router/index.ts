@@ -9,6 +9,7 @@ import Members from '../views/Members.vue';
 import Robots from '../views/Robots.vue';
 import News from '../views/News.vue';
 import Sponsors from '../views/Sponsors.vue';
+import Resources from '../views/Resources.vue';
 
 // Define the routes 
 // A route is an object that contains the path and the component that should be rendered when the path is matched
@@ -33,6 +34,7 @@ const routes = [
   { path: '/robots', component: Robots },
   { path: '/news', component: News },
   { path: '/sponsors', component: Sponsors },
+  { path: '/resources', component: Resources },
 ];
 
 // Create a new router instance
