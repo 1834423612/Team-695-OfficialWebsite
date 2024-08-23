@@ -26,7 +26,7 @@ export default defineComponent({
         return {
             members: [
                 { name: 'Dotan Dana', role: 'Scouting & Strategy Lead' },
-                { name: 'Alex Ribochii', role: 'Scouting & Strategy Lead' },
+                { name: 'Alex Rabochii', role: 'Scouting & Strategy Lead' },
                 { name: 'Shamith Murphy', role: 'Software Lead' },
                 { name: 'Nate Brodbent', role: 'CAD Lead' },
                 { name: 'Riley Walker', role: 'Fabrication Lead' },
