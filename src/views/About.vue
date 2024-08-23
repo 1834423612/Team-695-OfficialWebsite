@@ -81,9 +81,13 @@
 
     <!-- Achievements Banner Area (Blue Flag) -->
     <section class="pt-12 px-2 flex justify-between">
-      <div class="container mx-auto px-6">
+      <div class="container mx-auto">
         <h2 class="text-3xl font-medium text-center mb-6">Achievements</h2>
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-8 gap-4 mb-3">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-8 gap-4 mb-3" style="@media (min-width: 300px) {
+    .xl\:grid-cols-1 {
+        grid-template-columns: repeat(8, minmax(0, 1fr));
+    }
+}">
           <WinnerBanner v-for="(item, index) in WinnerBannerItems" :key="index" :title="item.title"
             :description="item.description" />
         </div>
