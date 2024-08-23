@@ -29,7 +29,7 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import DropdownMenu from '@/components/Header/MobileDropdownMenu.vue';
+import DropdownMenu from '../components/Header/MobileDropdownMenu.vue';
 import DesktopMenu from './Header/DesktopMenu.vue';
 
 interface MenuItem {
@@ -49,7 +49,8 @@ export default defineComponent({
         { name: 'Home', link: '/'},
         { name: 'About', link: '/about'},
         { name: 'Members', link: '/members'},
-        { name: 'Robots', link: '/robots'}
+        { name: 'Robots', link: '/robots'},
+        { name: 'Resources', link: '/resources'}
       ] as MenuItem[], // Cast to MenuItem array
     };
   },
