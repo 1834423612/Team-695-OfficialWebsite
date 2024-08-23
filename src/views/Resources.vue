@@ -29,7 +29,7 @@
                                         </a>
                                     </h3>
                                     <p class="mt-2 text-sm text-gray-500">
-                                        Test description for the resource card.
+                                        {{ action.description ?? 'Click to visit this resource.' }}
                                     </p>
                                 </div>
                                 <span class="pointer-events-none absolute right-6 top-6 text-gray-300 group-hover:text-gray-400" aria-hidden="true">
