@@ -1,15 +1,22 @@
 {
     "categories": {
-        "Scoutify": {
-            "title": "Scoutify",
+        "Important": {
+            "title": "Important Links",
             "icon": "ic:baseline-search",
             "iconForeground": "text-blue-700",
             "iconBackground": "bg-blue-50",
             "iconHover": "bg-blue-100"
         },
+        "Open Source": {
+            "title": "Open Source",
+            "icon": "bi:github",
+            "iconForeground": "text-black",
+            "iconBackground": "bg-slate-100",
+            "iconHover": "bg-black"
+        },
         "Code": {
             "title": "Coding",
-            "icon": "ic:baseline-code",
+            "icon": "ph:code-bold",
             "iconForeground": "text-teal-700",
             "iconBackground": "bg-teal-50",
             "iconHover": "bg-teal-300"
@@ -24,10 +31,29 @@
     },
     "items": [
         {
-            "type": "Scoutify",
+            "type": "Important",
             "title": "Scouting Website",
             "link": "https://scoutify.team695.com/",
-            "description": "This is a Scoutify-related resource."
+            "description": "Team Scouting Website, will use it during the matches to scout other teams."
+        },
+        {
+            "type": "Important",
+            "title": "Team 695 Documentation",
+            "link": "https://doc.team695.com/",
+            "description": "Everything you need to know about Team, there are all at here!"
+        },
+
+        {
+            "type": "Open Source",
+            "title": "Scouting Project",
+            "link": "https://github.com/alexfinger21/scouting-project",
+            "description": "The GitHub repository for the Scouting project."
+        },
+        {
+            "type": "Open Source",
+            "title": "Team 695 Official Website",
+            "link": "https://github.com/1834423612/Team-695-OfficialWebsite",
+            "description": "The GitHub repository for the Team 695 Official Website."
         },
         {
             "type": "Code",
