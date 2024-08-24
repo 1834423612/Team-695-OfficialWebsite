@@ -12,6 +12,7 @@
     "@headlessui/vue": "^1.7.22",
     "@heroicons/vue": "^2.1.5",
     "@iconify/json": "^2.2.233",
+    "axios": "^1.7.5",
     "tailwindcss-animate": "^1.0.7",
     "vue": "^3.4.29",
     "vue-router": "4"
