@@ -1,0 +1,88 @@
+<template>
+    <div>
+        <main class="flex-1">
+            <section id="news" class="py-16 px-6">
+                <div class="container mx-auto max-w-6xl">
+                    <div class="mb-8">
+                        <h2 class="text-3xl font-bold mb-1">Resources</h2>
+                        <span class="text-gray-500 mb-1">Feel free to request and add more, or visit the Documentation Website</span>
+                    </div>
+                    <div class="space-y-12">
+                        <!-- Iterate over each category -->
+                        <div v-for="(category, type) in categories" :key="type">
+                            <h3 class="text-2xl font-semibold mb-4">{{ category.title }}</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <!-- Resources Card Container -->
+                                <div v-for="(action, actionIdx) in filteredItems(type)" :key="action.title" :class="[
+                                    actionIdx === 0 ? 'rounded-tl-lg rounded-tr-lg sm:rounded-tr-none' : '',
+                                    actionIdx === 1 ? 'sm:rounded-tr-lg' : '',
+                                    actionIdx === filteredItems(type).length - 2 ? 'sm:rounded-bl-lg' : '',
+                                    actionIdx === filteredItems(type).length - 1 ? 'rounded-bl-lg rounded-br-lg sm:rounded-bl-none' : '',
+                                    'group relative bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-500',
+                                    'shadow-lg transition-transform transform hover:scale-105'
+                                ]">
+                                    <div>
+                                        <span 
+                                            class="bg-purple-100 text-purple-700 inline-flex rounded-lg p-2 group-hover:bg-purple-200 group-focus:bg-purple-300"
+                                            :class="[getIconBackground(type), getIconForeground(type)]"
+                                        >
+                                            <Icon :icon="getIcon(type)" class="h-6 w-6" aria-hidden="true" />
+                                        </span>
+                                    </div>
+                                    <div class="mt-6">
+                                        <h4 class="text-base font-semibold leading-6 text-gray-900">
+                                            <a :href="action.link" class="focus:outline-none">
+                                                <span class="absolute inset-0" aria-hidden="true" />
+                                                {{ action.title }}
+                                            </a>
+                                        </h4>
+                                        <p class="mt-2 text-sm text-gray-500">
+                                            {{ action.description ?? 'Click to visit this resource.' }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+import ResourceList from '../Data/ResourceList.json';
+import { Icon } from '@iconify/vue';
+
+// Setup categories and items
+const categories = ref(ResourceList.categories);
+const items = ref(ResourceList.items);
+
+// Filter items based on type
+const filteredItems = (type) => {
+    return items.value.filter(item => item.type === type);
+};
+
+// Map icon names to Iconify icons
+const getIcon = (type) => {
+    const iconName = categories.value[type]?.icon || "carbon:book"; // Default icon
+    return iconName; // Return the icon name for Iconify
+};
+
+// Get foreground color class
+const getIconForeground = (type) => {
+    const className = categories.value[type]?.iconForeground || 'text-gray-700';
+    console.log('Foreground class for', type, ':', className);
+    return className;
+};
+
+
+
+// Get background color class
+const getIconBackground = (type) => {
+    const className = categories.value[type]?.iconBackground || 'bg-red-300';
+    console.log('Background class for', type, ':', className);
+    return className;
+};
+</script>

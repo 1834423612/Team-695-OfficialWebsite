@@ -60,33 +60,33 @@ const images = ref([
 
 .stack-0 {
   transform: translate(0, 0);
-  z-index: 6;
+  z-index: 1;
 }
 
 
 .stack-1 {
-  transform: translate(10px, 10px);
-  z-index: 5;
+  transform: translate(50px, -40px);
+  z-index: 2;
 }
 
 .stack-2 {
   transform: translate(20px, 20px);
-  z-index: 4;
+  z-index: 3;
 }
 
 .stack-3 {
   transform: translate(0, 0);
-  z-index: 3;
+  z-index: 4;
 }
 
 .stack-4 {
   transform: translate(10px, 10px);
-  z-index: 2;
+  z-index: 5;
 }
 
 .stack-5 {
   transform: translate(20px, 20px);
-  z-index: 1;
+  z-index: 6;
 }
 
 @media (max-width: 768px) {

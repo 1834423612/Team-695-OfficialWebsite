@@ -1,5 +1,7 @@
 import { fontFamily } from "tailwindcss/defaultTheme";
 
+const { addIconSelectors } = require('@iconify/tailwind');
+
 export default {
   content: [
     "./index.html",
@@ -70,5 +72,10 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    require("tailwindcss-animate"),
+    // Iconify plugin
+    // addDynamicIconSelectors(),
+    addIconSelectors(['mdi', 'mdi-light']),
+  ],
 };

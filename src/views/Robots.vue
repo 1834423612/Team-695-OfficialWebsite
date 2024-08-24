@@ -7,27 +7,27 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <Card>
               <CardHeader>
-                <img src="https://gravatar.com/avatar/361a331e88af15ea5f7f81cdd60a6633e7bc4a69db43b236caae96cdcb1ddd03?s=1024" width="400" height="300" alt="Robot 1" class="rounded-t-lg" />
+                <img src="https://r2.fastbirdcdn.online/Robotics/Robots/66b5585976c8c-20240809_278988044_140123391903967_6855528956026866249.jpg" width="400" height="250" alt="Robot 2" class="rounded-t-lg" style="height: 280px;" />
               </CardHeader>
               <CardContent>
-                <CardTitle>Robot 1</CardTitle>
+                <CardTitle>2022 FRC Season</CardTitle>
                 <CardDescription>
-                  Our first robot, test was really good and we will continue winning the competition.
+                  This robot was a sturdy robot that made it to worlds through its defensive build.
                 </CardDescription>
               </CardContent>
             </Card>
             <Card>
               <CardHeader>
-                <img src="https://gravatar.com/avatar/361a331e88af15ea5f7f81cdd60a6633e7bc4a69db43b236caae96cdcb1ddd03?s=1024" width="400" height="300" alt="Robot 2" class="rounded-t-lg" />
+                <img src="https://r2.fastbirdcdn.online/Robotics/Robots/66ac2099b1841-20240802_Screenshot 2024-08-01 193902.png" width="275" height="250" alt="Robot 1" class="rounded-t-lg" style="width:300px; height: 280px;" />
               </CardHeader>
               <CardContent>
-                <CardTitle>Robot 2</CardTitle>
+                <CardTitle>2023 FRC Season</CardTitle>
                 <CardDescription>
-                  Our first robot, test was really good and we will continue winning the competition.
+                  This simple yet eloquent design that advanced to worlds.
                 </CardDescription>
               </CardContent>
             </Card>
-            <Card>
+            <!--<Card>
               <CardHeader>
                 <img src="https://gravatar.com/avatar/361a331e88af15ea5f7f81cdd60a6633e7bc4a69db43b236caae96cdcb1ddd03?s=1024" width="400" height="300" alt="Robot 3" class="rounded-t-lg" />
               </CardHeader>
@@ -37,7 +37,7 @@
                   Our first robot, test was really good and we will continue winning the competition.
                 </CardDescription>
               </CardContent>
-            </Card>
+            </Card>-->
           </div>
         </div>
       </section>

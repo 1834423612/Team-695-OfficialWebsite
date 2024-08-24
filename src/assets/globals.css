@@ -3,12 +3,45 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
+/* 
+---------------------------
+  Color Palette
+---------------------------
+  使用的颜色格式是 HSL（色相、饱和度、亮度）：
 
+- 色相（Hue): 取值范围是 0 到 360，表示颜色的类型（例如红色、绿色、蓝色等）。
+- 饱和度（Saturation）: 取值范围是 0% 到 100%，表示颜色的强度或纯度。
+- 亮度（Lightness）: 取值范围是 0% 到 100%，表示颜色的明暗程度。
+
+
+The color format used is HSL (Hue, Saturation, Lightness):
+
+- Hue: The range is 0 to 360, representing the type of color (e.g. red, green, blue, etc.).
+- Saturation: The range is 0% to 100%, representing the strength or purity of the color.
+- Lightness: The range is 0% to 100%, representing the brightness of the color.
+
+---------------------------
+  Theme Color
+---------------------------
+
+  Beachwood School
+  Main color scheme:
+  - Yellow Background: #ffd900
+  - Yellow Background HSL: 51 100% 50%
+  - Black Background: #272525
+  #FEEB29 
+  Backup color scheme:
+  - Light Pink: 308 56% 85%;
+  - Purple: 250.68 70.19% 59.22%;
+
+---------------------------
+*/
+ 
 @layer base {
   :root {
     --background: 210 100% 97%;
     --foreground: 339 20% 20%;
-    --primary: 308 56% 85%;
+    --primary: 51 100% 50%;
     --primary-foreground: 210 22% 22%;
     --secondary: 196 75% 88%;
     --secondary-foreground: 210 22% 22%;
