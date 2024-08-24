@@ -21,8 +21,32 @@
             "description": "This is a code-related resource."
         },
         {
+            "type": "Code",
+            "title": "Test Resource Card 2",
+            "link": "#",
+            "description": "This is a code-related resource."
+        },
+        {
+            "type": "Code",
+            "title": "Test Resource Card 3",
+            "link": "#",
+            "description": "This is a code-related resource."
+        },
+        {
+            "type": "Template",
+            "title": "Test Resource Card 1",
+            "link": "#",
+            "description": "This is a template-related resource."
+        },
+        {
             "type": "Template",
             "title": "Test Resource Card 2",
+            "link": "#",
+            "description": "This is a template-related resource."
+        },
+        {
+            "type": "Template",
+            "title": "Test Resource Card 3",
             "link": "#",
             "description": "This is a template-related resource."
         }
