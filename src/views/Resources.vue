@@ -23,7 +23,7 @@
                                 ]">
                                     <div>
                                         <span 
-                                            class="bg-purple-100 text-purple-700 inline-flex rounded-lg p-2 group-hover:bg-purple-200 group-focus:bg-purple-300"
+                                            class="bg-purple-100 text-purple-700 inline-flex rounded-lg p-2 group-hover:bg-purple-200"
                                             :class="[getIconBackground(type), getIconForeground(type)]"
                                         >
                                             <Icon :icon="getIcon(type)" class="h-6 w-6" aria-hidden="true" />
@@ -76,8 +76,6 @@ const getIconForeground = (type) => {
     // console.log('Foreground class for', type, ':', className);
     return className;
 };
-
-
 
 // Get background color class
 const getIconBackground = (type) => {
