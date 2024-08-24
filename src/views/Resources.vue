@@ -23,6 +23,7 @@
                                 ]">
                                     <div>
 <<<<<<< HEAD
+<<<<<<< HEAD
                                         <span :class="[getIconBackground(type), getIconForeground(type), getIconHover(type)]" class="inline-flex rounded-lg p-2" >
 =======
                                         <span 
@@ -30,6 +31,9 @@
                                             :class="[getIconBackground(type), getIconForeground(type)]"
                                         >
 >>>>>>> 40613e2 (fix: Resource Card Icon color)
+=======
+                                        <span :class="[getIconBackground(type), getIconForeground(type), getIconHover(type)]" class="inline-flex rounded-lg p-2" >
+>>>>>>> af89a2d (feat: Icon Hover color & fix class name)
                                             <Icon :icon="getIcon(type)" class="h-6 w-6" aria-hidden="true" />
                                         </span>
                                     </div>
@@ -83,9 +87,15 @@ const getIcon = (type) => {
 // Get foreground color class
 const getIconForeground = (type) => {
 <<<<<<< HEAD
+<<<<<<< HEAD
     const className = categories.value[type]?.iconForeground || 'text-gray-700';
     console.log('Foreground class for', type, ':', className);
     return className;
+=======
+    const iconForeground = categories.value[type]?.iconForeground || 'text-purple-700';
+    // console.log('Foreground class for', type, ':', className);
+    return iconForeground;
+>>>>>>> af89a2d (feat: Icon Hover color & fix class name)
 =======
     const iconForeground = categories.value[type]?.iconForeground || 'text-purple-700';
     // console.log('Foreground class for', type, ':', className);
@@ -96,10 +106,13 @@ const getIconForeground = (type) => {
 // Get background color class
 const getIconBackground = (type) => {
 <<<<<<< HEAD
+<<<<<<< HEAD
     const className = categories.value[type]?.iconBackground || 'bg-red-300';
     console.log('Background class for', type, ':', className);
     return className;
 =======
+=======
+>>>>>>> af89a2d (feat: Icon Hover color & fix class name)
     const iconBackground = categories.value[type]?.iconBackground || 'bg-purple-100';
     // console.log('Background class for', type, ':', className);
     return iconBackground;
@@ -110,6 +123,9 @@ const getIconHover = (type) => {
     const iconHover = categories.value[type]?.iconHover ? `hover:${categories.value[type].iconHover}` : 'hover:bg-purple-400';
     // console.log('Hover class for', type, ':', iconHover);
     return iconHover;
+<<<<<<< HEAD
+>>>>>>> af89a2d (feat: Icon Hover color & fix class name)
+=======
 >>>>>>> af89a2d (feat: Icon Hover color & fix class name)
 };
 </script>
