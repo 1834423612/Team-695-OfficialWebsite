@@ -22,11 +22,14 @@
                                     'shadow-lg transition-transform transform hover:scale-105'
                                 ]">
                                     <div>
-                                        <span :class="[getIconBackground(type), getIconForeground(type), 'inline-flex rounded-lg p-3 ring-4 ring-white']">
-                                            <component :is="getIcon(type)" class="h-6 w-6" aria-hidden="true" />
+                                        <span 
+                                            class="bg-purple-100 text-purple-700 inline-flex rounded-lg p-2 group-hover:bg-purple-200 group-focus:bg-purple-300"
+                                            :class="[getIconBackground(type), getIconForeground(type)]"
+                                        >
+                                            <Icon :icon="getIcon(type)" class="h-6 w-6" aria-hidden="true" />
                                         </span>
                                     </div>
-                                    <div class="mt-8">
+                                    <div class="mt-6">
                                         <h4 class="text-base font-semibold leading-6 text-gray-900">
                                             <a :href="action.link" class="focus:outline-none">
                                                 <span class="absolute inset-0" aria-hidden="true" />
@@ -50,29 +53,36 @@
 <script setup>
 import { ref } from 'vue';
 import ResourceList from '../Data/ResourceList.json';
-import { AcademicCapIcon, CheckBadgeIcon, ClockIcon, ReceiptRefundIcon, UsersIcon } from '@heroicons/vue/24/outline';
+import { Icon } from '@iconify/vue';
 
+// Setup categories and items
 const categories = ref(ResourceList.categories);
 const items = ref(ResourceList.items);
 
+// Filter items based on type
 const filteredItems = (type) => {
     return items.value.filter(item => item.type === type);
 };
 
+// Map icon names to Iconify icons
 const getIcon = (type) => {
-    const iconName = categories.value[type].icon || "ClockIcon"; // Default icon
-    return {
-        "ClockIcon": ClockIcon,
-        "ReceiptRefundIcon": ReceiptRefundIcon,
-        // Icons mapping
-    }[iconName] || ClockIcon; // Default icon return
+    const iconName = categories.value[type]?.icon || "carbon:book"; // Default icon
+    return iconName; // Return the icon name for Iconify
 };
 
+// Get foreground color class
 const getIconForeground = (type) => {
-    return categories.value[type]?.iconForeground || 'text-gray-700'; // Default foreground color
+    const className = categories.value[type]?.iconForeground || 'text-gray-700';
+    console.log('Foreground class for', type, ':', className);
+    return className;
 };
 
+
+
+// Get background color class
 const getIconBackground = (type) => {
-    return categories.value[type]?.iconBackground || 'bg-gray-300'; // Default background color
+    const className = categories.value[type]?.iconBackground || 'bg-red-300';
+    console.log('Background class for', type, ':', className);
+    return className;
 };
 </script>

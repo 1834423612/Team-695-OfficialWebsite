@@ -2,13 +2,13 @@
     "categories": {
         "Code": {
             "title": "Code Resources",
-            "icon": "ClockIcon",
+            "icon": "ic:baseline-code",
             "iconForeground": "text-teal-700",
             "iconBackground": "bg-teal-50"
         },
         "Template": {
             "title": "Template Resources",
-            "icon": "ReceiptRefundIcon",
+            "icon": "carbon:book",
             "iconForeground": "text-purple-700",
             "iconBackground": "bg-purple-50"
         }
