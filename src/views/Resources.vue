@@ -28,7 +28,8 @@
                                     </div>
                                     <div class="mt-6">
                                         <h4 class="text-base font-semibold leading-6 text-gray-900">
-                                            <a :href="action.link" class="focus:outline-none">
+                                            <!-- Previous code: <a :href="action.link" class="focus:outline-none"> -->
+                                            <a :href="action.link" target="_blank" rel="noopener noreferrer" class="focus:outline-none">
                                                 <span class="absolute inset-0" aria-hidden="true" />
                                                 {{ action.title }}
                                             </a>
@@ -36,6 +37,11 @@
                                         <p class="mt-2 text-sm text-gray-500">
                                             {{ action.description ?? 'Click to visit this resource.' }}
                                         </p>
+                                        <span
+                                            class="pointer-events-none absolute right-6 top-6 text-gray-300 group-hover:text-gray-400"
+                                            aria-hidden="true">
+                                            <Icon icon="ph:arrow-up-right-bold" class="h-6 w-6" />
+                                        </span>
                                     </div>
                                 </div>
                             </div>
