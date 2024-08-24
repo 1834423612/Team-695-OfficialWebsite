@@ -22,7 +22,14 @@
                                     'shadow-lg transition-transform transform hover:scale-105'
                                 ]">
                                     <div>
+<<<<<<< HEAD
                                         <span :class="[getIconBackground(type), getIconForeground(type), getIconHover(type)]" class="inline-flex rounded-lg p-2" >
+=======
+                                        <span 
+                                            class="bg-purple-100 text-purple-700 inline-flex rounded-lg p-2 group-hover:bg-purple-200"
+                                            :class="[getIconBackground(type), getIconForeground(type)]"
+                                        >
+>>>>>>> 40613e2 (fix: Resource Card Icon color)
                                             <Icon :icon="getIcon(type)" class="h-6 w-6" aria-hidden="true" />
                                         </span>
                                     </div>
