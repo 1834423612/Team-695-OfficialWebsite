@@ -73,7 +73,7 @@ const getIcon = (type) => {
 // Get foreground color class
 const getIconForeground = (type) => {
     const className = categories.value[type]?.iconForeground || 'text-gray-700';
-    console.log('Foreground class for', type, ':', className);
+    // console.log('Foreground class for', type, ':', className);
     return className;
 };
 
@@ -82,7 +82,7 @@ const getIconForeground = (type) => {
 // Get background color class
 const getIconBackground = (type) => {
     const className = categories.value[type]?.iconBackground || 'bg-red-300';
-    console.log('Background class for', type, ':', className);
+    // console.log('Background class for', type, ':', className);
     return className;
 };
 </script>
