@@ -4,13 +4,15 @@
             "title": "Code Resources",
             "icon": "ic:baseline-code",
             "iconForeground": "text-teal-700",
-            "iconBackground": "bg-teal-50"
+            "iconBackground": "bg-teal-50",
+            "iconHover": "bg-teal-300"
         },
         "Template": {
             "title": "Template Resources",
             "icon": "carbon:book",
             "iconForeground": "text-purple-700",
-            "iconBackground": "bg-purple-50"
+            "iconBackground": "bg-purple-50",
+            "iconHover": "bg-purple-100"
         }
     },
     "items": [

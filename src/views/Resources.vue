@@ -22,10 +22,7 @@
                                     'shadow-lg transition-transform transform hover:scale-105'
                                 ]">
                                     <div>
-                                        <span 
-                                            class="bg-purple-100 text-purple-700 inline-flex rounded-lg p-2 group-hover:bg-purple-200"
-                                            :class="[getIconBackground(type), getIconForeground(type)]"
-                                        >
+                                        <span :class="[getIconBackground(type), getIconForeground(type), getIconHover(type)]" class="inline-flex rounded-lg p-2" >
                                             <Icon :icon="getIcon(type)" class="h-6 w-6" aria-hidden="true" />
                                         </span>
                                     </div>
@@ -72,15 +69,22 @@ const getIcon = (type) => {
 
 // Get foreground color class
 const getIconForeground = (type) => {
-    const className = categories.value[type]?.iconForeground || 'text-gray-700';
+    const iconForeground = categories.value[type]?.iconForeground || 'text-purple-700';
     // console.log('Foreground class for', type, ':', className);
-    return className;
+    return iconForeground;
 };
 
 // Get background color class
 const getIconBackground = (type) => {
-    const className = categories.value[type]?.iconBackground || 'bg-red-300';
+    const iconBackground = categories.value[type]?.iconBackground || 'bg-purple-100';
     // console.log('Background class for', type, ':', className);
-    return className;
+    return iconBackground;
+};
+
+// Get the hover color of the icon
+const getIconHover = (type) => {
+    const iconHover = categories.value[type]?.iconHover ? `hover:${categories.value[type].iconHover}` : 'hover:bg-purple-400';
+    // console.log('Hover class for', type, ':', iconHover);
+    return iconHover;
 };
 </script>
