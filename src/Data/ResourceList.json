@@ -1,7 +1,14 @@
 {
     "categories": {
+        "Scoutify": {
+            "title": "Scoutify",
+            "icon": "ic:baseline-search",
+            "iconForeground": "text-blue-700",
+            "iconBackground": "bg-blue-50",
+            "iconHover": "bg-blue-100"
+        },
         "Code": {
-            "title": "Code Resources",
+            "title": "Coding",
             "icon": "ic:baseline-code",
             "iconForeground": "text-teal-700",
             "iconBackground": "bg-teal-50",
@@ -16,6 +23,12 @@
         }
     },
     "items": [
+        {
+            "type": "Scoutify",
+            "title": "Scouting Website",
+            "link": "https://scoutify.team695.com/",
+            "description": "This is a Scoutify-related resource."
+        },
         {
             "type": "Code",
             "title": "Test Resource Card 1",
