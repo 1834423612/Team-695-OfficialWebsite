@@ -17,12 +17,11 @@
                                     <span class="text-gray-500 mb-1">Feel free to request and add more, or visit the
                                         Documentation Website</span>
                                 </div>
-                                <h3
+                                <!-- <h3
                                     class="inline-block relative text-gray-800 font-bold text-xl bg-[#5d8dcf99] px-3 py-1 rounded-md shadow-md">
                                     这是一个标题
-                                    <!-- <span class="absolute inset-0 bg-yellow-200 blur-lg rounded-md"></span> -->
                                 </h3>
-                                <h3 class="marker-title">这是一个标题</h3>
+                                <h3 class="marker-title">这是一个标题</h3> -->
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                     <!-- Resources Card Container -->
                                     <div v-for="(action, actionIdx) in filteredItems(type)" :key="action.title" :class="[
