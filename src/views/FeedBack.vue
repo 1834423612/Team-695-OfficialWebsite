@@ -61,16 +61,16 @@
                             </button>
                         </div>
                     </section>
-                    <DeviceInfoTable :deviceInfo="deviceInfo" />
+                    <DeviceInfoTable :deviceInfo="deviceInfo" :currentTimestamp="currentTimestamp" />
                 </div>
-                <button type="submit" class="btn-primary">Submit</button>
+                <button type="submit" class="btn-primary transition transform hover:bg-blue-700 hover:scale-105 active:scale-95">Submit</button>
             </form>
         </div>
     </div>
 </template>
 
 <script lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import axios from 'axios';
 import DeviceInfoTable from '@/components/DeviceInfoTable.vue';
 
@@ -82,6 +82,7 @@ export default {
         const title = ref('');
         const contact = ref('');
         const content = ref('');
+        const currentTimestamp = ref(new Date().toISOString());
         const isBug = ref(false);
         const deviceInfo = ref({
             userAgent: '',
@@ -91,12 +92,20 @@ export default {
             language: '',
         });
 
+        const updateTimestamp = () => {
+            currentTimestamp.value = new Date().toISOString();
+        };
+        let intervalId: number;
+
         onMounted(() => {
+            // Update the timestamp every second
+            intervalId = window.setInterval(updateTimestamp, 1000);
+
             // Get device information
             deviceInfo.value = {
                 userAgent: navigator.userAgent,
                 ip: '',
-                timestamp: new Date().toISOString(),
+                timestamp: currentTimestamp.value,
                 screenSize: `${window.innerWidth} x ${window.innerHeight}`,
                 language: navigator.language,
             };
@@ -105,6 +114,11 @@ export default {
             axios.get('https://api.ipify.org?format=json').then((response: { data: { ip: any; }; }) => {
                 deviceInfo.value.ip = response.data.ip;
             });
+        });
+
+        // Clear the interval when the component is unmounted
+        onBeforeUnmount(() => {
+            clearInterval(intervalId);
         });
 
         // If the category is "bug", set isBug to true
@@ -119,7 +133,10 @@ export default {
                 title: title.value,
                 contact: contact.value,
                 content: content.value,
-                deviceInfo: deviceInfo.value,
+                deviceInfo: {
+                    ...deviceInfo.value,
+                    timestamp: currentTimestamp.value,
+                },
             };
 
             // Dev Note: Uncomment the code below to submit without posting to the server
@@ -153,6 +170,7 @@ export default {
             content,
             isBug,
             deviceInfo,
+            currentTimestamp,
             handleCategoryChange,
             submitFeedback,
         };

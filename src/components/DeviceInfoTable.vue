@@ -19,7 +19,7 @@
                     </tr>
                     <tr>
                         <td class="border border-gray-300 px-4 py-2">UTC Time</td>
-                        <td class="border border-gray-300 px-4 py-2">{{ deviceInfo.timestamp }}</td>
+                        <td class="border border-gray-300 px-4 py-2">{{ currentTimestamp }}</td>
                     </tr>
                     <tr>
                         <td class="border border-gray-300 px-4 py-2">
@@ -39,14 +39,25 @@
 </template>
 
 <script lang="ts">
-export default {
+import { defineComponent, PropType } from 'vue';
+
+export default defineComponent({
     props: {
         deviceInfo: {
-            type: Object,
+            type: Object as PropType<{
+                userAgent: string;
+                ip: string;
+                screenSize: string;
+                language: string;
+            }>,
+            required: true,
+        },
+        currentTimestamp: {
+            type: String,
             required: true,
         },
     },
-};
+});
 </script>
 
 <style scoped></style>
