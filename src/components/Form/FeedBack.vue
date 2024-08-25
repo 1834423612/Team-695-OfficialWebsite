@@ -1,78 +1,81 @@
 <template>
-    <div class="max-w-4xl mx-auto p-6">
-        <h1 class="text-2xl font-bold mb-4">Give Some Feedback</h1>
+    <!-- <h1 class="text-2xl font-bold mb-4">Give Some Feedback</h1> -->
 
-        <div class="bg-gray-100 p-4 rounded shadow">
-            <form @submit.prevent="submitFeedback">
-                <div class="mb-4">
-                    <label for="nickname" class="block mb-2">Your Name
-                        <span class="text-red-500">*</span>
-                    </label>
-                    <input v-model="nickname" type="text" id="nickname" class="input-field" placeholder="Nick Name is fine if you want..." required />
-                </div>
+    <div class="bg-gray-100 p-4 rounded shadow">
+        <form @submit.prevent="submitFeedback">
+            <div class="mb-4">
+                <label for="nickname" class="block mb-2">Your Name
+                    <span class="text-red-500">*</span>
+                </label>
+                <input v-model="nickname" type="text" id="nickname" class="input-field"
+                    placeholder="Nick Name is fine if you want..." required />
+            </div>
 
-                <div class="mb-4">
-                    <label for="contact" class="block mb-2">
-                        Contact Info
-                        <!-- <span class="text-sm text-gray-500">(Email, Phone, etc.)</span> -->
-                        <span class="text-red-500">*</span>
-                    </label>
-                    
-                    <input v-model="contact" type="text" id="contact" class="input-field" placeholder="Email, Phone Number, etc." required />
-                </div>
+            <div class="mb-4">
+                <label for="contact" class="block mb-2">
+                    Contact Info
+                    <!-- <span class="text-sm text-gray-500">(Email, Phone, etc.)</span> -->
+                    <span class="text-red-500">*</span>
+                </label>
 
-                <div class="mb-4">
-                    <label for="category" class="block mb-2">Category
-                        <span class="text-red-500">*</span>
-                    </label>
-                    <select v-model="category" id="category" class="input-field" @change="handleCategoryChange">
-                        <option value="">Please choose a category</option>
-                        <option value="bug">Bug Report</option>
-                        <option value="general">General Feedback</option>
-                    </select>
-                </div>
+                <input v-model="contact" type="text" id="contact" class="input-field"
+                    placeholder="Email, Phone Number, etc." required />
+            </div>
 
-                <div class="mb-4">
-                    <label for="title" class="block mb-2">Title
-                        <span class="text-red-500">*</span>
-                    </label>
-                    <input v-model="title" type="text" id="title" class="input-field" placeholder="Give a title to your feedback" required />
-                </div>
+            <div class="mb-4">
+                <label for="category" class="block mb-2">Category
+                    <span class="text-red-500">*</span>
+                </label>
+                <select v-model="category" id="category" class="input-field" @change="handleCategoryChange">
+                    <option value="">Please choose a category</option>
+                    <option value="bug">Bug Report</option>
+                    <option value="general">General Feedback</option>
+                </select>
+            </div>
 
-                <div class="mb-4">
-                    <label for="content" class="block mb-2">Your feedback
-                        <span class="text-red-500">*</span>
-                    </label>
-                    
-                    <textarea v-model="content" id="content" class="input-field" rows="4" placeholder="More detail as you can" required></textarea>
-                </div>
+            <div class="mb-4">
+                <label for="title" class="block mb-2">Title
+                    <span class="text-red-500">*</span>
+                </label>
+                <input v-model="title" type="text" id="title" class="input-field"
+                    placeholder="Give a title to your feedback" required />
+            </div>
 
-                <div v-if="isBug" class="mb-4">
-                    <section>
-                        <div class="flex items-center justify-between gap-x-6 bg-red-600 px-6 py-2.5 sm:pr-3.5 lg:pl-8">
-                            <p class="text-sm leading-6 text-white">
-                                <strong class="font-semibold">
-                                    We will collect those device information below
-                                </strong>
-                                to help us diagnose the issue much faster
-                            </p>
-                            <button type="button" class="-m-3 flex-none p-3 focus-visible:outline-offset-[-4px]">
-                                <span class="sr-only">Dismiss</span>
-                            </button>
-                        </div>
-                    </section>
-                    <DeviceInfoTable :deviceInfo="deviceInfo" :currentTimestamp="currentTimestamp" />
-                </div>
-                <button type="submit" class="btn-primary transition transform hover:bg-blue-700 hover:scale-105 active:scale-95">Submit</button>
-            </form>
-        </div>
+            <div class="mb-4">
+                <label for="content" class="block mb-2">Your feedback
+                    <span class="text-red-500">*</span>
+                </label>
+
+                <textarea v-model="content" id="content" class="input-field" rows="4"
+                    placeholder="More detail as you can" required></textarea>
+            </div>
+
+            <div v-if="isBug" class="mb-4">
+                <section>
+                    <div class="flex items-center justify-between gap-x-6 bg-red-600 px-6 py-2.5 sm:pr-3.5 lg:pl-8">
+                        <p class="text-sm leading-6 text-white">
+                            <strong class="font-semibold">
+                                We will collect those device information below
+                            </strong>
+                            to help us diagnose the issue much faster
+                        </p>
+                        <button type="button" class="-m-3 flex-none p-3 focus-visible:outline-offset-[-4px]">
+                            <span class="sr-only">Dismiss</span>
+                        </button>
+                    </div>
+                </section>
+                <DeviceInfoTable :deviceInfo="deviceInfo" :currentTimestamp="currentTimestamp" />
+            </div>
+            <button type="submit"
+                class="btn-primary transition transform hover:bg-blue-700 hover:scale-105 active:scale-95">Submit</button>
+        </form>
     </div>
 </template>
 
 <script lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import axios from 'axios';
-import DeviceInfoTable from '@/components/DeviceInfoTable.vue';
+import DeviceInfoTable from '@/components/Form/DeviceInfoTable.vue';
 
 export default {
     components: { DeviceInfoTable },
