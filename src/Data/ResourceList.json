@@ -56,6 +56,12 @@
             "description": "The GitHub repository for the Team 695 Official Website."
         },
         {
+            "type": "Open Source",
+            "title": "Team 695 Documentation",
+            "link": "https://github.com/1834423612/Team-695-Document",
+            "description": "The GitHub repository for the Team 695 Documentation."
+        },
+        {
             "type": "Code",
             "title": "Test Resource Card 1",
             "link": "#",
