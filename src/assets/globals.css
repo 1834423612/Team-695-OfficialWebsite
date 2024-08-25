@@ -28,7 +28,7 @@ The color format used is HSL (Hue, Saturation, Lightness):
   Main color scheme:
   - Yellow Background: #ffd900
   - Yellow Background HSL: 51 100% 50%
-  - Black Background: #272525
+  - Black Background: #111827
   #FEEB29 
   Backup color scheme:
   - Light Pink: 308 56% 85%;
@@ -36,13 +36,13 @@ The color format used is HSL (Hue, Saturation, Lightness):
 
 ---------------------------
 */
- 
+
 @layer base {
   :root {
     --background: 210 100% 97%;
     --foreground: 339 20% 20%;
     --primary: 51 100% 50%;
-    --primary-foreground: 210 22% 22%;
+    --primary-foreground: 220.91 39.29% 10.98%; /*210 22% 22%;*/
     --secondary: 196 75% 88%;
     --secondary-foreground: 210 22% 22%;
     --accent: 211 86% 70%;
