@@ -1,6 +1,7 @@
 <template>
     <div>
         <nav class="hidden md:flex items-center gap-6">
+            <span>Desktop Menu is Visible</span>
             <router-link 
                 v-for="(item, index) in menuItems" 
                 :key="index"

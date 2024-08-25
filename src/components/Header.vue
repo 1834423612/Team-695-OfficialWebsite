@@ -15,11 +15,13 @@
       <!-- Mobile Dropdown Menu -->
       <DropdownMenu
         buttonText="Menu"
+        v-if="!isDesktop"
         :menuItems="menuItems"
       />
 
       <!-- Desktop Menu -->
       <DesktopMenu
+        v-if="isDesktop"
         class="hidden md:flex items-center gap-4"
         :menuItems="menuItems"
       />
@@ -30,7 +32,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import DropdownMenu from '../components/Header/MobileDropdownMenu.vue';
-import DesktopMenu from './Header/DesktopMenu.vue';
+import DesktopMenu from '../components/Header/DesktopMenu.vue';
 
 interface MenuItem {
     name: string;
@@ -53,7 +55,22 @@ export default defineComponent({
         { name: 'Resources', link: '/resources'},
         { name: 'Feedback', link: '/feedback'},
       ] as MenuItem[], // Cast to MenuItem array
+      isDesktop: false,
     };
+  },
+
+  methods: {
+    checkIfDesktop() {
+      this.isDesktop = window.innerWidth >= 768; // 根据窗口宽度来判断
+      console.log('Desktop Menu is Visible', this.isDesktop)
+    },
+  },
+  mounted() {
+    this.checkIfDesktop();
+    window.addEventListener('resize', this.checkIfDesktop); // 监听窗口尺寸变化
+  },
+  beforeDestroy() {
+    window.removeEventListener('resize', this.checkIfDesktop); // 清理监听器
   },
 });
 </script>

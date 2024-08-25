@@ -178,7 +178,7 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 .input-field {
     padding: 0.5rem;
     border: 1px solid #d1d5db;
