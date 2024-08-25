@@ -59,7 +59,7 @@
                             <h2 class="mb-4 text-2xl font-semibold text-gray-900">Chat with us</h2>
                             <div class="mb-4 flex items-center space-x-4">
                                 <img alt="Team Coach" class="rounded-full" height="64"
-                                    src="https://generated.vusercontent.net/placeholder.svg?height=64&width=64"
+                                    src="https://placehold.co/64x64/3b82f6/white"
                                     style="aspect-ratio: 64/64; object-fit: cover;" width="64" />
                                 <div>
                                     <h3 class="font-semibold text-gray-800">Coach Name</h3>
@@ -83,7 +83,7 @@
                             </div>
                             <div class="aspect-video overflow-hidden rounded-md bg-yellow-100">
                                 <img alt="Map"
-                                    src="https://generated.vusercontent.net/placeholder.svg?height=300&width=400"
+                                    src="https://placehold.co/300x400/3b82f6/white"
                                     class="h-full w-full object-cover" />
                             </div>
                         </div>
