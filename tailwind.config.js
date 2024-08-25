@@ -11,9 +11,6 @@ export default {
     "./Data/**/*.{js,ts,jsx,tsx,json}",
   ],
   theme: {
-    screens: {
-      '300small': {'max': '374px'},
-    },
     extend: {
       fontFamily: {
         heading: ['Manrope', ...fontFamily.sans],
