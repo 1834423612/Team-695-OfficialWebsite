@@ -50,7 +50,8 @@ export default defineComponent({
         { name: 'About', link: '/about'},
         { name: 'Members', link: '/members'},
         { name: 'Robots', link: '/robots'},
-        { name: 'Resources', link: '/resources'}
+        { name: 'Resources', link: '/resources'},
+        { name: 'Feedback', link: '/feedback'},
       ] as MenuItem[], // Cast to MenuItem array
     };
   },
