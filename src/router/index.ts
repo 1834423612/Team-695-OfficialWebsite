@@ -12,6 +12,7 @@ import News from '../views/News.vue';
 import Sponsors from '../views/Sponsors.vue';
 import Resources from '../views/Resources.vue';
 import Contact from '@/views/Contact.vue';
+import Gallery from '@/views/Gallery.vue';
 
 // Define the routes 
 // A route is an object that contains the path and the component that should be rendered when the path is matched
@@ -39,6 +40,7 @@ const routes = [
   },
   { path: '/members', component: Members },
   { path: '/robots', component: Robots },
+  { path: '/gallery', component: Gallery },
   { path: '/news', component: News },
   { path: '/sponsors', component: Sponsors },
   { path: '/resources', component: Resources },
