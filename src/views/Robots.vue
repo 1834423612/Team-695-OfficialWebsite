@@ -4,8 +4,9 @@
       <section id="robots" class="py-16 px-6 bg-muted">
         <div class="container mx-auto max-w-4xl">
           <h2 class="text-3xl font-bold mb-8">Our Robots</h2>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card>
+          <!-- <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"> -->
+            
+            <!-- <Card>
               <CardHeader>
                 <img
                   src="https://r2.fastbirdcdn.online/Robotics/Robots/66b5585976c8c-20240809_278988044_140123391903967_6855528956026866249.jpg"
@@ -30,7 +31,8 @@
                   This simple yet eloquent design that advanced to worlds.
                 </CardDescription>
               </CardContent>
-            </Card>
+            </Card> -->
+
             <!--<Card>
               <CardHeader>
                 <img src="https://gravatar.com/avatar/361a331e88af15ea5f7f81cdd60a6633e7bc4a69db43b236caae96cdcb1ddd03?s=1024" width="400" height="300" alt="Robot 3" class="rounded-t-lg" />
@@ -42,7 +44,7 @@
                 </CardDescription>
               </CardContent>
             </Card>-->
-          </div>
+          <!-- </div> -->
         </div>
       </section>
     </main>
