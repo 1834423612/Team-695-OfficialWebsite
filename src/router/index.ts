@@ -1,5 +1,6 @@
 // Import vue-router dependencies 
 import { createRouter, createWebHistory } from 'vue-router';
+import NotFound from '../components/404NotFound.vue';
 import Home from '../views/Home.vue';
 import About from '../views/About.vue';
 // import Mentors from '../views/Mentors.vue';
@@ -18,6 +19,11 @@ import Contact from '@/views/Contact.vue';
 // The component is the Vue component that should be rendered when the path is matched
 // Example: https://example.com/[path] [path] -> [component]
 const routes = [
+  {
+    path: '/:pathMatch(.*)*',
+    name: '404NotFound',
+    component: NotFound
+  },
   { path: '/', component: Home },
   { path: '/about', component: About },
   // { path: '/mentors', component: Mentors },
