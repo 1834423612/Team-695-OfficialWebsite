@@ -1,7 +1,7 @@
 <template>
     <!-- <h1 class="text-2xl font-bold mb-4">Give Some Feedback</h1> -->
 
-    <div class="bg-gray-100 p-4 rounded shadow">
+    <div class="bg-gray-100 p-4 rounded shadow overflow-x-auto">
         <form @submit.prevent="submitFeedback">
             <div class="mb-4">
                 <label for="nickname" class="block mb-2">Your Name

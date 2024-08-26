@@ -19,7 +19,7 @@
             </div>
             <div class="container mx-auto mt-8 p-4">
                 <div class="grid gap-8 md:grid-cols-2">
-                    <div class="rounded-lg border-4 border-amber-400 bg-white p-6 shadow-md">
+                    <div class="rounded-lg border-4 border-amber-400 bg-white p-6 shadow-md overflow-x-auto">
                         <h2 class="mb-4 text-2xl font-semibold text-gray-900">Send us a message</h2>
                         <!-- <form @submit.prevent="submitForm" class="space-y-4">
                             <div>
