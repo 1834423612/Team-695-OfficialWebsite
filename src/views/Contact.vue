@@ -55,7 +55,7 @@
                         <FeedBack />
                     </div>
                     <div class="space-y-6">
-                        <div class="rounded-lg border border-yellow-200 bg-yellow-50 p-6 shadow-md">
+                        <div class="rounded-lg border-4 border-blue-400 bg-yellow-50 p-6 shadow-xl">
                             <h2 class="mb-4 text-2xl font-semibold text-gray-900">Chat with us</h2>
                             <div class="mb-4 flex items-center space-x-4">
                                 <img alt="Team Coach" class="rounded-full" height="64"
@@ -68,9 +68,10 @@
                             </div>
                             <button @click="startChat"
                                 class="w-full rounded border border-gray-800 px-4 py-2 font-bold text-gray-800 hover:bg-gray-100">Start
-                                Chat</button>
+                                Chat
+                            </button>
                         </div>
-                        <div class="rounded-lg border border-yellow-200 bg-yellow-50 p-6 shadow-md">
+                        <div class="rounded-lg border-4 border-emerald-400 bg-yellow-50 p-6 shadow-xl">
                             <h2 class="mb-4 text-2xl font-semibold text-gray-900">Visit us</h2>
                             <div class="mb-2 flex items-center space-x-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600"
