@@ -9,7 +9,7 @@
                             Website</span>
                     </div>
                     <div class="space-y-12">
-                        <div class="container mx-auto bg-slate-400 p-6 rounded-md">
+                        <div class="container mx-auto bg-white p-6 rounded-md">
                             <!-- Iterate over each category -->
                             <div v-for="(category, type) in categories" :key="type">
                                 <div class="mb-6">
