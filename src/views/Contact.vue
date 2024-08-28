@@ -21,37 +21,7 @@
                 <div class="grid gap-8 md:grid-cols-2">
                     <div class="rounded-lg border-4 border-amber-400 bg-white p-6 shadow-md overflow-x-auto">
                         <h2 class="mb-4 text-2xl font-semibold text-gray-900">Send us a message</h2>
-                        <!-- <form @submit.prevent="submitForm" class="space-y-4">
-                            <div>
-                                <label for="name" class="block text-sm font-medium text-gray-800">Your Name</label>
-                                <input v-model="form.name" id="name" type="text" placeholder="John Doe"
-                                    class="mt-1 block w-full rounded-md border-yellow-300 shadow-sm focus:border-gray-500 focus:ring-gray-500" />
-                            </div>
-                            <div>
-                                <label for="email" class="block text-sm font-medium text-gray-800">Email</label>
-                                <input v-model="form.email" id="email" type="email" placeholder="john@example.com"
-                                    class="mt-1 block w-full rounded-md border-yellow-300 shadow-sm focus:border-gray-500 focus:ring-gray-500" />
-                            </div>
-                            <div>
-                                <label for="category" class="block text-sm font-medium text-gray-800">Category</label>
-                                <select v-model="form.category" id="category"
-                                    class="mt-1 block w-full rounded-md border-yellow-300 shadow-sm focus:border-gray-500 focus:ring-gray-500">
-                                    <option>General Inquiry</option>
-                                    <option>Sponsorship</option>
-                                    <option>Join the Team</option>
-                                    <option>Other</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="message" class="block text-sm font-medium text-gray-800">Message</label>
-                                <textarea v-model="form.message" id="message" rows="4"
-                                    placeholder="Your message here..."
-                                    class="mt-1 block w-full rounded-md border-yellow-300 shadow-sm focus:border-gray-500 focus:ring-gray-500"></textarea>
-                            </div>
-                            <button type="submit"
-                                class="w-full rounded bg-gray-800 px-4 py-2 font-bold text-white hover:bg-gray-700">Send
-                                Message</button>
-                        </form> -->
+                        <!-- Feedback component -->
                         <FeedBack />
                     </div>
                     <div class="space-y-6">
@@ -64,12 +34,22 @@
                                 <div>
                                     <h3 class="font-semibold text-gray-800">Coach Name</h3>
                                     <p class="text-sm text-gray-600">Head Coach</p>
+
+                                    <!-- Icons -->
+                                    <div class="flex space-x-4 mt-1 text-black hover:text-gray-400">
+                                        <a href="mailto:coach@frc695.com" class="text-black hover:text-gray-600">
+                                            <span class="sr-only">Email</span>
+                                            <Icon icon="line-md:email" height="23" width="23" />
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
-                            <button @click="startChat"
+
+                            <!-- Chat Button(Only uncomment this when using) -->
+                            <!-- <button @click="startChat"
                                 class="w-full rounded border border-gray-800 px-4 py-2 font-bold text-gray-800 hover:bg-gray-100">Start
                                 Chat
-                            </button>
+                            </button> -->
                         </div>
                         <div class="rounded-lg border-4 border-emerald-400 bg-yellow-50 p-6 shadow-xl">
                             <h2 class="mb-4 text-2xl font-semibold text-gray-900">Visit us</h2>
@@ -83,8 +63,7 @@
                                 <p class="text-gray-800">123 Village, Nice City, AB 12345</p>
                             </div>
                             <div class="aspect-video overflow-hidden rounded-md bg-yellow-100">
-                                <img alt="Map"
-                                    src="https://placehold.co/300x400/3b82f6/white"
+                                <img alt="Map" src="https://placehold.co/300x400/3b82f6/white"
                                     class="h-full w-full object-cover" />
                             </div>
                         </div>
@@ -98,6 +77,7 @@
 <script setup>
 import { ref } from 'vue'
 import FeedBack from '@/components/Form/FeedBack.vue';
+import { Icon } from '@iconify/vue';
 
 // const form = ref({
 //     name: '',
