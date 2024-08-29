@@ -60,10 +60,10 @@
                                         d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
                                         clip-rule="evenodd" />
                                 </svg>
-                                <p class="text-gray-800">123 Village, Nice City, AB 12345</p>
+                                <p class="text-gray-800">24601 Fairmount Blvd, Cleveland, OH 44122, USA.</p>
                             </div>
                             <div class="aspect-video overflow-hidden rounded-md bg-yellow-100">
-                                <img alt="Map" src="https://placehold.co/300x400/3b82f6/white"
+                                <img alt="Map" src="https://th.bing.com/th/id/OIP.Nj6b7ASE7ZgUSg3lcgwqgQHaFj?rs=1&pid=ImgDetMain"
                                     class="h-full w-full object-cover" />
                             </div>
                         </div>

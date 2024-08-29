@@ -12,6 +12,13 @@
                 Build season starts January 6.
               </p>
             </article>
+            <article class="p-6 bg-white rounded-lg shadow-md">
+              <h3 class="text-2xl font-bold mb-2"> </h3>
+              <p class="text-sm text-gray-500 mb-4">August 29, 2021</p>
+              <p>
+                Off season event on Saturday 9/14.
+              </p>
+            </article>
           </div>
         </div>
       </section>
