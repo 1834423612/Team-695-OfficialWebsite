@@ -29,17 +29,21 @@
                             <h2 class="mb-4 text-2xl font-semibold text-gray-900">Chat with us</h2>
 
                             <div class="rounded-2xl bg-gray-50 p-10">
-                                <h3 class="text-base font-semibold leading-7 text-gray-900">Collaborate</h3>
+                                <h3 class="text-base font-semibold leading-7 text-gray-900">Coach Name</h3>
                                 <dl class="mt-3 space-y-1 text-sm leading-6 text-gray-600">
                                     <div>
                                         <dt class="sr-only">Email</dt>
                                         <dd><a class="font-semibold text-indigo-600"
-                                                href="mailto:collaborate@example.com">collaborate@example.com</a></dd>
+                                                href="mailto:asasasa@example.com">asasasa@example.com</a></dd>
+                                                <a href="mailto:coach@frc695.com" class="text-black hover:text-gray-600">
+                                            <span class="sr-only">Email</span>
+                                            <Icon icon="line-md:email" height="23" width="23" />
+                                        </a>
                                     </div>
-                                    <div class="mt-1">
+                                    <!-- <div class="mt-1">
                                         <dt class="sr-only">Phone number</dt>
-                                        <dd>+1 (555) 905-2345</dd>
-                                    </div>
+                                        <dd>+1 (555) 555-5555</dd>
+                                    </div> -->
                                 </dl>
                             </div>
 
@@ -81,8 +85,11 @@
                             <div class="aspect-video overflow-hidden rounded-md bg-yellow-100">
                                 <!-- <img alt="Map" src="https://placehold.co/300x400/3b82f6/white"
                                     class="h-full w-full object-cover" /> -->
-                                
-                                    <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2988.936050733924!2d-81.50350832399468!3d41.48398608999798!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x88310289d7a522f5%3A0x6b21ae2be51d4ca1!2sBeachwood%20High%20School!5e0!3m2!1szh-CN!2sus!4v1724974249750!5m2!1szh-CN!2sus" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+
+                                <iframe
+                                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2988.936050733924!2d-81.50350832399468!3d41.48398608999798!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x88310289d7a522f5%3A0x6b21ae2be51d4ca1!2sBeachwood%20High%20School!5e0!3m2!1szh-CN!2sus!4v1724974249750!5m2!1szh-CN!2sus"
+                                    width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"
+                                    referrerpolicy="no-referrer-when-downgrade"></iframe>
                             </div>
                         </div>
                     </div>
