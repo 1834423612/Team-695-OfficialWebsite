@@ -21,7 +21,6 @@ declare module 'vue' {
     DeviceInfoTable: typeof import('./src/components/Form/DeviceInfoTable.vue')['default']
     FeedBack: typeof import('./src/components/Form/FeedBack.vue')['default']
     Footer: typeof import('./src/components/Footer.vue')['default']
-    Gallery: typeof import('./src/components/Gallery/Gallery.vue')['default']
     GalleryCard: typeof import('./src/components/Cards/GalleryCard.vue')['default']
     Header: typeof import('./src/components/Header.vue')['default']
     HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']

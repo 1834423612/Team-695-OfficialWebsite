@@ -28,11 +28,11 @@
                         <div class="rounded-lg border-4 border-blue-400 bg-yellow-50 p-6 shadow-xl">
                             <h2 class="mb-4 text-2xl font-semibold text-gray-900">Chat with us</h2>
                             <div class="mb-4 flex items-center space-x-4">
-                                <img alt="Team Coach" class="rounded-full" height="64"
+                                <!--<img alt="Team Coach" class="rounded-full" height="64"
                                     src="https://placehold.co/64x64/3b82f6/white"
-                                    style="aspect-ratio: 64/64; object-fit: cover;" width="64" />
+                                    style="aspect-ratio: 64/64; object-fit: cover;" width="64" />-->
                                 <div>
-                                    <h3 class="font-semibold text-gray-800">Coach Name</h3>
+                                    <h3 class="font-semibold text-gray-800">Coach John</h3>
                                     <p class="text-sm text-gray-600">Head Coach</p>
 
                                     <!-- Icons -->
