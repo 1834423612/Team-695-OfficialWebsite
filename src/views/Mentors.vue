@@ -34,10 +34,10 @@ export default defineComponent({
     return {
       mentors: [
         { email: "coach@frc695.com", name: 'John Keyerleber', role: 'Head Coach', image: 'https://image.cleveland.com/home/cleve-media/pgmain/img/plain-dealer/photo/2015/08/11/-84c81f495ef4b095.jpeg' },
-        { email: "cjdickey36@gmail.com", name: 'Christopher Dickey', role: 'head of fabrication', image: 'https://lh3.googleusercontent.com/a-/ALV-UjW2_5xxYI9ZZQP55aVd-09BqZI4p9vutKFV0FCUOrgKjxWSrEi7=s2048-p' },
-        { email: "matt@keyerleber.com", name: 'Matt Keyerleber', role: 'head of CAD', image: 'https://www.cleveland.com/resizer/45r4t_WZdcdKASkhPZ8u8HcgiCs=/1280x0/smart/cloudfront-us-east-1.images.arcpublishing.com/advancelocal/TWI7QADMBRC5JLLHPHLYQ2R72E.png' },
-        { email: "sxs183@gmail.com", name: 'Sameer Shah', role: 'head of scouting and strategy', image: 'https://cf-images.us-east-1.prod.boltdns.net/v1/static/3798483592001/f5ec30db-b867-4a55-bf66-7b0d57637d19/3759745a-b3e9-4926-8b65-8d1469975099/1280x720/match/image.jpg' },
-        { email: "unknown", name: 'Destin Tynan "Kyle"', role: 'test mentor', image: 'https://placehold.co/100x100/ff0000/ffffff/' },
+        { email: "cjdickey36@gmail.com", name: 'Christopher Dickey', role: 'Head of fabrication', image: 'https://lh3.googleusercontent.com/a-/ALV-UjW2_5xxYI9ZZQP55aVd-09BqZI4p9vutKFV0FCUOrgKjxWSrEi7=s2048-p' },
+        { email: "matt@keyerleber.com", name: 'Matt Keyerleber', role: 'Head of CAD', image: 'https://www.cleveland.com/resizer/45r4t_WZdcdKASkhPZ8u8HcgiCs=/1280x0/smart/cloudfront-us-east-1.images.arcpublishing.com/advancelocal/TWI7QADMBRC5JLLHPHLYQ2R72E.png' },
+        { email: "sxs183@gmail.com", name: 'Sameer Shah', role: 'Head of scouting and strategy', image: 'https://cf-images.us-east-1.prod.boltdns.net/v1/static/3798483592001/f5ec30db-b867-4a55-bf66-7b0d57637d19/3759745a-b3e9-4926-8b65-8d1469975099/1280x720/match/image.jpg' },
+        { email: "unknown", name: 'Destin Tynan "Kyle"', role: 'Assistant CAD Mentor', image: 'https://placehold.co/100x100/ff0000/ffffff/' },
       ],
     };
   },
