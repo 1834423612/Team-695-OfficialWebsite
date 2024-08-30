@@ -89,45 +89,17 @@
         </div>
       </div>
     </section>
-
-    <!-- Mentors Section -->
-    <section id="mentors" class="py-8 px-8 bg-green-100">
-      <div class="container mx-auto max-w-6xl">
-        <h2 class="text-3xl text-center font-medium mb-5">Our Mentors</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <MentorCard v-for="(mentor, index) in mentors" :key="index" :src="mentor.avatar" :alt="mentor.name"
-            :name="mentor.name" :role="mentor.role" :detailsLink="`/mentors/${mentor.name.replace(/ /g, '-')}`"
-            :email="mentor.email" />
-        </div>
-      </div>
-    </section>
-
-    <!-- Gallery Area -->
-    <section class="py-8 px-3">
-      <div class="container mx-auto px-5">
-        <h2 class="text-3xl font-medium text-center mb-5">Gallery</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          <GalleryCard v-for="(item, index) in galleryItems" :key="index" :image="item.image" :title="item.title"
-            :description="item.description" />
-        </div>
-      </div>
-    </section>
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
 import WinnerBanner from '@/components/Cards/WinnerBanner.vue';
-import mentorsData from '@/components/Mentor/info.json';
-import MentorCard from '@/components/Cards/MentorCard.vue';
-import GalleryCard from '@/components/Cards/GalleryCard.vue';
 
 export default defineComponent({
   name: 'About',
   components: {
     WinnerBanner,
-    MentorCard,
-    GalleryCard,
   },
   data() {
     return {
@@ -137,13 +109,6 @@ export default defineComponent({
         { title: 'Winner', description: '2023 MIAMI VALLEY REGIONAL' },
         { title: 'Woodie Flowers Finalist Award', description: '2023 BUCKEYE REGIONAL' },
         { title: 'Winner', description: '2023 BUCKEYE REGIONAL' },
-      ],
-      mentors: mentorsData,
-      galleryItems: [
-        { title: 'Pittsburgh Regional', description: 'Pittsburgh Regional 2024', image: 'https://r2.fastbirdcdn.online/Robotics/Robots/66ad276113a1c-20240803_RoboticsTeamPittsburghRegional.jpg' },
-        { title: 'Gold Module', description: 'Gold Module scores a cube', image: 'https://r2.fastbirdcdn.online/Robotics/Robots/66ac2313c6e20-20240802_Screenshot%202024-08-01%20200551.png' },
-        { title: 'Gold Module', description: 'Gold Module on practice field', image: 'https://r2.fastbirdcdn.online/Robotics/Robots/66ac2313c81d8-20240802_Screenshot%202024-08-01%20200559.png' },
-        { title: 'Gold Module', description: 'Gold Module showing off an illegal bumper font', image: 'https://r2.fastbirdcdn.online/Robotics/Robots/66ac2099b1841-20240802_Screenshot%202024-08-01%20193902.png' },
       ],
       values: [
         {
