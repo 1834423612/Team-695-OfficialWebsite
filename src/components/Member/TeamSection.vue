@@ -2,9 +2,12 @@
     <section class="text-gray-600 body-font">
         <div class="container px-5 py-24 mx-auto">
             <div class="flex flex-col text-center w-full mb-20">
-                <h1 class="sm:text-3xl text-2xl font-medium title-font mb-4 text-gray-900">Our Team</h1>
+                <h1 class="sm:text-3xl text-2xl font-medium title-font mb-4 text-gray-900">Our Team Leads</h1>
                 <p class="lg:w-2/3 mx-auto leading-relaxed text-base">
-                    Here are our amazing team members who work so hard to make this success.
+                    Here are our amazing team leaders who work so hard to make this success.
+                    <br>
+                    <br>
+                    Disclaimer: listed here are actually last year's team leads merely as a point of contact until apointments and/or elections take place for this year.
                 </p>
             </div>
             <div class="flex flex-wrap -m-2">
@@ -25,11 +28,11 @@ export default defineComponent({
     data() {
         return {
             members: [
-                { name: 'Dotan Dana', role: 'Scouting & Strategy Lead' },
-                { name: 'Alex Rabochii', role: 'Scouting & Strategy Lead' },
-                { name: 'Shamith Murphy', role: 'Software Lead' },
-                { name: 'Nate Brodbent', role: 'CAD Lead' },
-                { name: 'Riley Walker', role: 'Fabrication Lead' },
+                { name: 'Dotan Dana', role: 'Past Scouting & Strategy Lead' },
+                { name: 'Alex Rabochii', role: 'Past Scouting & Strategy Lead' },
+                { name: 'Shamith Murphy', role: 'Past Software Lead' },
+                { name: 'Nate Brodbent', role: 'Past CAD Lead' },
+                { name: 'Riley Walker', role: 'Past Fabrication Lead' },
             ],
         };
     },
