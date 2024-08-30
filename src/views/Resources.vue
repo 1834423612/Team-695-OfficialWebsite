@@ -1,15 +1,15 @@
 <template>
-    <div>
+    <div class="bg-sky-100">
         <main class="flex-1">
-            <section id="news" class="py-16 px-6">
-                <div class="container mx-auto max-w-6xl">
+            <section id="resource" class="py-16 px-6">
+                <div class="container mx-auto">
                     <div class="mb-8">
                         <h2 class="text-3xl font-bold mb-1">Resources</h2>
                         <span class="text-gray-500 mb-1">Feel free to request and add more, or visit the Documentation
                             Website</span>
                     </div>
-                    <div class="space-y-12">
-                        <div class="container mx-auto bg-white p-6 rounded-md">
+                    <div class="space-y-12 shadow-md rounded-md border-4 border-violet-400">
+                        <div class="container mx-auto bg-violet-100 p-6 rounded-md">
                             <!-- Iterate over each category -->
                             <div v-for="(category, type) in categories" :key="type">
                                 <div class="mb-6">
@@ -19,10 +19,10 @@
                                 </div>
                                 <!-- <h3
                                     class="inline-block relative text-gray-800 font-bold text-xl bg-[#5d8dcf99] px-3 py-1 rounded-md shadow-md">
-                                    这是一个标题
+                                    This is a title
                                 </h3>
-                                <h3 class="marker-title">这是一个标题</h3> -->
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <h3 class="marker-title">This is a title</h3> -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
                                     <!-- Resources Card Container -->
                                     <div v-for="(action, actionIdx) in filteredItems(type)" :key="action.title" :class="[
                                         actionIdx === 0 ? 'rounded-tl-lg rounded-tr-lg sm:rounded-tr-none' : '',
