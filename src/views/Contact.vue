@@ -29,12 +29,12 @@
                             <h2 class="mb-4 text-2xl font-semibold text-gray-900">Chat with us</h2>
 
                             <div class="rounded-2xl bg-gray-50 p-10">
-                                <h3 class="text-base font-semibold leading-7 text-gray-900">Coach Name</h3>
+                                <h3 class="text-base font-semibold leading-7 text-gray-900">Coach John</h3>
                                 <dl class="mt-3 space-y-1 text-sm leading-6 text-gray-600">
                                     <div>
                                         <dt class="sr-only">Email</dt>
                                         <dd><a class="font-semibold text-indigo-600"
-                                                href="mailto:asasasa@example.com">asasasa@example.com</a></dd>
+                                                href="mailto:asasasa@example.com">coach@frc695.com</a></dd>
                                                 <a href="mailto:coach@frc695.com" class="text-black hover:text-gray-600">
                                             <span class="sr-only">Email</span>
                                             <Icon icon="line-md:email" height="23" width="23" />
