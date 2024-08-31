@@ -1,18 +1,17 @@
 <template>
-    <div class="relative inline-block bg-[#0f4bcb] text-white text-center p-2 w-36 h-[190px] mb-10 ml-2">
-        <img
-        src="https://www.thebluealliance.com/images/first_icon.svg"
-        alt="FRC Logo"
-        class="w-[4.8rem] mx-auto mb-2 mt-3"
-        />
+    <div class="relative inline-block bg-[#0f4bcb] text-white text-center p-2 w-36 h-[180px] mb-10 ml-2">
+        <img src="https://www.thebluealliance.com/images/first_icon.svg" alt="FRC Logo"
+            class="w-[4.8rem] mx-auto mb-2 mt-3" />
         <div class="award-name">
-            <span class="text-base font-bold italic text-center mb-8">{{ title }}</span>
+            <span class="text-base font-bold italic leading-4 mb-3 text-center flow-root">{{ title }}</span>
         </div>
         <div class="award-event mt-1">
-            <span class="text-xs font-medium text-center">{{ description }}</span>
+            <span class="text-xs font-medium text-center flow-root">{{ description }}</span>
         </div>
-        <div class="absolute left-0 right-0 top-full border-l-[#0f4bcb] border-r-[#0f4bcb] border-b-[#0000] border-solid border-x-[72px] border-b-[30px]"></div>
-  </div>
+        <div
+            class="absolute left-0 right-0 top-full border-l-[#0f4bcb] border-r-[#0f4bcb] border-b-[#0000] border-solid border-x-[72px] border-b-[30px]">
+        </div>
+    </div>
 </template>
 
 <script lang="ts">
