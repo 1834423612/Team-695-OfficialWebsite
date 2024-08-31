@@ -3,7 +3,7 @@
         <h1 class="text-3xl sm:text-4xl font-bold text-center text-teal-800 mb-6 sm:mb-8">Gallery</h1>
         <masonry-wall 
             :items="items" 
-            :ssr-columns="4" 
+            :ssr-columns="5" 
             :column-width="200" 
             :gap="32"
             :cols="5"
