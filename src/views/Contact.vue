@@ -50,6 +50,28 @@
                                 </dl>
                             </div>
 
+                            <!-- Project Info -->
+                            <div class="rounded-2xl bg-gray-50 py-4 px-6 mt-4">
+                                <h3 class="text-base font-semibold text-gray-900">Find our Project</h3>
+                                <span class="text-sm font-semibold text-gray-500">Github Open Source</span>
+                                <dl class="mt-3 space-y-1 text-sm leading-6 text-gray-600">
+                                    <div>
+                                        <dt class="sr-only">Email</dt>
+                                        <dd>
+                                            <a href="mailto:coach@frc695.com" class="flex text-black hover:text-gray-600">
+                                                <span class="sr-only">Email</span>
+                                                <Icon icon="line-md:github" height="23" width="23" />
+                                                <a class="ml-2 font-semibold text-indigo-600 hover:text-indigo-500 hover:underline hover:decoration-2 hover:underline-offset-4">coach@frc695.com</a>
+                                            </a>
+                                        </dd>
+                                    </div>
+                                    <!-- <div class="mt-1">
+                                        <dt class="sr-only">Phone number</dt>
+                                        <dd>+1 (555) 555-5555</dd>
+                                    </div> -->
+                                </dl>
+                            </div>
+
                             <!-- <div class="mb-4 flex items-center space-x-4">
                                 <img alt="Team Coach" class="rounded-full" height="64"
                                     src="https://placehold.co/64x64/3b82f6/white"
