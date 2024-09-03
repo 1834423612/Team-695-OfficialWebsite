@@ -26,19 +26,22 @@
                     </div>
                     <div class="space-y-6">
                         <div class="rounded-lg border-4 border-blue-400 bg-blue-100 p-6 shadow-xl">
-                            <h2 class="mb-4 text-2xl font-semibold text-gray-900">Chat with us</h2>
+                            <h2 class="mb-4 text-2xl font-semibold text-gray-900">Contact with us</h2>
 
-                            <div class="rounded-2xl bg-gray-50 p-10">
-                                <h3 class="text-base font-semibold leading-7 text-gray-900">Coach John</h3>
+                            <!-- Head Coach -->
+                            <div class="rounded-2xl bg-gray-50 py-4 px-6">
+                                <h3 class="text-base font-semibold text-gray-900">John Keyerleber</h3>
+                                <span class="text-sm font-semibold text-gray-500">Head Coach</span>
                                 <dl class="mt-3 space-y-1 text-sm leading-6 text-gray-600">
                                     <div>
                                         <dt class="sr-only">Email</dt>
-                                        <dd><a class="font-semibold text-indigo-600"
-                                                href="mailto:asasasa@example.com">coach@frc695.com</a></dd>
-                                                <a href="mailto:coach@frc695.com" class="text-black hover:text-gray-600">
-                                            <span class="sr-only">Email</span>
-                                            <Icon icon="line-md:email" height="23" width="23" />
-                                        </a>
+                                        <dd>
+                                            <a href="mailto:coach@frc695.com" class="flex text-black hover:text-gray-600">
+                                                <span class="sr-only">Email</span>
+                                                <Icon icon="line-md:email" height="23" width="23" />
+                                                <a class="ml-2 font-semibold text-indigo-600 hover:text-indigo-500 hover:underline hover:decoration-2 hover:underline-offset-4">coach@frc695.com</a>
+                                            </a>
+                                        </dd>
                                     </div>
                                     <!-- <div class="mt-1">
                                         <dt class="sr-only">Phone number</dt>
@@ -80,7 +83,7 @@
                                         d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
                                         clip-rule="evenodd" />
                                 </svg>
-                                <p class="text-gray-800">24601 Fairmount Blvd, Cleveland, OH 44122, USA.</p>
+                                <p class="text-gray-800">24601 Fairmount Blvd, Beachwood, Cleveland, OH 44122, USA.</p>
                             </div>
                             <div class="aspect-video overflow-hidden rounded-md bg-yellow-100">
                                 <!-- <img alt="Map" src="https://placehold.co/300x400/3b82f6/white"
