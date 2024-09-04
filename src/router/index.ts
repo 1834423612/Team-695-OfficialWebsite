@@ -2,6 +2,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import NotFound from '../components/404NotFound.vue';
 import Home from '../views/Home.vue';
+import AboutContainerPage from '@/views/AboutContainerPage.vue';
 import About from '../views/About.vue';
 // import Mentors from '../views/Mentors.vue';
 import mentorsData from "../components/Mentor/info.json";
@@ -26,7 +27,8 @@ const routes = [
     component: NotFound
   },
   { path: '/', component: Home },
-  { path: '/about', component: About },
+  { path: '/about', component: AboutContainerPage },
+  // { path: '/aboutdetail', component: About },
   // { path: '/mentors', component: Mentors },
   // { path: '/mentors/:id', component: Mentors },
   {
@@ -38,11 +40,12 @@ const routes = [
       return { mentor };
     }
   },
-  { path: '/members', component: Members },
-  { path: '/robots', component: Robots },
+  { path: '/members', component: AboutContainerPage },
+  { path: '/achievements', component: AboutContainerPage },
+  // { path: '/robots', component: Robots },
   { path: '/gallery', component: Gallery },
-  { path: '/news', component: News },
-  { path: '/sponsors', component: Sponsors },
+  // { path: '/news', component: News },
+  // { path: '/sponsors', component: Sponsors },
   { path: '/resources', component: Resources },
   { path: '/contact', component: Contact },
 ];

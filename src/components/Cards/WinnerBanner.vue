@@ -1,15 +1,18 @@
 <template>
-    <div class="relative inline-block bg-[#0f4bcb] text-white text-center p-2 w-36 h-[180px] mb-10 ml-2">
+    <div
+        class="relative inline-block bg-[#0f4bcb] text-white text-center p-2 w-36 h-[180px] mb-10 rounded-t-lg shadow-md">
         <img src="https://www.thebluealliance.com/images/first_icon.svg" alt="FRC Logo"
-            class="w-[4.8rem] mx-auto mb-2 mt-3" />
-        <div class="award-name">
-            <span class="text-base font-bold italic leading-4 mb-3 text-center flow-root">{{ title }}</span>
+            class="w-16 mx-auto mb-2 mt-3" />
+        <div class="award-name h-fit flex items-center justify-center">
+            <span class="text-sm font-bold italic leading-4 mt-2">{{ title }}</span>
         </div>
         <div class="award-event mt-1">
-            <span class="text-xs font-medium text-center flow-root">{{ description }}</span>
+            <span class="text-xs font-medium tracking-tight">{{ description }}</span>
         </div>
         <div
             class="absolute left-0 right-0 top-full border-l-[#0f4bcb] border-r-[#0f4bcb] border-b-[#0000] border-solid border-x-[72px] border-b-[30px]">
+        </div>
+        <div class="absolute inset-0 opacity-0 hover:opacity-10 transition-opacity duration-300 rounded-t-lg">
         </div>
     </div>
 </template>
@@ -31,10 +34,3 @@ export default defineComponent({
     },
 });
 </script>
-
-<style scoped>
-.banner {
-    /* Use the shadow effect of Tailwind CSS */
-    filter: drop-shadow(0 5px 5px rgba(0, 0, 0, 0.1));
-}
-</style>
