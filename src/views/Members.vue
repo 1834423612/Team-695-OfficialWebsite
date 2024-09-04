@@ -13,10 +13,21 @@
               </div>
               <h3 class="text-2xl font-semibold text-gray-800 mb-2 relative z-10">{{ mentor.name }}</h3>
               <p class="text-gray-600 mb-4 relative z-10">{{ mentor.role }}</p>
-              <a :href="`mailto:${mentor.email}`"
+              <router-link :to="`/mentors/${mentor.name}`"
                 class="inline-block bg-gradient-to-r from-blue-500 to-purple-500 text-white font-medium py-2 px-4 rounded-full hover:from-blue-600 hover:to-purple-600 transition-all duration-300 relative z-10">
                 Details
-              </a>
+              </router-link>
+            </div>
+          </div>
+
+          <!-- Single Card for placeholder -->
+          <div
+            class="hidden sm:block bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl group">
+            <div class="p-6 relative">
+              <div
+                class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-200 to-purple-200 rounded-bl-full opacity-50 group-hover:opacity-75 transition-opacity duration-300">
+              </div>
+              <h3 class="text-2xl font-semibold text-center text-gray-800 mt-2 relative z-10">Thanks to these mentors for their dedication!</h3>
             </div>
           </div>
         </div>
