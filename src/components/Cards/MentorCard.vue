@@ -6,17 +6,16 @@
         {{ name }}
       </h5>
       <span class="text-sm text-gray-500 dark:text-gray-400">{{ role }}</span>
-      <span class="text-sm text-gray-500 dark:text-gray-400">{{ email }}</span>
-      <div class="flex mt-4 md:mt-6">
+      <!-- <span class="text-sm text-gray-500 dark:text-gray-400">{{ email }}</span> -->
+      <div class="flex mt-2 md:mt-2">
         <!-- <a
           :href="detailsLink"
           class="inline-flex items-center px-4 py-2 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
           >Details</a
         > -->
-        <a 
-          :href="detailsLink"
-          class="text-blue-500 hover:text-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 inline-flex items-center"
-        >Learn More
+        <a :href="detailsLink"
+          class="text-blue-500 hover:text-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 inline-flex items-center">Learn
+          More
           <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             class="w-4 h-4 ml-2" viewBox="0 0 24 24">
             <path d="M5 12h14M12 5l7 7-7 7"></path>
@@ -59,4 +58,3 @@ export default defineComponent({
   },
 });
 </script>
-
