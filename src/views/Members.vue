@@ -67,7 +67,7 @@
               <ul class="mb-4 relative z-10">
                 <li v-for="(project, i) in maintainer.projects" :key="i" class="flex text-gray-600">
                   <Icon icon="bi:github" class="w-5 h-5 text-black" />
-                  <span :href="project.link" class="ml-1 text-blue-500 hover:underline">{{ project.name }}</span>
+                  <a :href="project.link" class="ml-1 text-blue-500 hover:underline">{{ project.name }}</a>
                 </li>
               </ul>
             </div>
