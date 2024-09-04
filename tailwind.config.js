@@ -5,9 +5,10 @@ const { addIconSelectors } = require('@iconify/tailwind');
 export default {
   content: [
     "./index.html",
-    "./src/**/*.{vue,js,ts,jsx,tsx}",
-    "./pages/**/*.{js,ts,jsx,tsx}",
-    "./components/**/*.{js,ts,jsx,tsx}",
+    "./src/**/*.{vue,js,ts,jsx,tsx,json}",
+    "./pages/**/*.{js,ts,jsx,tsx,json}",
+    "./components/**/*.{js,ts,jsx,tsx,json}",
+    "./Data/**/*.{js,ts,jsx,tsx,json}",
   ],
   theme: {
     extend: {

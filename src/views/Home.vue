@@ -61,23 +61,14 @@
               <div class="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-inset ring-gray-900/10" />
             </div>
           </div> -->
+        
         </div>
       </section>
 
-      <!-- Mentors Section -->
-      <Mentors />
-
-      <!-- Team Members Section -->
-      <!-- <Members /> -->
-
-      <!-- Robots Section -->
-      <!-- <Robots /> -->
-
+      
       <!-- News Section -->
       <News />
 
-      <!-- Sponsors Section -->
-      <!-- <Sponsors /> -->
     </main>
   </div>
 </template>
@@ -85,22 +76,12 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import CardStack from "../components/CardStack.vue";
-import Robots from "../views/Robots.vue";
-import Mentors from './Mentors.vue';
-// import MentorCard from "../components/Cards/MentorCard.vue";
-import Members from "../views/Members.vue";
 import News from "../views/News.vue";
-import Sponsors from "../views/Sponsors.vue";
 
 export default defineComponent({
   components: { 
-    CardStack, 
-    Robots, 
-    Mentors, 
-    // MentorCard, 
-    Members, 
-    News, 
-    Sponsors 
+    CardStack,
+    News,
   },
 });
 </script>

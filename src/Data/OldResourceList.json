@@ -13,6 +13,20 @@
             "iconForeground": "text-black",
             "iconBackground": "bg-slate-100",
             "iconHover": "bg-black"
+        },
+        "Code": {
+            "title": "Coding",
+            "icon": "ph:code-bold",
+            "iconForeground": "text-teal-700",
+            "iconBackground": "bg-teal-50",
+            "iconHover": "bg-teal-300"
+        },
+        "Template": {
+            "title": "Template Resources",
+            "icon": "carbon:book",
+            "iconForeground": "text-purple-700",
+            "iconBackground": "bg-purple-50",
+            "iconHover": "bg-purple-100"
         }
     },
     "items": [
@@ -46,6 +60,42 @@
             "title": "Team 695 Documentation",
             "link": "https://github.com/1834423612/Team-695-Document",
             "description": "The GitHub repository for the Team 695 Documentation."
+        },
+        {
+            "type": "Code",
+            "title": "Test Resource Card 1",
+            "link": "#",
+            "description": "This is a code-related resource."
+        },
+        {
+            "type": "Code",
+            "title": "Test Resource Card 2",
+            "link": "#",
+            "description": "This is a code-related resource."
+        },
+        {
+            "type": "Code",
+            "title": "Test Resource Card 3",
+            "link": "#",
+            "description": "This is a code-related resource."
+        },
+        {
+            "type": "Template",
+            "title": "Test Resource Card 1",
+            "link": "#",
+            "description": "This is a template-related resource."
+        },
+        {
+            "type": "Template",
+            "title": "Test Resource Card 2",
+            "link": "#",
+            "description": "This is a template-related resource."
+        },
+        {
+            "type": "Template",
+            "title": "Test Resource Card 3",
+            "link": "#",
+            "description": "This is a template-related resource."
         }
     ]
 }

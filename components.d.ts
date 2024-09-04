@@ -7,6 +7,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    404NotFound: typeof import('./src/components/404NotFound.vue')['default']
     Avatar: typeof import('./src/components/Avatar.vue')['default']
     AvatarFallback: typeof import('./src/components/AvatarFallback.vue')['default']
     AvatarImage: typeof import('./src/components/AvatarImage.vue')['default']
@@ -17,11 +18,14 @@ declare module 'vue' {
     CardStack: typeof import('./src/components/CardStack.vue')['default']
     CardTitle: typeof import('./src/components/CardTitle.vue')['default']
     DesktopMenu: typeof import('./src/components/Header/DesktopMenu.vue')['default']
+    DeviceInfoTable: typeof import('./src/components/Form/DeviceInfoTable.vue')['default']
+    FeedBack: typeof import('./src/components/Form/FeedBack.vue')['default']
     Footer: typeof import('./src/components/Footer.vue')['default']
     GalleryCard: typeof import('./src/components/Cards/GalleryCard.vue')['default']
     Header: typeof import('./src/components/Header.vue')['default']
     HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
     'ILineMd:emailTwotone': typeof import('~icons/line-md/email-twotone')['default']
+    MasonryGallery: typeof import('./src/components/Gallery/MasonryGallery.vue')['default']
     MentorCard: typeof import('./src/components/Cards/MentorCard.vue')['default']
     MenuIcon: typeof import('./src/components/MenuIcon.vue')['default']
     MobileDropdownMenu: typeof import('./src/components/Header/MobileDropdownMenu.vue')['default']

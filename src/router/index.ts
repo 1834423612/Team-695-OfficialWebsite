@@ -1,6 +1,8 @@
 // Import vue-router dependencies 
 import { createRouter, createWebHistory } from 'vue-router';
+import NotFound from '../components/404NotFound.vue';
 import Home from '../views/Home.vue';
+import AboutContainerPage from '@/views/AboutContainerPage.vue';
 import About from '../views/About.vue';
 // import Mentors from '../views/Mentors.vue';
 import mentorsData from "../components/Mentor/info.json";
@@ -10,6 +12,8 @@ import Robots from '../views/Robots.vue';
 import News from '../views/News.vue';
 import Sponsors from '../views/Sponsors.vue';
 import Resources from '../views/Resources.vue';
+import Contact from '@/views/Contact.vue';
+import Gallery from '@/views/Gallery.vue';
 
 // Define the routes 
 // A route is an object that contains the path and the component that should be rendered when the path is matched
@@ -17,8 +21,14 @@ import Resources from '../views/Resources.vue';
 // The component is the Vue component that should be rendered when the path is matched
 // Example: https://example.com/[path] [path] -> [component]
 const routes = [
+  {
+    path: '/:pathMatch(.*)*',
+    name: '404NotFound',
+    component: NotFound
+  },
   { path: '/', component: Home },
-  { path: '/about', component: About },
+  { path: '/about', component: AboutContainerPage },
+  // { path: '/aboutdetail', component: About },
   // { path: '/mentors', component: Mentors },
   // { path: '/mentors/:id', component: Mentors },
   {
@@ -30,11 +40,14 @@ const routes = [
       return { mentor };
     }
   },
-  { path: '/members', component: Members },
-  { path: '/robots', component: Robots },
-  { path: '/news', component: News },
-  { path: '/sponsors', component: Sponsors },
+  { path: '/members', component: AboutContainerPage },
+  { path: '/achievements', component: AboutContainerPage },
+  // { path: '/robots', component: Robots },
+  { path: '/gallery', component: Gallery },
+  // { path: '/news', component: News },
+  // { path: '/sponsors', component: Sponsors },
   { path: '/resources', component: Resources },
+  { path: '/contact', component: Contact },
 ];
 
 // Create a new router instance
