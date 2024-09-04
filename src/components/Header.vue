@@ -43,7 +43,7 @@ export default defineComponent({
       menuItems: [
         { name: 'Home', link: '/' },
         { name: 'About', link: '/about' },
-        { name: 'Members', link: '/members' },
+        // { name: 'Members', link: '/members' },
         // { name: 'Robots', link: '/robots' },
         { name:'Gallery', link:'/gallery'},
         { name: 'Resources', link: '/resources' },
