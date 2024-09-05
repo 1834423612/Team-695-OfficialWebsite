@@ -5,7 +5,7 @@ import Home from '../views/Home.vue';
 import AboutContainerPage from '@/views/AboutContainerPage.vue';
 // import About from '../views/About.vue';
 // import Mentors from '../views/Mentors.vue';
-import mentorsData from "../components/Mentor/info.json";
+// import mentorsData from "../components/Mentor/info.json";
 // import MentorDetail from '../views/MentorDetail.vue';
 // import Members from '../views/Members.vue';
 // import Robots from '../views/Robots.vue';
