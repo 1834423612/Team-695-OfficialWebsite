@@ -75,7 +75,7 @@
 
           <!-- Single Card for placeholder -->
           <div
-            class="hidden sm:flex flex-col items-center bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl group">
+            class="hidden sm:flex sm:flex-col items-center bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl group">
             <div class="p-6 relative">
               <div
                 class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-green-200 to-blue-200 rounded-bl-full opacity-50 group-hover:opacity-75 transition-opacity duration-300">
