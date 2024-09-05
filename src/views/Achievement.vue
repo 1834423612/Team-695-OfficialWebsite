@@ -40,11 +40,12 @@ export default defineComponent({
     data() {
         return {
             WinnerBannerItems: [
-                { title: 'Woodie Flowers Finalist Award', description: '2014 MIDWEST REGIONAL' },
-                { title: 'Winner', description: '2022 GREATER PITTSBURGH  REGIONAL' },
-                { title: 'Winner', description: '2023 MIAMI VALLEY REGIONAL' },
-                { title: 'Woodie Flowers Finalist Award', description: '2023 BUCKEYE REGIONAL' },
-                { title: 'Winner', description: '2023 BUCKEYE REGIONAL' },
+                { title: 'Woodie Flowers Finalist Award', description: '2023 Buckeye Regional' },
+                { title: 'Winner', description: '2023 Buckeye Regional' },
+                { title: 'Winner', description: '2023 Miami Valley Regional' },
+                { title: 'Winner', description: '2023 South Florida Regional' },
+                { title: 'Winner', description: '2022 Greater Pittsburgh Regional' },
+                { title: 'Woodie Flowers Finalist Award', description: '2014 Midwest Regional' },
             ],
         };
     },

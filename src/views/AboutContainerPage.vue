@@ -32,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, markRaw } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import About from './About.vue';
 import Members from './Members.vue';
@@ -46,9 +46,9 @@ interface Tab {
 }
 
 const tabs = ref<Tab[]>([
-    { name: 'About', component: About, current: true, color: 'blue' },
-    { name: 'Members', component: Members, current: false, color: 'green' },
-    { name: 'Achievements', component: Achievement, current: false, color: 'yellow' },
+    { name: 'About', component: markRaw(About), current: true, color: 'blue' },
+    { name: 'Members', component: markRaw(Members), current: false, color: 'green' },
+    { name: 'Achievements', component: markRaw(Achievement), current: false, color: 'yellow' },
 ]);
 
 const getTabClasses = (tab: Tab) => {
