@@ -6,7 +6,7 @@ import AboutContainerPage from '@/views/AboutContainerPage.vue';
 // import About from '../views/About.vue';
 // import Mentors from '../views/Mentors.vue';
 import mentorsData from "../components/Mentor/info.json";
-import MentorDetail from '../views/MentorDetail.vue';
+// import MentorDetail from '../views/MentorDetail.vue';
 // import Members from '../views/Members.vue';
 // import Robots from '../views/Robots.vue';
 // import News from '../views/News.vue';
@@ -31,15 +31,15 @@ const routes = [
   // { path: '/aboutdetail', component: About },
   // { path: '/mentors', component: Mentors },
   // { path: '/mentors/:id', component: Mentors },
-  {
-    path: '/mentors/:name',
-    component: MentorDetail,
-    props: (route: { params: { name: string; }; }) => {
-      const mentorName = route.params.name.replace(/-/g, ' '); // Use '-' in the URL
-      const mentor = mentorsData.find((m: { name: string; }) => m.name === mentorName);
-      return { mentor };
-    }
-  },
+  // {
+  //   path: '/mentors/:name',
+  //   component: MentorDetail,
+  //   props: (route: { params: { name: string; }; }) => {
+  //     const mentorName = route.params.name.replace(/-/g, ' '); // Use '-' in the URL
+  //     const mentor = mentorsData.find((m: { name: string; }) => m.name === mentorName);
+  //     return { mentor };
+  //   }
+  // },
   { path: '/members', component: AboutContainerPage },
   { path: '/achievements', component: AboutContainerPage },
   // { path: '/robots', component: Robots },

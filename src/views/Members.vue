@@ -13,10 +13,10 @@
               </div>
               <h3 class="text-2xl font-semibold text-gray-800 mb-2 relative z-10">{{ mentor.name }}</h3>
               <p class="text-gray-600 mb-4 relative z-10">{{ mentor.role }}</p>
-              <router-link :to="`/mentors/${mentor.name}`"
+              <!-- <router-link :to="`/mentors/${mentor.name}`"
                 class="inline-block bg-gradient-to-r from-blue-500 to-purple-500 text-white font-medium py-2 px-4 rounded-full hover:from-blue-600 hover:to-purple-600 transition-all duration-300 relative z-10">
                 Details
-              </router-link>
+              </router-link> -->
             </div>
           </div>
 
