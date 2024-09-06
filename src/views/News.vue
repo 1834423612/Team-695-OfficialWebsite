@@ -14,9 +14,23 @@
             </article>
             <article class="p-6 bg-white rounded-lg shadow-md">
               <h3 class="text-2xl font-bold mb-2"> </h3>
-              <p class="text-sm text-gray-500 mb-4">August 29, 2021</p>
+              <p class="text-sm text-gray-500 mb-4">September 6, 2024</p>
               <p>
-                Off season event on Saturday 9/14.
+                Off season event at Great Lakes Science Center on Saturday 9/28.
+              </p>
+            </article>
+            <article class="p-6 bg-white rounded-lg shadow-md">
+              <h3 class="text-2xl font-bold mb-2"> </h3>
+              <p class="text-sm text-gray-500 mb-4">September 6, 2024</p>
+              <p>
+                Off season event at CORI on Sunday 10/27 in Columbus is TBD.
+              </p>
+            </article>
+            <article class="p-6 bg-white rounded-lg shadow-md">
+              <h3 class="text-2xl font-bold mb-2"> </h3>
+              <p class="text-sm text-gray-500 mb-4">September 6, 2024</p>
+              <p>
+                Off season event, MVRC, on Saturday 9/28 in Warren is canceled.
               </p>
             </article>
           </div>
