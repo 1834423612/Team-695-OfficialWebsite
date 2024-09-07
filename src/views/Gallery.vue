@@ -2,13 +2,13 @@
     <MasonryGallery />
     <!-- Gallery Area -->
     <section class="py-8 px-3">
-      <div class="container mx-auto px-5">
-        <h2 class="text-3xl font-medium text-center mb-5">Gallery</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          <GalleryCard v-for="(item, index) in galleryItems" :key="index" :image="item.image" :title="item.title"
-            :description="item.description" />
+        <div class="container mx-auto px-5">
+            <h2 class="text-3xl font-medium text-center mb-5">Gallery</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                <GalleryCard v-for="(item, index) in galleryItems" :key="index" :image="item.image" :title="item.title"
+                    :description="item.description" />
+            </div>
         </div>
-      </div>
     </section>
 </template>
 
