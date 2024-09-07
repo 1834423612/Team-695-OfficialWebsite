@@ -1,5 +1,5 @@
 <template>
-  <header class="bg-primary text-primary-foreground py-4 px-4 sm:px-8 flex items-center">
+  <header class="bg-primary text-primary-foreground py-4 px-4 sm:px-8 flex items-center sticky top-0 z-">
     <div class="container mx-auto flex items-center justify-between">
       <div class="gap-1 space-x-2">
         <router-link to="/" class="hover:no-underline flex flex-row items-center">
