@@ -40,6 +40,7 @@ export default defineComponent({
     data() {
         return {
             WinnerBannerItems: [
+                { title: 'Winner', description:'2023 Curiosity Open Robotics Challenge' },
                 { title: 'Woodie Flowers Finalist Award', description: '2023 Buckeye Regional' },
                 { title: 'Winner', description: '2023 Buckeye Regional' },
                 { title: 'Winner', description: '2023 Miami Valley Regional' },
