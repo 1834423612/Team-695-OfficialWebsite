@@ -1,14 +1,24 @@
-[
-    {
-        "id": 1,
-        "title": "2022 FRC Season Robot 1",
-        "description": "This robot was a sturdy robot that made it to worlds through its defensive build.",
-        "image": "https://r2.fastbirdcdn.online/Robotics/Robots/66b5585976c8c-20240809_278988044_140123391903967_6855528956026866249.jpg"
-    },
-    {
-        "id": 2,
-        "title": "2023 FRC Season Robot 2",
-        "description": "This simple yet eloquent design that advanced to worlds.",
-        "image": "https://r2.fastbirdcdn.online/Robotics/Robots/66ac2099b1841-20240802_Screenshot%202024-08-01%20193902.png"
-    }
-]
+{
+    "Robots": [
+        {
+            "id": 1,
+            "title": "2022 FRC Season Robot",
+            "description": "The Gold Module",
+            "image": "https://r2.fastbirdcdn.online/Robotics/Robots/66b5585976c8c-20240809_278988044_140123391903967_6855528956026866249.jpg"
+        },
+        {
+            "id": 2,
+            "title": "2023 FRC Season Robot",
+            "description": "The Gold Module",
+            "image": "https://r2.fastbirdcdn.online/Robotics/Robots/66ac2099b1841-20240802_Screenshot%202024-08-01%20193902.png"
+        }
+    ],
+    "Team Photos": [
+        {
+            "id": 3,
+            "title": "2023 Team Photo at the Pittsburgh Regional",
+            "description": "The Pittsburgh Regional",
+            "image": "https://r2.fastbirdcdn.online/Robotics/Robots/66ad276113a1c-20240803_RoboticsTeamPittsburghRegional.jpg"
+        }
+    ]
+}
