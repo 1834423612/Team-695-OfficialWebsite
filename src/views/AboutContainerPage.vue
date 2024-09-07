@@ -35,7 +35,7 @@
 import { ref, onMounted, watch, markRaw } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import About from './About.vue';
-import Members from './Members.vue';
+// import Members from './Members.vue';
 import Achievement from './Achievement.vue';
 
 interface Tab {
@@ -47,7 +47,7 @@ interface Tab {
 
 const tabs = ref<Tab[]>([
     { name: 'About', component: markRaw(About), current: true, color: 'blue' },
-    { name: 'Members', component: markRaw(Members), current: false, color: 'green' },
+    // { name: 'Members', component: markRaw(Members), current: false, color: 'green' },
     { name: 'Achievements', component: markRaw(Achievement), current: false, color: 'yellow' },
 ]);
 
