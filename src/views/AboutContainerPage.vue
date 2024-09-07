@@ -88,6 +88,11 @@ const updateTabFromRoute = () => {
     const selectedTab = tabs.value.find(tab => tab.name.toLowerCase() === path.toLowerCase());
     if (selectedTab) {
         selectTab(selectedTab);
+    } else {
+        const aboutTab = tabs.value.find(tab => tab.name === 'about');
+        if (aboutTab)
+            selectTab(aboutTab);
+        router.push('/about');
     }
 };
 
