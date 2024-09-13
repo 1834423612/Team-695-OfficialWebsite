@@ -4,8 +4,8 @@
       <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
         <div>
           <h3 class="mb-4 text-lg font-semibold">About Us</h3>
-          <p class="text-gray-400">Team 695 Bison Robotics is a competitive FIRST Robotics Competition team
-            dedicated to inspiring students in STEM fields.</p>
+          <p class="text-gray-400">Founded in 2001, Team 695 Bison Robotics is Beachwood High School’s competitive robotics team, dedicated
+              to engaging students in a hands-on STEM environment.</p>
         </div>
         <div>
           <h3 class="mb-4 text-lg font-semibold">Quick Links</h3>

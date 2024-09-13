@@ -25,10 +25,13 @@ import { MenuItem } from '@/types';
 import DropdownMenu from '../components/Header/MobileDropdownMenu.vue';
 import DesktopMenu from '../components/Header/DesktopMenu.vue';
 
-export interface MenuItem {
-  name: string;
-  link: string;
-}
+const menuItems: MenuItem[] = [
+  { name: 'Home', link: '/' },
+  { name: 'About', link: '/about' },
+  { name: 'Gallery', link: '/gallery' },
+  { name: 'Resources', link: '/resources' },
+  { name: 'Contact', link: '/contact' },
+];
 
 export default defineComponent({
   name: 'Header',
@@ -38,23 +41,9 @@ export default defineComponent({
   },
   data() {
     return {
-      menuItems: [
-        { name: 'Home', link: '/' },
-        { name: 'About', link: '/about' },
-        { name: 'Gallery', link: '/gallery' },
-        { name: 'Resources', link: '/resources' },
-        { name: 'Contact', link: '/contact' },
-      ] as MenuItem[], // Cast to MenuItem array
+      menuItems, // Use the imported menuItems constant
       isDesktop: false,
     };
   },
 });
-
-// const menuItems: MenuItem[] = [
-//   { name: 'Home', link: '/' },
-//   { name: 'About', link: '/about' },
-//   { name: 'Gallery', link: '/gallery' },
-//   { name: 'Resources', link: '/resources' },
-//   { name: 'Contact', link: '/contact' },
-// ];
 </script>
