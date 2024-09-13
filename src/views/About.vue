@@ -5,18 +5,13 @@
       <section class="mb-24">
         <h2 class="text-4xl font-bold mb-12 text-center text-gray-800">Our Mission</h2>
         <div class="bg-white rounded-2xl shadow-lg p-8 md:p-12 flex flex-col md:flex-row gap-12">
-          <div class="md:w-2/3">
+          <div class="flex items-center md:w-2/3">
             <p class="text-gray-700 mb-6 leading-relaxed indent-8">
-              We are a FIRST Robotics Competition team dedicated to inspiring the next generation of engineers and
-              innovators. Through our participation in the annual FIRST Robotics Competition, we strive to develop
-              cutting-edge robots, foster teamwork and leadership, and make a positive impact on our community.
-            </p>
-            <p class="text-gray-700 leading-relaxed indent-8">
-              Our team is committed to continuous learning and innovation. By engaging in hands-on projects and
-              collaborating with industry professionals, we gain invaluable experience in engineering, programming, and
-              project management. We also prioritize outreach and education, hosting workshops and events to share our
-              passion for robotics with the wider community. Join us on our journey as we push the boundaries of
-              technology and inspire the engineers of tomorrow.
+              At Team 695 Bison Robotics, our mission is to cultivate a dynamic, technically challenging environment
+              where students can develop essential life skills while working on real-world engineering challenges. We
+              strive to not only build high-performing robots but also foster an inclusive and supportive community
+              where every member can grow, learn, and contribute. Through commitment and teamwork, we aim to inspire the
+              next generation of leaders in STEM.
             </p>
           </div>
           <div class="md:w-1/3 flex flex-col justify-center">
@@ -80,28 +75,24 @@ export default defineComponent({
       ],
       values: [
         {
-          name: 'Gracious Professionalism',
-          description: 'Treat everyone with respect and kindness, valuing both competition and cooperation. Strive to make a positive impact while maintaining integrity and humility.',
+          name: 'Innovation',
+          description: 'Approach every challenge with creativity and persistence, always seeking new ways to solve problems.',
         },
         {
           name: 'Teamwork',
-          description: 'Collaborate effectively with others to achieve common goals and create a supportive and inclusive environment.',
+          description: 'Success is a collective effort. We believe in the strength of collaboration and working together to achieve our goals.',
         },
         {
-          name: 'Always learning',
-          description: 'Embrace continuous learning and growth.',
+          name: 'Growth',
+          description: 'Embrace every experience as an opportunity to learn and develop new skills, from engineering to leadership.',
         },
         {
-          name: 'Be supportive',
-          description: 'Encourage and uplift your teammates.',
+          name: 'Gracious Professionalism',
+          description: 'Compete fiercely while maintaining kindness, respect, and empathy toward others, fostering a positive and ethical environment.',
         },
         {
-          name: 'Take responsibility',
-          description: 'Own your actions and their outcomes.',
-        },
-        {
-          name: 'Enjoy downtime',
-          description: 'Balance hard work with relaxation and fun.',
+          name: 'Community Engagement',
+          description: 'Commit to making a positive impact on the Beachwood community and beyond, through outreach and mentorship.',
         },
       ],
     };
