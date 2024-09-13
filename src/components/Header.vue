@@ -22,8 +22,8 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import type { MenuItem } from '@/types';
-// import DropdownMenu from '../components/Header/MobileDropdownMenu.vue';
-// import DesktopMenu from '../components/Header/DesktopMenu.vue';
+import DropdownMenu from '../components/Header/MobileDropdownMenu.vue';
+import DesktopMenu from '../components/Header/DesktopMenu.vue';
 
 const menuItems: Array<MenuItem> = [
   { name: 'Home', link: '/' },
@@ -35,6 +35,10 @@ const menuItems: Array<MenuItem> = [
 
 export default defineComponent({
   name: 'Header',
+  components: {
+    DropdownMenu,
+    DesktopMenu,
+  },
   data() {
     return {
       menuItems, // Use the imported menuItems constant

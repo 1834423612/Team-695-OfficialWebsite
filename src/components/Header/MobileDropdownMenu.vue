@@ -5,7 +5,7 @@
             <MenuButton
                 class="inline-flex justify-center rounded-md bg-black/20 px-4 py-2 text-sm font-medium text-white hover:bg-black/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75">
                 {{ buttonText }}
-                <Bars3Icon class="ml-2 h-5 w-5 text-violet-200 hover:text-violet-100" aria-hidden="true" />
+                <Icon class="ml-2 h-5 w-5 text-violet-200 hover:text-violet-100" icon="mingcute:menu-fill" aria-hidden="true" />
                 <!-- <ChevronDownIcon class="-mr-1 ml-2 h-5 w-5 text-violet-200 hover:text-violet-100" aria-hidden="true" /> -->
             </MenuButton>
         </div>
@@ -21,6 +21,7 @@
                     <MenuItem v-for="(item, index) in menuItems" :key="index">
                         <router-link :to="item.link"
                             class="block px-4 py-2 text-sm text-gray-900 hover:bg-violet-500 hover:text-white transition-colors"
+                            :class="{ 'font-bold bg-violet-500 text-white': currentRoute === item.link }"
                             @click="closeMenu">
                             {{ item.name }}
                         </router-link>
@@ -34,12 +35,13 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue';
-// import { ChevronDownIcon } from '@heroicons/vue/20/solid';
-import { Bars3Icon } from "@heroicons/vue/20/solid";
+// import { ChevronDownIcon } from '@heroicons/vue/solid';
+import { Icon } from '@iconify/vue';
 
-interface MenuItemProps {
+export interface MenuItemProps {
     name: string;
     link: string;
 }
@@ -52,7 +54,7 @@ export default defineComponent({
         MenuItems, 
         MenuItem, 
         // ChevronDownIcon,
-        Bars3Icon,
+        Icon,
     },
     props: {
         buttonText: {
@@ -64,10 +66,28 @@ export default defineComponent({
             required: true,
         },
     },
+    data() {
+        return {
+            isMenuOpen: false, // Track the menu open state
+            currentRoute: '', // Track the current route
+        };
+    },
     methods: {
         closeMenu() {
-            // Function to close the mobile menu
+            this.isMenuOpen = false; // Set the menu open state to false
         },
+    },
+    mounted() {
+        const route = useRoute();
+
+        // Watch for route changes and close the menu
+        watch(route, () => {
+            this.closeMenu();
+            this.currentRoute = route.path;
+        });
+
+        // Set the initial route
+        this.currentRoute = route.path;
     },
 });
 </script>
