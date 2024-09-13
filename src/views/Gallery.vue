@@ -4,22 +4,22 @@
             <img src="https://r2.fastbirdcdn.online/Robotics/Robots/66ad276113a1c-20240803_RoboticsTeamPittsburghRegional.jpg"
                 alt="Team Photo" class="w-full h-[40vh] object-cover" />
             <div class="absolute inset-0 bg-black bg-opacity-40 flex flex-col items-center justify-center">
-                <h1 class="text-white text-4xl md:text-6xl font-bold tracking-wider text-center">695 Bison Robotics</h1>
+                <h1 class="text-white text-4xl md:text-6xl font-bold tracking-wider text-center">Team Gallery</h1>
                 <p class="text-gray-200 text-xl mt-4 mx-4 text-center max-w-3xl">
-                    Explore our journey through robotics competitions and achievements.
+                    TestTestTestTestTestTestTestTest
                 </p>
             </div>
         </header>
 
         <nav ref="nav" class="bg-white shadow-md py-4 sticky top-0 z-10 transition-max-height duration-300 ease-in-out">
             <div class="container mx-auto px-4">
-                <ul class="flex justify-center space-x-4">
-                    <li v-for="category in categories" :key="category">
-                        <button @click="setActiveCategory(category)" :class="['px-4 py-2 rounded-full transition-colors duration-200',
-                            activeCategory === category
-                                ? 'bg-indigo-500 text-white'
-                                : 'text-gray-700 hover:bg-indigo-100']">
-                            {{ category }}
+                <ul class="flex flex-wrap justify-center space-x-4">
+                    <li v-for="category in categories" :key="category.name">
+                        <button @click="setActiveCategory(category.name)" :class="['px-4 py-2 rounded-full transition-colors duration-200',
+                            activeCategory === category.name
+                                ? `${category.color} text-white`
+                                : `text-gray-700 ${category.hoverColor}`]">
+                            {{ category.name }}
                         </button>
                     </li>
                 </ul>
@@ -45,22 +45,32 @@ interface GalleryItem {
     category: string;
 }
 
+interface Category {
+    name: string;
+    color: string;
+    hoverColor: string;
+}
+
 interface GalleryData {
-    [key: string]: Omit<GalleryItem, 'category'>[];
+    category: Category[];
+    items: Record<string, Omit<GalleryItem, 'category'>[]>;
 }
 
 const items = ref<Record<string, GalleryItem[]>>({});
+const categories = ref<Category[]>([]);
 
-// Group items by category
+// Load data from JSON
 const data: GalleryData = galleryData;
-for (const category in data) {
-    items.value[category] = data[category].map((item: Omit<GalleryItem, 'category'>) => ({
+categories.value = data.category;
+
+// Add category to each item
+for (const category in data.items) {
+    items.value[category] = data.items[category].map(item => ({
         ...item,
         category
     }));
 }
 
-const categories = computed(() => ['All', ...Object.keys(items.value)]);
 const activeCategory = ref('All');
 
 const setActiveCategory = (category: string) => {

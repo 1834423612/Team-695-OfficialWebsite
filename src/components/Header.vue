@@ -21,6 +21,7 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
+import { MenuItem } from '@/types';
 import DropdownMenu from '../components/Header/MobileDropdownMenu.vue';
 import DesktopMenu from '../components/Header/DesktopMenu.vue';
 
@@ -48,4 +49,12 @@ export default defineComponent({
     };
   },
 });
+
+// const menuItems: MenuItem[] = [
+//   { name: 'Home', link: '/' },
+//   { name: 'About', link: '/about' },
+//   { name: 'Gallery', link: '/gallery' },
+//   { name: 'Resources', link: '/resources' },
+//   { name: 'Contact', link: '/contact' },
+// ];
 </script>
