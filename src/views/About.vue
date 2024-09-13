@@ -90,10 +90,6 @@ export default defineComponent({
           name: 'Gracious Professionalism',
           description: 'Compete fiercely while maintaining kindness, respect, and empathy toward others, fostering a positive and ethical environment.',
         },
-        {
-          name: 'Community Engagement',
-          description: 'Commit to making a positive impact on the Beachwood community and beyond, through outreach and mentorship.',
-        },
       ],
     };
   },
