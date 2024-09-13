@@ -24,7 +24,6 @@ declare module 'vue' {
     GalleryCard: typeof import('./src/components/Cards/GalleryCard.vue')['default']
     Header: typeof import('./src/components/Header.vue')['default']
     HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
-    'ILineMd:emailTwotone': typeof import('~icons/line-md/email-twotone')['default']
     MasonryGallery: typeof import('./src/components/Gallery/MasonryGallery.vue')['default']
     MentorCard: typeof import('./src/components/Cards/MentorCard.vue')['default']
     MenuIcon: typeof import('./src/components/MenuIcon.vue')['default']

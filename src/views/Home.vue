@@ -7,36 +7,31 @@
             <h2 class="text-xl font-bold mb-4">Welcome to</h2>
             <h2 class="text-4xl font-bold mb-4">TEAM 695 Bison Robotics</h2>
             <p class="text-muted-foreground mb-6">
-              We are a FIRST Robotics Competition team dedicated to inspiring
-              the next generation of engineers and innovators. Through our
-              participation in the annual FIRST Robotics Competition, we strive
-              to develop cutting-edge robots, foster teamwork and leadership,
-              and make a positive impact on our community.
+              Founded in 2001, Team 695 Bison Robotics is Beachwood High School’s competitive robotics team, dedicated
+              to engaging students in a hands-on STEM environment. With a focus on teamwork, innovation, and real-world
+              problem solving, we aim to build a competitive robot that reflects the passion and skills of our students.
+              Our team members range from grades 9 to 12 and are united by a shared goal: to create, compete, and excel
+              through robotics.
             </p>
-            <!--buttons
+
+            <!-- Buttons -->
             <div class="flex gap-4">
-              <router-link
-                to="/"
-                class="inline-flex h-10 items-center justify-center rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
-              >
-                Button 1
-              </router-link>
-              <router-link
-                to="/"
-                class="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-6 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
-              >
-                Button 2
-              </router-link>
+              <a href="https://doc.team695.com/" target="_blank"
+                class="inline-flex h-10 items-center justify-center rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50">
+                Team Documentation
+              </a>
+              <a href="https://scoutify.team695.com/" target="_blank"
+                class="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-6 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50">
+                Scoutify Website
+              </a>
             </div>
-            -->
           </div>
 
           <!-- 单图展示 -->
           <img
             src="https://r2.fastbirdcdn.online/Robotics/Robots/66ac2099b1841-20240802_Screenshot%202024-08-01%20193902.png"
             alt="Robotics Picture"
-            class="my-10 aspect-[8/7] w-full max-w-lg rounded-2xl object-cover sm:mt-16 lg:mt-0 lg:max-w-none "
-          />
+            class="my-10 aspect-[8/7] w-full max-w-lg rounded-2xl object-cover sm:mt-16 lg:mt-0 lg:max-w-none " />
 
           <!-- 图片瀑布样式 -->
           <!-- <div class="hidden lg:flex justify-evenly mt-4">
@@ -61,11 +56,11 @@
               <div class="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-inset ring-gray-900/10" />
             </div>
           </div> -->
-        
+
         </div>
       </section>
 
-      
+
       <!-- News Section -->
       <News />
 
@@ -79,7 +74,7 @@ import CardStack from "../components/CardStack.vue";
 import News from "../views/News.vue";
 
 export default defineComponent({
-  components: { 
+  components: {
     CardStack,
     News,
   },

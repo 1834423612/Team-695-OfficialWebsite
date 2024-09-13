@@ -30,7 +30,7 @@
               <h3 class="text-2xl font-bold mb-2"> </h3>
               <p class="text-sm text-gray-500 mb-4">September 6, 2024</p>
               <p>
-                Off season event, MVRC, on Saturday 9/28 in Warren is canceled.
+                Off season event, MVRC, on Saturday 9/14 in Warren is canceled.
               </p>
             </article>
           </div>

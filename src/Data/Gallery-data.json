@@ -1,24 +1,151 @@
 {
-    "Robots": [
-        {
-            "id": 1,
-            "title": "2022 FRC Season Robot",
-            "description": "The Gold Module",
-            "image": "https://r2.fastbirdcdn.online/Robotics/Robots/66b5585976c8c-20240809_278988044_140123391903967_6855528956026866249.jpg"
-        },
-        {
-            "id": 2,
-            "title": "2023 FRC Season Robot",
-            "description": "The Gold Module",
-            "image": "https://r2.fastbirdcdn.online/Robotics/Robots/66ac2099b1841-20240802_Screenshot%202024-08-01%20193902.png"
-        }
+    "category": [
+        { "name": "All", "color": "bg-indigo-500", "hoverColor": "hover:bg-indigo-200" },
+        { "name": "Robots", "color": "bg-green-500", "hoverColor": "hover:bg-green-200" },
+        { "name": "Team Photos", "color": "bg-blue-500", "hoverColor": "hover:bg-blue-200" }
     ],
-    "Team Photos": [
-        {
-            "id": 3,
-            "title": "2023 Team Photo at the Pittsburgh Regional",
-            "description": "The Pittsburgh Regional",
-            "image": "https://r2.fastbirdcdn.online/Robotics/Robots/66ad276113a1c-20240803_RoboticsTeamPittsburghRegional.jpg"
-        }
-    ]
+    "items": {
+        "Robots": [
+            {
+                "id": 1,
+                "title": "2022 FRC Season Robot",
+                "description": "The Gold Module",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Robots/66b5585976c8c-20240809_278988044_140123391903967_6855528956026866249.jpg"
+            },
+            {
+                "id": 3,
+                "title": "2023 Charged Up Season",
+                "description": "Robot Image",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2023%20Charged%20Up%20Season/compressed/A6301802.jpg"
+            },
+            {
+                "id": 4,
+                "title": "2023 Charged Up Season",
+                "description": "Robot Image",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2023%20Charged%20Up%20Season/compressed/MKP00005.jpg"
+            },
+            {
+                "id": 5,
+                "title": "2023 Charged Up Season",
+                "description": "Robot Image",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2023%20Charged%20Up%20Season/compressed/MKP00125.jpg"
+            },
+            {
+                "id": 6,
+                "title": "2024 Crescendo Season",
+                "description": "Robot Image",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/Ayl7P7m.jpg"
+            },
+            {
+                "id": 7,
+                "title": "2024 Crescendo Season",
+                "description": "Robot Image",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/GPR_Sat_106.jpg"
+            },
+            {
+                "id": 8,
+                "title": "2024 Crescendo Season",
+                "description": "Robot Image",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/GPR_Sat_112.jpg"
+            },
+            {
+                "id": 9,
+                "title": "2024 Crescendo Season",
+                "description": "Robot Image",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/MKP00713.jpg"
+            },
+            {
+                "id": 10,
+                "title": "2024 Crescendo Season",
+                "description": "Robot Image",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/MKP01360.jpg"
+            },
+            {
+                "id": 11,
+                "title": "2024 Crescendo Season",
+                "description": "Robot Image",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/MKP01453.jpg"
+            },
+            {
+                "id": 13,
+                "title": "2024 Crescendo Season",
+                "description": "Robot Image",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/OHCL_2024_200.jpg"
+            },
+            {
+                "id": 14,
+                "title": "2024 Crescendo Season",
+                "description": "Robot Image",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/OHCL_2024_215.jpg"
+            }
+        ],
+        "Team Photos": [
+            {
+                "id": 15,
+                "title": "2024 Team Photo at the Pittsburgh Regional",
+                "description": "The Pittsburgh Regional",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Robots/66ad276113a1c-20240803_RoboticsTeamPittsburghRegional.jpg"
+            },
+            {
+                "id": 16,
+                "title": "2023 Charged Up Season",
+                "description": "Team Photo",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2023%20Charged%20Up%20Season/compressed/MKP00166.jpg"
+            },
+            {
+                "id": 17,
+                "title": "2023 Charged Up Season",
+                "description": "Team Photo",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2023%20Charged%20Up%20Season/compressed/MKP00174.jpg"
+            },
+            {
+                "id": 18,
+                "title": "2023 Charged Up Season",
+                "description": "Team Photo",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2023%20Charged%20Up%20Season/compressed/PXL_20230930_195422043.jpg"
+            },
+            {
+                "id": 20,
+                "title": "2024 Crescendo Season",
+                "description": "Team Photo",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/GPR_Sat_73.jpg"
+            },
+            {
+                "id": 21,
+                "title": "2024 Crescendo Season",
+                "description": "Team Photo",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/GPR_Sat_91.jpg"
+            },
+            {
+                "id": 22,
+                "title": "2024 Crescendo Season",
+                "description": "Team Photo",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/GPR_Sat_100.jpg"
+            },
+            {
+                "id": 23,
+                "title": "2024 Crescendo Season",
+                "description": "Team Photo",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/GPR_Sat_110.jpg"
+            },
+            {
+                "id": 24,
+                "title": "2024 Crescendo Season",
+                "description": "Team Photo",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/OHCL_2024_118.jpg"
+            },
+            {
+                "id": 25,
+                "title": "2024 Crescendo Season",
+                "description": "Team Photo",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/OHCL_2024_179.jpg"
+            },
+            {
+                "id": 26,
+                "title": "2024 Crescendo Season",
+                "description": "Team Photo",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/PXL_20240323_212533129.jpg"
+            }
+        ]
+    }
 }

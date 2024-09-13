@@ -16,12 +16,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import { RouterLink } from 'vue-router';
-
-// Define the MenuItem interface
-interface MenuItem {
-    name: string;
-    link: string;
-}
+import { MenuItem } from '@/types';
 
 export default defineComponent({
     name: 'DesktopMenu',
