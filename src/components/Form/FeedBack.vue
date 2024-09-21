@@ -8,7 +8,7 @@
                     <span class="text-red-500">*</span>
                 </label>
                 <input v-model="nickname" type="text" id="nickname" class="input-field"
-                    placeholder="Nick Name is fine if you want..." required />
+                    placeholder="Please input your name here" required />
             </div>
 
             <div class="mb-4">
