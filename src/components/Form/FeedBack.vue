@@ -42,7 +42,7 @@
             </div>
 
             <div class="mb-4">
-                <label for="content" class="block mb-2">Your feedback
+                <label for="content" class="block mb-2">Your message
                     <span class="text-red-500">*</span>
                 </label>
 
