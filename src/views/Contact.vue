@@ -18,17 +18,17 @@
                 </div>
             </div>
             <div class="container mx-auto mt-8 p-4">
-                <div class="grid gap-8 md:grid-cols-2">
+                <div class="">
                     <div class="rounded-lg border-4 border-amber-400 bg-white p-6 shadow-md overflow-x-auto">
                         <h2 class="mb-4 text-2xl font-semibold text-gray-900">Send us a message</h2>
                         <!-- Feedback component -->
                         <FeedBack />
                     </div>
-                    <div class="space-y-6">
+
+                    <!-- <div class="space-y-6">
                         <div class="rounded-lg border-4 border-blue-400 bg-blue-100 p-6 shadow-xl">
                             <h2 class="mb-4 text-2xl font-semibold text-gray-900">Contact with us</h2>
 
-                            <!-- Head Coach -->
                             <div class="rounded-2xl bg-gray-50 py-4 px-6">
                                 <h3 class="text-base font-semibold text-gray-900">John Keyerleber</h3>
                                 <span class="text-sm font-semibold text-gray-500">Head Coach</span>
@@ -44,14 +44,9 @@
                                             </span>
                                         </a>
                                     </div>
-                                    <!-- <div class="mt-1">
-                                        <dt class="sr-only">Phone number</dt>
-                                        <dd>+1 (555) 555-5555</dd>
-                                    </div> -->
                                 </dl>
                             </div>
 
-                            <!-- Project Info -->
                             <div class="rounded-2xl bg-gray-50 py-4 px-6 mt-4">
                                 <h3 class="text-base font-semibold text-gray-900">Find our Project</h3>
                                 <span class="text-sm font-semibold text-gray-500">Github Open Source</span>
@@ -70,36 +65,8 @@
                                             <Icon icon="mingcute:arrow-right-line" class="ml-1 mt-1 w-4 h-4" />
                                         </router-link>
                                     </div>
-                                    <!-- <div class="mt-1">
-                                        <dt class="sr-only">Phone number</dt>
-                                        <dd>+1 (555) 555-5555</dd>
-                                    </div> -->
                                 </dl>
                             </div>
-
-                            <!-- <div class="mb-4 flex items-center space-x-4">
-                                <img alt="Team Coach" class="rounded-full" height="64"
-                                    src="https://placehold.co/64x64/3b82f6/white"
-                                    style="aspect-ratio: 64/64; object-fit: cover;" width="64" />
-                                <div>
-                                    <h3 class="font-semibold text-gray-800">Coach John</h3>
-                                    <p class="text-sm text-gray-600">Head Coach</p>
-
-                                    Icons
-                                    <div class="flex space-x-4 mt-1 text-black hover:text-gray-400">
-                                        <a href="mailto:coach@frc695.com" class="text-black hover:text-gray-600">
-                                            <span class="sr-only">Email</span>
-                                            <Icon icon="line-md:email" height="23" width="23" />
-                                        </a>
-                                    </div>
-                                </div>
-                            </div> -->
-
-                            <!-- Chat Button(Only uncomment this when using) -->
-                            <!-- <button @click="startChat"
-                                class="w-full rounded border border-gray-800 px-4 py-2 font-bold text-gray-800 hover:bg-gray-100">Start
-                                Chat
-                            </button> -->
                         </div>
                         <div class="rounded-lg border-4 border-emerald-400 bg-emerald-100 p-6 shadow-xl">
                             <h2 class="mb-4 text-2xl font-semibold text-gray-900">Visit us</h2>
@@ -108,8 +75,6 @@
                                 <p class="text-gray-800">25100 Fairmount Blvd, Beachwood, OH 44122, USA.</p>
                             </div>
                             <div class="aspect-video overflow-hidden rounded-md bg-yellow-100">
-                                <!-- <img alt="Map" src="https://placehold.co/300x400/3b82f6/white"
-                                    class="h-full w-full object-cover" /> -->
 
                                 <iframe
                                     src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2988.936050733924!2d-81.50350832399468!3d41.48398608999798!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x88310289d7a522f5%3A0x6b21ae2be51d4ca1!2sBeachwood%20High%20School!5e0!3m2!1sen-US!2sus!4v1724974249750!5m2!1sen-US!2sus"
@@ -118,7 +83,8 @@
                                 </iframe>
                             </div>
                         </div>
-                    </div>
+                    </div> -->
+
                 </div>
             </div>
         </main>

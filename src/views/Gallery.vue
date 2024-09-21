@@ -5,9 +5,9 @@
                 alt="Team Photo" class="w-full h-[40vh] object-cover" />
             <div class="absolute inset-0 bg-black bg-opacity-40 flex flex-col items-center justify-center">
                 <h1 class="text-white text-4xl md:text-6xl font-bold tracking-wider text-center">Team Gallery</h1>
-                <p class="text-gray-200 text-xl mt-4 mx-4 text-center max-w-3xl">
+                <!--<p class="text-gray-200 text-xl mt-4 mx-4 text-center max-w-3xl">
                     TestTestTestTestTestTestTestTest
-                </p>
+                </p>-->
             </div>
         </header>
 

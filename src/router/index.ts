@@ -14,6 +14,7 @@ import AboutContainerPage from '@/views/AboutContainerPage.vue';
 import Resources from '../views/Resources.vue';
 import Contact from '@/views/Contact.vue';
 import Gallery from '@/views/Gallery.vue';
+import PitScouting from '@/views/pit-scouting.vue'
 
 // Define the routes 
 // A route is an object that contains the path and the component that should be rendered when the path is matched
@@ -48,6 +49,7 @@ const routes = [
   // { path: '/sponsors', component: Sponsors },
   { path: '/resources', component: Resources },
   { path: '/contact', component: Contact },
+  { path: '/pit-scouting', component: PitScouting},
 ];
 
 // Create a new router instance
