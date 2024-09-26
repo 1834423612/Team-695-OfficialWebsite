@@ -5,39 +5,46 @@
         <h1 class="text-center text-3xl font-bold text-gray-900 mb-8">Pit-Scouting Form</h1>
 
         <!-- Tabs -->
-        <div class="flex flex-wrap gap-2 mb-4">
-          <button v-for="(tab, index) in tabs" :key="index" @click="switchTab(index)"
-            class="px-4 py-2 rounded-md text-sm font-medium"
-            :class="currentTab === index ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'">
-            {{ tab.name }}
-            <Icon icon="mdi:close" class="ml-2 inline-block" @click.stop="confirmRemoveTab(index)" />
-          </button>
-          <button @click="addTab"
-            class="px-4 py-2 rounded-md text-sm font-medium bg-green-500 text-white hover:bg-green-600">
-            <Icon icon="mdi:plus" class="mr-2 inline-block" />
-            Add Tab
-          </button>
+        <div class="p-4 bg-fuchsia-50 rounded-md">
+          <div class="flex flex-wrap gap-2 mb-2">
+            <button v-for="(tab, index) in tabs" :key="index" @click="switchTab(index)"
+              class="px-4 py-2 rounded-md text-sm font-medium"
+              :class="currentTab === index ? 'bg-blue-100 text-blue-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'">
+              {{ tab.name }}
+              <Icon icon="mdi:close" class="ml-2 inline-block" @click.stop="confirmRemoveTab(index)" />
+            </button>
+            <button @click="addTab"
+              class="ml-2 px-4 py-2 rounded-md text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200">
+              <Icon icon="mdi:plus" class="w-5 h-5 mr-1 inline-block" />
+              Add Tab
+            </button>
+          </div>
+
+          <div class="mt-2">
+            <button @click="confirmClearCurrentTab"
+              class="px-4 py-2 rounded-md text-sm font-medium bg-red-100 text-red-600 hover:bg-red-200">
+              <Icon icon="mdi:refresh" class="mr-2 inline-block" />
+              Clear Current Tab
+            </button>
+          </div>
         </div>
-        <button @click="confirmClearCurrentTab"
-          class="mb-4 px-4 py-2 rounded-md text-sm font-medium bg-red-500 text-white hover:bg-red-600">
-          <Icon icon="mdi:refresh" class="mr-2 inline-block" />
-          Clear Current Tab
-        </button>
 
         <!-- Event ID and Form ID -->
-        <div class="flex flex-col mb-4">
-          <div>
+        <div class="flex flex-col my-4">
+          <div class="mb-4">
             <span class="text-sm font-medium text-gray-500">Event ID:</span>
             <span class="max-[640px]:text-xs ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded-md">{{ eventId }}</span>
           </div>
           <div>
             <span class="text-sm font-medium text-gray-500">Form ID:</span>
-            <span class="max-[640px]:text-[10px] ml-2 px-2 py-1 bg-green-100 text-green-800 rounded-md">{{ currentFormId }}</span>
+            <span class="max-[640px]:text-[10px] ml-2 px-2 py-1 bg-green-100 text-green-800 rounded-md">{{ currentFormId
+              }}</span>
           </div>
         </div>
 
         <form @submit.prevent="confirmSubmitForm">
-          <div v-for="(field, index) in formFields" :key="index" class="mb-8 max-[640px]:mb-4 bg-gray-50 p-6 rounded-lg shadow-sm">
+          <div v-for="(field, index) in formFields" :key="index"
+            class="mb-8 max-[640px]:mb-4 bg-gray-50 p-6 rounded-lg shadow-sm">
             <div v-if="field.type !== 'hidden'" class="mb-2">
               <label :for="'field-' + index" class="block text-lg font-semibold text-gray-900 mb-2">
                 {{ field.question }}
