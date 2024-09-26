@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-4xl mx-auto bg-white shadow-md rounded-lg overflow-hidden">
       <div class="px-4 py-5 sm:p-6">
-        <h1 class="text-3xl font-bold text-gray-900 mb-8">Robot Questionnaire</h1>
+        <h1 class="text-center text-3xl font-bold text-gray-900 mb-8">Pit-Scouting Form</h1>
 
         <!-- Tabs -->
         <div class="flex flex-wrap gap-2 mb-4">
@@ -25,19 +25,19 @@
         </button>
 
         <!-- Event ID and Form ID -->
-        <div class="flex justify-between mb-4">
+        <div class="flex flex-col mb-4">
           <div>
             <span class="text-sm font-medium text-gray-500">Event ID:</span>
-            <span class="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded-md">{{ eventId }}</span>
+            <span class="max-[640px]:text-xs ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded-md">{{ eventId }}</span>
           </div>
           <div>
             <span class="text-sm font-medium text-gray-500">Form ID:</span>
-            <span class="ml-2 px-2 py-1 bg-green-100 text-green-800 rounded-md">{{ currentFormId }}</span>
+            <span class="max-[640px]:text-[10px] ml-2 px-2 py-1 bg-green-100 text-green-800 rounded-md">{{ currentFormId }}</span>
           </div>
         </div>
 
         <form @submit.prevent="confirmSubmitForm">
-          <div v-for="(field, index) in formFields" :key="index" class="mb-8 bg-gray-50 p-6 rounded-lg shadow-sm">
+          <div v-for="(field, index) in formFields" :key="index" class="mb-8 max-[640px]:mb-4 bg-gray-50 p-6 rounded-lg shadow-sm">
             <div v-if="field.type !== 'hidden'" class="mb-2">
               <label :for="'field-' + index" class="block text-lg font-semibold text-gray-900 mb-2">
                 {{ field.question }}
