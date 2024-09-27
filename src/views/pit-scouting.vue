@@ -590,7 +590,12 @@ const showDebugButton = ref(false);
 onMounted(async () => {
   await loadTeams();
   await loadEventId();
-  loadFromLocalStorage();
+  const isNewUser = !localStorage.getItem("surveyTabs");
+  if (isNewUser) {
+    saveToLocalStorage();
+  } else {
+    loadFromLocalStorage();
+  }
 });
 
 const checkDebugInput = () => {
@@ -687,6 +692,7 @@ const addTab = () => {
   };
   tabs.value.push(newTab);
   switchTab(tabs.value.length - 1);
+  saveToLocalStorage(); // 确保新标签页添加后立即保存到本地存储
 };
 
 const confirmRemoveTab = (index: number) => {
@@ -740,7 +746,7 @@ const removeTab = (index: number) => {
 
 const switchTab = (index: number) => {
   currentTab.value = index;
-  formFields.value = tabs.value[index].formData;
+  formFields.value = JSON.parse(JSON.stringify(tabs.value[index].formData));
   loadImagesFromLocalStorage();
   checkDebugInput();
 };
