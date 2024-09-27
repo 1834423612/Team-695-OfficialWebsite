@@ -18,8 +18,8 @@
               class="px-4 py-2 rounded-md text-sm font-medium"
               :class="
                 currentTab === index
-                  ? 'bg-blue-100 text-blue-600'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  ? 'bg-blue-100 text-blue-600 border-2 border-blue-500'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300 border-2 border-gray-400'
               "
             >
               {{ tab.name }}
@@ -31,7 +31,7 @@
             </button>
             <button
               @click="addTab"
-              class="ml-2 px-4 py-2 rounded-md text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200"
+              class="ml-2 px-4 py-2 rounded-md text-sm font-medium border-2 border-green-500 bg-green-100 text-green-700 hover:bg-green-200"
             >
               <Icon icon="mdi:plus" class="w-5 h-5 mr-1 inline-block" />
               Add Tab
@@ -41,10 +41,17 @@
           <div class="mt-2">
             <button
               @click="confirmClearCurrentTab"
-              class="px-4 py-2 rounded-md text-sm font-medium bg-red-100 text-red-600 hover:bg-red-200"
+              class="px-4 py-2 rounded-md text-sm font-medium border-2 border-red-500 bg-red-100 text-red-600 hover:bg-red-200"
             >
               <Icon icon="mdi:refresh" class="mr-2 inline-block" />
               Clear Current Tab
+            </button>
+            <button
+              v-if="showDebugButton"
+              class="ml-2 px-4 py-2 rounded-md text-sm font-medium border-4 border-amber-500/100 bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
+              @click="confirmDebugAction"
+            >
+              Debug
             </button>
           </div>
         </div>
@@ -207,7 +214,7 @@
                   type="text"
                   v-model="field.value"
                   :required="field.required"
-                  @input="searchTeams"
+                  @input="handleTeamNumberInput"
                   @blur="hideTeamSuggestions"
                   class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                   :class="{ 'border-red-500': field.error }"
@@ -578,6 +585,7 @@ const fullRobotImages = ref<ImageData[]>([]);
 const driveTrainImages = ref<ImageData[]>([]);
 const teamSuggestions = ref<any[]>([]);
 const showTeamSuggestions = ref(false);
+const showDebugButton = ref(false);
 
 onMounted(async () => {
   await loadTeams();
@@ -585,23 +593,60 @@ onMounted(async () => {
   loadFromLocalStorage();
 });
 
-const loadTeams = async () => {
-  try {
-    const response = await fetch(
-      "https://api.frc695.com/api/team/teams"
-    );
-    const data = await response.json();
-    teamSuggestions.value = data;
-  } catch (error) {
-    console.error("Error loading teams:", error);
+const checkDebugInput = () => {
+  const teamNumberField = formFields.value.find(field => field.question === 'Team number');
+  if (teamNumberField) {
+    showDebugButton.value = teamNumberField.value === 'debug';
   }
+};
+
+const handleTeamNumberInput = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const teamNumberField = formFields.value.find(field => field.question === 'Team number');
+  if (teamNumberField) {
+    teamNumberField.value = input.value;
+  }
+  checkDebugInput();
+  searchTeams();
+};
+
+const confirmDebugAction = () => {
+  Swal.fire({
+    title: "Debug Action",
+    text: "Are you sure you want to clear all local storage and cache? This action cannot be undone.",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    confirmButtonText: "Yes, clear it!",
+    reverseButtons: true,
+  }).then((result) => {
+    if (result.isConfirmed) {
+      clearLocalStorageAndRefresh();
+    }
+  });
+};
+
+const clearLocalStorageAndRefresh = () => {
+  // 清除所有 localStorage 内容
+  localStorage.clear();
+
+  // 清除缓存
+  if ('caches' in window) {
+    caches.keys().then((names) => {
+      names.forEach((name) => {
+        caches.delete(name);
+      });
+    });
+  }
+
+  // 强制刷新页面
+  location.reload();
 };
 
 const loadEventId = async () => {
   try {
-    const response = await fetch(
-      "https://api.frc695.com/api/event/event-id"
-    );
+    const response = await fetch("https://api.frc695.com/api/event/event-id");
     const data = await response.json();
     eventId.value = data.eventId;
   } catch (error) {
@@ -697,6 +742,7 @@ const switchTab = (index: number) => {
   currentTab.value = index;
   formFields.value = tabs.value[index].formData;
   loadImagesFromLocalStorage();
+  checkDebugInput();
 };
 
 const confirmClearCurrentTab = () => {
@@ -755,7 +801,6 @@ const searchTeams = () => {
   showTeamSuggestions.value = true;
 };
 
-
 const selectTeam = (team: Team) => {
   formFields.value[0].value = team.team_number;
   showTeamSuggestions.value = false;
@@ -771,6 +816,16 @@ const selectTeam = (team: Team) => {
 //   teamSuggestions.value = mockTeams.filter(team => team.number.includes(formFields.value[0].value) || team.name.toLowerCase().includes(formFields.value[0].value.toLowerCase()))
 //   showTeamSuggestions.value = teamSuggestions.value.length > 0
 // }
+
+const loadTeams = async () => {
+  try {
+    const response = await fetch("https://api.frc695.com/api/team/teams");
+    const data = await response.json();
+    teamSuggestions.value = data;
+  } catch (error) {
+    console.error("Error loading teams:", error);
+  }
+};
 
 const hideTeamSuggestions = () => {
   setTimeout(() => {
@@ -825,13 +880,10 @@ const uploadImage = async (type: "fullRobot" | "driveTrain", file: File) => {
   formData.append("type", type);
 
   try {
-    const response = await fetch(
-      "https://api.frc695.com/api/upload/upload",
-      {
-        method: "POST",
-        body: formData,
-      }
-    );
+    const response = await fetch("https://api.frc695.com/api/upload/upload", {
+      method: "POST",
+      body: formData,
+    });
     const data = await response.json();
     const imageData: ImageData = {
       url: data.url,
@@ -1020,19 +1072,16 @@ const confirmSubmitForm = () => {
 
 const submitForm = async () => {
   try {
-    const response = await fetch(
-      "https://api.frc695.com/api/survey/submit",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          eventId: eventId.value,
-          tabs: tabs.value,
-        }),
-      }
-    );
+    const response = await fetch("https://api.frc695.com/api/survey/submit", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        eventId: eventId.value,
+        tabs: tabs.value,
+      }),
+    });
     const data = await response.json();
     if (response.ok) {
       console.log("Form submitted:", data);
