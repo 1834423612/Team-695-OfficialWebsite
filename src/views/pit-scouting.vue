@@ -1072,6 +1072,23 @@ const confirmSubmitForm = () => {
 
 const submitForm = async () => {
   try {
+      // 处理包含 "Other" 选项的字段
+      const processedTabs = tabs.value.map((tab) => {
+      const processedFormData = tab.formData.map((field) => {
+        if (field.type === "radio" || field.type === "checkbox") {
+          if (Array.isArray(field.value)) {
+            field.value = field.value.map((val) =>
+              val === "Other" ? field.otherValue : val
+            );
+          } else if (field.value === "Other") {
+            field.value = field.otherValue;
+          }
+        }
+        return field;
+      });
+      return { ...tab, formData: processedFormData };
+    });
+
     const response = await fetch("https://api.frc695.com/api/survey/submit", {
       method: "POST",
       headers: {
@@ -1079,7 +1096,7 @@ const submitForm = async () => {
       },
       body: JSON.stringify({
         eventId: eventId.value,
-        tabs: tabs.value,
+        tabs: processedTabs,
       }),
     });
     const data = await response.json();
@@ -1103,7 +1120,7 @@ const submitForm = async () => {
       // Show success message
       Swal.fire("Success!", "Form submitted successfully!", "success");
 
-      // 删除当前的 tab 和 tab 对应的所有内容
+      // Delete the current tab and all its content
       removeTab(currentTab.value);
     } else {
       throw new Error(data.error || "Failed to submit form");
