@@ -1132,11 +1132,10 @@ const submitForm = async () => {
     // 处理包含 "Other" 选项的字段
     const processedTabs = tabs.value.map((tab) => {
       const processedFormData = tab.formData.map((field) => {
-        if (field.type === "checkbox" && field.showOtherInput && field.otherValue) {
-          return {
-            ...field,
-            value: [...field.value, field.otherValue],
-          };
+        if (field.type === "radio" && field.value === "Other" && field.otherValue) {
+          field.value = field.otherValue;
+        } else if (field.type === "checkbox" && field.value.includes("Other") && field.otherValue) {
+          field.value = field.value.map((val: string) => (val === "Other" ? field.otherValue : val));
         }
         return field;
       });
@@ -1178,7 +1177,6 @@ const submitForm = async () => {
       formFields.value = formFields.value.map((field) => ({
         ...field,
         value: field.type === "checkbox" ? [] : null,
-        otherValue: field.showOtherInput ? "" : undefined,
         error: undefined,
       }));
       fullRobotImages.value = [];

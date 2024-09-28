@@ -28,6 +28,7 @@ declare module 'vue' {
     MentorCard: typeof import('./src/components/Cards/MentorCard.vue')['default']
     MenuIcon: typeof import('./src/components/MenuIcon.vue')['default']
     MobileDropdownMenu: typeof import('./src/components/Header/MobileDropdownMenu.vue')['default']
+    PitScoutingDashboard: typeof import('./src/components/PitScoutingDashboard.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     TeamMember: typeof import('./src/components/Member/TeamMember.vue')['default']
