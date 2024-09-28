@@ -1127,6 +1127,20 @@ const confirmSubmitForm = () => {
 //   saveFormData(); // 确保每次更改复选框时保存数据
 // };
 
+
+const deviceInfo = ref({
+  userAgent: navigator.userAgent,
+  ip: '',
+  language: navigator.language,
+});
+
+onMounted(() => {
+  // 获取用户的 IP 地址
+  axios.get('https://api.ipify.org?format=json').then((response) => {
+    deviceInfo.value.ip = response.data.ip;
+  });
+});
+
 const submitForm = async () => {
   try {
     // 处理包含 "Other" 选项的字段
@@ -1161,6 +1175,7 @@ const submitForm = async () => {
           fullRobotImages,
           driveTrainImages,
         },
+        deviceInfo: deviceInfo.value, // 使用已获取的设备信息
       }),
     });
 
