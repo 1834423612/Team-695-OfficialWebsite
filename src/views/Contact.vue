@@ -22,7 +22,7 @@
                     <div class="rounded-lg border-4 border-amber-400 bg-white p-6 shadow-md overflow-x-auto">
                         <h2 class="mb-4 text-2xl font-semibold text-gray-900">Send us a message</h2>
                         <!-- Feedback component -->
-                        <FeedBack />
+                        <FeedBack :deviceInfo="deviceInfo" />
                     </div>
 
                     <!-- <div class="space-y-6">
@@ -92,28 +92,27 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue';
 import FeedBack from '@/components/Form/FeedBack.vue';
-import { Icon } from '@iconify/vue';
+import axios from 'axios';
 
-// const form = ref({
-//     name: '',
-//     email: '',
-//     category: 'General Inquiry',
-//     message: ''
-// })
+const deviceInfo = ref({
+    userAgent: '',
+    ip: '',
+    screenSize: '',
+    language: ''
+});
 
-// const submitForm = () => {
-//     // Handle form submission
-//     console.log('Form submitted:', form.value)
-// }
+onMounted(() => {
+    deviceInfo.value = {
+        userAgent: navigator.userAgent,
+        ip: '',
+        screenSize: `${window.innerWidth} x ${window.innerHeight}`,
+        language: navigator.language,
+    };
 
-// const startChat = () => {
-//     // Handle chat initiation
-//     console.log('Chat started')
-// }
+    axios.get('https://api.ipify.org?format=json').then((response) => {
+        deviceInfo.value.ip = response.data.ip;
+    });
+});
 </script>
-
-<style scoped>
-/* Add any component-specific styles here */
-</style>

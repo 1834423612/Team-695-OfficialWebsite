@@ -14,10 +14,12 @@
     "@iconify/json": "^2.2.233",
     "@yeger/vue-masonry-wall": "^5.0.14",
     "axios": "^1.7.5",
+    "chart.js": "^4.4.4",
     "sweetalert2": "^11.14.1",
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^10.0.0",
     "vue": "^3.4.29",
+    "vue-chartjs": "^5.3.1",
     "vue-router": "4"
   },
   "devDependencies": {

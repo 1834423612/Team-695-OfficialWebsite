@@ -412,9 +412,11 @@
 import { ref, onMounted, watch, computed } from "vue";
 import { Icon } from "@iconify/vue";
 import { v4 as uuidv4 } from "uuid";
+import axios from "axios";
 import Swal from "sweetalert2";
 
 interface FormField {
+  // id: string;
   question: string;
   type: string;
   required: boolean;
@@ -436,6 +438,7 @@ interface Tab {
 }
 
 interface ImageData {
+  id: string;
   url: string;
   name: string;
   size: number;
@@ -444,6 +447,11 @@ interface ImageData {
 interface Team {
   team_number: string;
   team_name: string;
+}
+
+interface FormField {
+  value: any;
+  error?: string;
 }
 
 const tabs = ref<Tab[]>([{ name: "Tab 1", formData: [], formId: uuidv4() }]);
@@ -590,7 +598,12 @@ const showDebugButton = ref(false);
 onMounted(async () => {
   await loadTeams();
   await loadEventId();
-  loadFromLocalStorage();
+  const isNewUser = !localStorage.getItem("surveyTabs");
+  if (isNewUser) {
+    saveToLocalStorage();
+  } else {
+    loadFromLocalStorage();
+  }
 });
 
 const checkDebugInput = () => {
@@ -678,7 +691,7 @@ const addTab = () => {
       JSON.stringify(
         formFields.value.map((field) => ({
           ...field,
-          value: null,
+          value: field.type === "checkbox" ? [] : null,
           error: undefined,
         }))
       )
@@ -687,6 +700,7 @@ const addTab = () => {
   };
   tabs.value.push(newTab);
   switchTab(tabs.value.length - 1);
+  saveToLocalStorage(); // 确保新标签页添加后立即保存到本地存储
 };
 
 const confirmRemoveTab = (index: number) => {
@@ -740,7 +754,7 @@ const removeTab = (index: number) => {
 
 const switchTab = (index: number) => {
   currentTab.value = index;
-  formFields.value = tabs.value[index].formData;
+  formFields.value = JSON.parse(JSON.stringify(tabs.value[index].formData));
   loadImagesFromLocalStorage();
   checkDebugInput();
 };
@@ -781,7 +795,7 @@ const clearCurrentTab = () => {
     JSON.stringify(
       formFields.value.map((field) => ({
         ...field,
-        value: null,
+        value: field.type === "checkbox" ? [] : null,
         error: undefined,
       }))
     )
@@ -886,6 +900,7 @@ const uploadImage = async (type: "fullRobot" | "driveTrain", file: File) => {
     });
     const data = await response.json();
     const imageData: ImageData = {
+      id: data.id, // 从响应中获取 id
       url: data.url,
       name: file.name,
       size: file.size,
@@ -927,14 +942,37 @@ const confirmRemoveImage = (
   });
 };
 
-const removeImage = (type: "fullRobot" | "driveTrain", index: number) => {
-  if (type === "fullRobot") {
-    fullRobotImages.value.splice(index, 1);
-  } else {
-    driveTrainImages.value.splice(index, 1);
+const removeImage = async (type: "fullRobot" | "driveTrain", index: number) => {
+  try {
+    const imageId = type === "fullRobot" ? fullRobotImages.value[index].id : driveTrainImages.value[index].id;
+    await axios.delete(`https://api.frc695.com/api/images/${imageId}`);
+    
+    if (type === "fullRobot") {
+      fullRobotImages.value.splice(index, 1);
+    } else {
+      driveTrainImages.value.splice(index, 1);
+    }
+    saveImagesToLocalStorage();
+  } catch (error) {
+    console.error("Failed to delete image:", error);
+    Swal.fire({
+      title: "Error!",
+      text: "Failed to delete the image from the server. Do you want to remove it locally?",
+      icon: "error",
+      confirmButtonColor: "#3085d6",
+      confirmButtonText: "Yes, remove it locally",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        if (type === "fullRobot") {
+          fullRobotImages.value.splice(index, 1);
+        } else {
+          driveTrainImages.value.splice(index, 1);
+        }
+        saveImagesToLocalStorage();
+        Swal.fire("Removed!", "The image has been removed locally.", "success");
+      }
+    });
   }
-  saveImagesToLocalStorage();
-  // In a real application, you would also delete the image from your backend here
 };
 
 const formatFileSize = (bytes: number): string => {
@@ -1070,24 +1108,60 @@ const confirmSubmitForm = () => {
   }
 };
 
+// const handleCheckboxChange = (event: Event) => {
+//   const target = event.target as HTMLInputElement;
+//   const fieldId = target.dataset.field;
+//   const option = target.value;
+
+//   if (!fieldId) return;
+
+//   const field = tabs.value[currentTab.value].formData.find((f) => f.id === fieldId);
+
+//   if (field && Array.isArray(field.value)) {
+//     if (field.value.includes(option)) {
+//       field.value = field.value.filter((val: string) => val !== option);
+//     } else {
+//       field.value.push(option);
+//     }
+//   }
+//   saveFormData(); // 确保每次更改复选框时保存数据
+// };
+
+
+const deviceInfo = ref({
+  userAgent: navigator.userAgent,
+  ip: '',
+  language: navigator.language,
+});
+
+onMounted(() => {
+  // 获取用户的 IP 地址
+  axios.get('https://api.ipify.org?format=json').then((response) => {
+    deviceInfo.value.ip = response.data.ip;
+  });
+});
+
 const submitForm = async () => {
   try {
-      // 处理包含 "Other" 选项的字段
-      const processedTabs = tabs.value.map((tab) => {
+    // 处理包含 "Other" 选项的字段
+    const processedTabs = tabs.value.map((tab) => {
       const processedFormData = tab.formData.map((field) => {
-        if (field.type === "radio" || field.type === "checkbox") {
-          if (Array.isArray(field.value)) {
-            field.value = field.value.map((val) =>
-              val === "Other" ? field.otherValue : val
-            );
-          } else if (field.value === "Other") {
-            field.value = field.otherValue;
-          }
+        if (field.type === "radio" && field.value === "Other" && field.otherValue) {
+          field.value = field.otherValue;
+        } else if (field.type === "checkbox" && field.value.includes("Other") && field.otherValue) {
+          field.value = field.value.map((val: string) => (val === "Other" ? field.otherValue : val));
         }
         return field;
       });
-      return { ...tab, formData: processedFormData };
+      return {
+        ...tab,
+        formData: processedFormData,
+      };
     });
+
+    // 添加图片信息
+    const fullRobotImages = JSON.parse(localStorage.getItem(`fullRobotImages_${currentFormId.value}`) || '[]');
+    const driveTrainImages = JSON.parse(localStorage.getItem(`driveTrainImages_${currentFormId.value}`) || '[]');
 
     const response = await fetch("https://api.frc695.com/api/survey/submit", {
       method: "POST",
@@ -1097,8 +1171,14 @@ const submitForm = async () => {
       body: JSON.stringify({
         eventId: eventId.value,
         tabs: processedTabs,
+        images: {
+          fullRobotImages,
+          driveTrainImages,
+        },
+        deviceInfo: deviceInfo.value, // 使用已获取的设备信息
       }),
     });
+
     const data = await response.json();
     if (response.ok) {
       console.log("Form submitted:", data);
@@ -1111,7 +1191,7 @@ const submitForm = async () => {
       // Reset form fields and images
       formFields.value = formFields.value.map((field) => ({
         ...field,
-        value: null,
+        value: field.type === "checkbox" ? [] : null,
         error: undefined,
       }));
       fullRobotImages.value = [];
@@ -1122,6 +1202,9 @@ const submitForm = async () => {
 
       // Delete the current tab and all its content
       removeTab(currentTab.value);
+
+      // Refresh the page to ensure no localStorage cache
+      location.reload();
     } else {
       throw new Error(data.error || "Failed to submit form");
     }
