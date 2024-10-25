@@ -5,31 +5,34 @@
         </header>
 
         <main class="container mx-auto p-4 mt-4">
-            <form @submit.prevent="fetchData" class="mb-8 p-6 bg-white rounded-lg shadow-md">
+            <form @submit.prevent="performSearch" class="mb-8 p-6 bg-white rounded-lg shadow-md">
                 <h2 class="text-2xl font-semibold mb-6 text-gray-800">Search</h2>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="relative">
-                        <input v-model="queryParams.eventId" id="eventId" type="text"
-                            class="peer h-10 w-full border-b-2 border-gray-300 text-gray-900 placeholder-transparent focus:outline-none focus:border-blue-500"
-                            placeholder="Event ID">
+                        <select v-model="queryParams.eventId" id="eventId"
+                            class="peer h-10 w-full border-b-2 border-gray-300 text-gray-900 bg-transparent appearance-none focus:outline-none focus:border-blue-500">
+                            <option value="">Select Event ID</option>
+                            <option v-for="eventId in uniqueEventIds" :key="eventId" :value="eventId">{{ eventId }}
+                            </option>
+                        </select>
                         <label for="eventId"
                             class="absolute left-0 -top-3.5 text-gray-600 text-sm transition-all peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-gray-600 peer-focus:text-sm">
                             Event ID
                         </label>
                     </div>
                     <div class="relative">
-                        <input v-model="queryParams.formId" id="formId" type="text"
+                        <input v-model="queryParams.formId" type="text" id="formId"
                             class="peer h-10 w-full border-b-2 border-gray-300 text-gray-900 placeholder-transparent focus:outline-none focus:border-blue-500"
-                            placeholder="Form ID">
+                            placeholder="Form ID" />
                         <label for="formId"
                             class="absolute left-0 -top-3.5 text-gray-600 text-sm transition-all peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-gray-600 peer-focus:text-sm">
                             Form ID
                         </label>
                     </div>
                     <div class="relative">
-                        <input v-model="queryParams.teamNumber" id="teamNumber" type="text"
+                        <input v-model="queryParams.teamNumber" type="text" id="teamNumber"
                             class="peer h-10 w-full border-b-2 border-gray-300 text-gray-900 placeholder-transparent focus:outline-none focus:border-blue-500"
-                            placeholder="Team Number">
+                            placeholder="Team Number" />
                         <label for="teamNumber"
                             class="absolute left-0 -top-3.5 text-gray-600 text-sm transition-all peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-gray-600 peer-focus:text-sm">
                             Team Number
@@ -53,15 +56,15 @@
                 <p>{{ error }}</p>
             </div>
 
-            <div v-else-if="surveyData.length === 0" class="text-center py-8">
+            <div v-else-if="filteredSurveyData.length === 0" class="text-center py-8">
                 <Icon icon="mdi:robot" class="text-6xl text-gray-400 mb-4" />
                 <p class="text-xl text-gray-600">
-                    No data available. Try again later.....
+                    No data available. Try adjusting your search criteria.
                 </p>
             </div>
 
             <div v-else>
-                <section v-if="surveyData.length > 0" class="mb-8 bg-white p-6 rounded-lg shadow-md">
+                <section v-if="filteredSurveyData.length > 0" class="mb-8 bg-white p-6 rounded-lg shadow-md">
                     <h2 class="text-2xl font-semibold mb-6 text-gray-800">Data Visualization</h2>
                     <div class="mb-6 relative">
                         <select v-model="selectedChartType" id="chartType"
@@ -96,8 +99,9 @@
                     </div>
                 </section>
 
-                <section class="mb-6 bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-2xl font-semibold mb-4">Survey Results</h2>
+                <section v-for="(eventData, eventId) in groupedSurveyData" :key="eventId"
+                    class="mb-6 bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-2xl font-semibold mb-4">Event: {{ eventId }}</h2>
                     <div class="overflow-x-auto">
                         <table class="min-w-full bg-white">
                             <thead class="bg-gray-100">
@@ -137,7 +141,7 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200">
-                                <tr v-for="(survey, index) in surveyData" :key="survey.id"
+                                <tr v-for="(survey, index) in eventData" :key="survey.id"
                                     :class="index % 2 === 0 ? 'bg-white' : 'bg-gray-50'">
                                     <td class="sticky left-0 z-10 px-4 py-2"
                                         :class="index % 2 === 0 ? 'bg-blue-50' : 'bg-blue-100'">
@@ -218,10 +222,11 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import axios from "axios";
 import { Icon } from "@iconify/vue";
 import { Bar } from "vue-chartjs";
+import { debounce } from "lodash";
 import {
     Chart as ChartJS,
     Title,
@@ -284,22 +289,8 @@ const fetchData = async () => {
     loading.value = true;
     error.value = "";
     try {
-        const params = new URLSearchParams();
-        if (queryParams.value.eventId)
-            params.append("eventId", queryParams.value.eventId);
-        if (queryParams.value.formId)
-            params.append("formId", queryParams.value.formId);
-        if (queryParams.value.teamNumber)
-            params.append("teamNumber", queryParams.value.teamNumber);
-
-        const response = await axios.get("https://api.frc695.com/api/survey/query", { params });
-        if (Array.isArray(response.data)) {
-            surveyData.value = response.data;
-        } else {
-            console.error("Unexpected data format:", response.data);
-            error.value = "Received unexpected data format from the server";
-            surveyData.value = [];
-        }
+        const response = await axios.get<SurveyData[]>("https://api.frc695.com/api/survey/query");
+        surveyData.value = response.data;
     } catch (err) {
         console.error("Error fetching data:", err);
         error.value = "Failed to fetch data. Please try again later.";
@@ -311,9 +302,34 @@ const fetchData = async () => {
 
 onMounted(fetchData);
 
+const uniqueEventIds = computed(() => {
+    const eventIds = new Set(surveyData.value.map(survey => survey.event_id));
+    return Array.from(eventIds);
+});
+
+const filteredSurveyData = computed(() => {
+    return surveyData.value.filter(survey => {
+        const eventIdMatch = !queryParams.value.eventId || survey.event_id === queryParams.value.eventId;
+        const formIdMatch = !queryParams.value.formId || survey.form_id === queryParams.value.formId;
+        const teamNumberMatch = !queryParams.value.teamNumber || survey.data["Team number"] === queryParams.value.teamNumber;
+        return eventIdMatch && formIdMatch && teamNumberMatch;
+    });
+});
+
+const groupedSurveyData = computed(() => {
+    const grouped: Record<string, SurveyData[]> = {};
+    filteredSurveyData.value.forEach(survey => {
+        if (!grouped[survey.event_id]) {
+            grouped[survey.event_id] = [];
+        }
+        grouped[survey.event_id].push(survey);
+    });
+    return grouped;
+});
+
 const createChartData = (dataKey: keyof SurveyData['data']) => {
     const dataTypes: Record<string, string[]> = {};
-    surveyData.value.forEach((survey) => {
+    filteredSurveyData.value.forEach((survey) => {
         let value = survey.data[dataKey];
         if (Array.isArray(value)) {
             value.forEach((v) => {
@@ -321,7 +337,7 @@ const createChartData = (dataKey: keyof SurveyData['data']) => {
                 dataTypes[v].push(survey.data["Team number"]);
             });
         } else {
-            const key = value || "Unknown";
+            const key = value?.toString() || "Unknown";
             if (!dataTypes[key]) dataTypes[key] = [];
             dataTypes[key].push(survey.data["Team number"]);
         }
@@ -454,4 +470,12 @@ const closeImageModal = () => {
     showImageModal.value = false;
     modalImages.value = [];
 };
+
+const performSearch = () => {
+    // This function is now empty as filtering is done reactively
+};
+
+const debouncedPerformSearch = debounce(performSearch, 800);
+
+watch(queryParams, debouncedPerformSearch, { deep: true });
 </script>
