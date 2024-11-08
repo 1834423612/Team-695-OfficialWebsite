@@ -7,16 +7,9 @@
           <div class="space-y-6">
             <article class="p-6 bg-white rounded-lg shadow-md">
               <h3 class="text-2xl font-bold mb-2"> </h3>
-              <p class="text-sm text-gray-500 mb-4">September 6, 2024</p>
+              <p class="text-sm text-gray-500 mb-4">November 7, 2024</p>
               <p>
-                Off season event at CORI on Sunday 10/27/2024 in Columbus.
-              </p>
-            </article>
-            <article class="p-6 bg-white rounded-lg shadow-md">
-              <h3 class="text-2xl font-bold mb-2"> </h3>
-              <p class="text-sm text-gray-500 mb-4">September 1, 2024</p>
-              <p>
-                Build season starts January 6.
+                Build season starts January 4, 2025.
               </p>
             </article>
           </div>
