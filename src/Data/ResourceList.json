@@ -23,13 +23,6 @@
             "description": "Team Scouting Website, will use it during the matches to scout other teams."
         },
         {
-            "type": "Important",
-            "title": "Team 695 Documentation",
-            "link": "https://doc.frc695.com/",
-            "description": "Everything you need to know about Team, there are all at here!"
-        },
-
-        {
             "type": "Open Source",
             "title": "Scouting Project",
             "link": "https://github.com/alexfinger21/scouting-project",
@@ -40,12 +33,6 @@
             "title": "Team 695 Official Website",
             "link": "https://github.com/1834423612/Team-695-OfficialWebsite",
             "description": "The GitHub repository for the Team 695 Official Website."
-        },
-        {
-            "type": "Open Source",
-            "title": "Team 695 Documentation",
-            "link": "https://github.com/1834423612/Team-695-Document",
-            "description": "The GitHub repository for the Team 695 Documentation."
         }
     ]
 }
