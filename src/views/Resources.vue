@@ -5,8 +5,7 @@
                 <div class="container mx-auto">
                     <div class="mb-8">
                         <h2 class="text-3xl font-bold mb-1">Resources</h2>
-                        <span class="text-gray-500 mb-1">Feel free to request and add more, or visit the Documentation
-                            Website</span>
+                        <span class="text-gray-500 mb-1">Feel free to request and add more</span>
                     </div>
                     <div class="space-y-12 shadow-md rounded-md border-4 border-violet-400">
                         <div class="container mx-auto bg-violet-100 p-6 rounded-md">
@@ -14,8 +13,7 @@
                             <div v-for="(category, type) in categories" :key="type">
                                 <div class="mb-6">
                                     <h3 class="text-2xl font-semibold mb-1">{{ category.title }}</h3>
-                                    <span class="text-gray-500 mb-1">Feel free to request and add more, or visit the
-                                        Documentation Website</span>
+                                    <span class="text-gray-500 mb-1">Feel free to request and add more</span>
                                 </div>
                                 <!-- <h3
                                     class="inline-block relative text-gray-800 font-bold text-xl bg-[#5d8dcf99] px-3 py-1 rounded-md shadow-md">
