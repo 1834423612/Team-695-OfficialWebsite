@@ -7,7 +7,6 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    404NotFound: typeof import('./src/components/404NotFound.vue')['default']
     Avatar: typeof import('./src/components/Avatar.vue')['default']
     AvatarFallback: typeof import('./src/components/AvatarFallback.vue')['default']
     AvatarImage: typeof import('./src/components/AvatarImage.vue')['default']
@@ -28,6 +27,7 @@ declare module 'vue' {
     MentorCard: typeof import('./src/components/Cards/MentorCard.vue')['default']
     MenuIcon: typeof import('./src/components/MenuIcon.vue')['default']
     MobileDropdownMenu: typeof import('./src/components/Header/MobileDropdownMenu.vue')['default']
+    NotFound: typeof import('./src/components/NotFound.vue')['default']
     PitScoutingDashboard: typeof import('./src/components/PitScoutingDashboard.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
