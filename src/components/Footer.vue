@@ -13,9 +13,9 @@
             <li>
               <a href="https://www.beachwoodschools.org/" class="text-gray-400 hover:text-white">Beachwood Schools</a>
             </li>
-            <li>
+            <!-- <li>
               <a href="https://doc.frc695.com/" class="text-gray-400 hover:text-white">Team Documentation</a>
-            </li>
+            </li> -->
             <li>
               <a href="https://scoutify.team695.com/" class="text-gray-400 hover:text-white">Scoutify Website</a>
             </li>
