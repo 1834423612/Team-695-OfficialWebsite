@@ -75,6 +75,7 @@ export default {
   },
   plugins: [
     require("tailwindcss-animate"),
+    require('@tailwindcss/forms'),
     // Iconify plugin
     // addDynamicIconSelectors(),
     addIconSelectors(['mdi', 'mdi-light']),

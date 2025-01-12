@@ -1,6 +1,6 @@
 // Import vue-router dependencies 
 import { createRouter, createWebHistory } from 'vue-router';
-import NotFound from '../components/404NotFound.vue';
+import NotFound from '../components/NotFound.vue';
 import Home from '../views/Home.vue';
 import AboutContainerPage from '@/views/AboutContainerPage.vue';
 // import About from '../views/About.vue';
