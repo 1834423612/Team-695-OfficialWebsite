@@ -1,5 +1,12 @@
-# Vue 3 + TypeScript + Vite
+# FRC Team 695 Bison Robotics - Official Website
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+## First Version Released 🎉
+![Team 695 Website-compressed](https://github.com/user-attachments/assets/c69422fd-eafc-44bc-b02f-a619dbf27a04)
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+## Website Links
+[https://www.team695.com/](https://www.team695.com/)
+[https://www.frc695.com/](https://www.frc695.com/)
+
+## Tech Stacks
+
+See https://github.com/1834423612/Team-695-OfficialWebsite/blob/master/package.json
