@@ -29,9 +29,23 @@ Visit the official [Node.JS](https://nodejs.org/en) website and download the **L
 ### 2. Download Git
 Go to [Git Download for Windows](https://git-scm.com/download/win) and download the **64-bit version**.
 
-### 3. Pull the Project to Local
+### 3. Get this repository link
+Go to [Team Official Website - FrontEnd Repository](https://github.com/1834423612/Team-695-OfficialWebsite) and follow the steps:  
+Select `Code` &#10132; `Local` &#10132; `HTTPS`, then copy the link.
+
+![image](https://github.com/user-attachments/assets/198174e8-2966-4ee9-ad0b-ad97e03f7bd3)
+
+### 4. Pull the Project to your Local
+<details>
+  <summary><b>See Screenshot Image</b></summary>
+
+  ----  
+  ![image](https://github.com/user-attachments/assets/43a90974-20af-4fb7-9457-e1edc975262b)
+  ----
+</details>
+
 Clone the repository using the following command:
-```shell
+```Shell
 git clone https://github.com/1834423612/Team-695-OfficialWebsite.git
 ```
 
@@ -40,14 +54,43 @@ Navigate to the project directory:
 cd Team-695-OfficialWebsite
 ```
 
-### 4. Install Project Dependencies
+### 5. Install Project Dependencies
+<details>
+  <summary><b>See Screenshot Image</b></summary>
+
+  ----  
+  ![image](https://github.com/user-attachments/assets/7eaa4774-5ab3-483c-ab9c-5c231d5f5212)
+  ----
+
+</details>
+
 We recommend using `pnpm` to manage packages. Install the dependencies with:
 ```Shell
 pnpm install
 ```
-**Note**: Use this command only when you change the `package.json` or the first time you run the project.
 
-### 5. Run the Website
+**Note**: 
+  - Use this command only when you change the `package.json`, add/update new dependencies, or the first time you run the project.
+  - Once you run `pnpm install`, you should be able to see there will generate one folder: `node_moudles`, and one file: `pnpm-lock.yaml`.
+
+#### If your device is a fresh install environment/without `pnpm`, please run the installation below to your global environment first:
+<details>
+  <summary><b>See Screenshot Image</b></summary>
+
+  ----  
+  ![image](https://github.com/user-attachments/assets/1024b960-5891-4ba7-8bc9-d7017764f573)
+  ----
+
+</details>
+
+```Shell
+npm install -g pnpm
+```
+```Shell
+pnpm setup
+```
+
+### 6. Run the Website
 Start the development server with:
 ```Shell
 pnpm run dev
@@ -58,16 +101,14 @@ When the terminal displays the local preview link, the website is successfully r
 <details>
 <summary>Details</summary>
 
-## Default Page
+### Default Page
 The default page is located at `/src/views/index.vue`.
 
-## Components Location
+### Components Location
 Components are stored in the `/src/components/` directory to facilitate maintenance. After creating new components, ensure they are imported into index.vue.
 
-</details>
-
-## Example Import Code
-**Replace `YourComponentsName` with the actual component name.**
+### Example Import Code
+**Replace `YourComponentName` with the actual component name.**
 
 ```vue
 <template>
@@ -75,19 +116,20 @@ Components are stored in the `/src/components/` directory to facilitate maintena
   <div>
     <!-- Import the components -->
     <!-- Same as your import name -->
-    <YourComponentsName />
+    <YourComponentName />
   </div>
   ...
 </template>
 
 <script>
-import YourComponentsName from '../components/YourComponentName.vue';
+import YourComponentName from '../components/YourComponentName.vue';
 
 export default {
   components: {
-    YourComponentsName // Register this component, matching the import name
+    YourComponentName // Register this component, matching the import name
   }
 };
 </script>
 ```
 
+</details>
