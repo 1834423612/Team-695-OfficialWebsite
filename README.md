@@ -71,7 +71,7 @@ pnpm install
 
 **Note**: 
   - Use this command only when you change the `package.json`, add/update new dependencies, or the first time you run the project.
-  - Once you run `pnpm install`, you should be able to see there will generate one folder: `node_moudles`, and one file: `pnpm-lock.yaml`.
+  - Once you run `pnpm install`, you should be able to see there will generate one folder: `node_modules`, and one file: `pnpm-lock.yaml`.
 
 #### If your device is a fresh install environment/without `pnpm`, please run the installation below to your global environment first:
 <details>
