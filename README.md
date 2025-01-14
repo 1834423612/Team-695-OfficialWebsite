@@ -10,3 +10,11 @@
 ## Tech Stacks
 
 See https://github.com/1834423612/Team-695-OfficialWebsite/blob/master/package.json
+
+<details>
+<summary>Dependencies Details/summary>
+
+Some dependencies
+</details>
+
+## Run the Project
