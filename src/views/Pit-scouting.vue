@@ -164,34 +164,49 @@
               </p>
             </div>
 
-            <!-- Image upload sections -->
-            <div class="space-y-6">
-              <div v-for="(imageType, typeIndex) in ['fullRobot', 'driveTrain']" :key="typeIndex" class="bg-gray-50 p-6 rounded-lg shadow-sm">
+            <!-- Add Image Upload Sections -->
+            <div class="space-y-8">
+              <div v-for="(imageType, typeIndex) in ['fullRobot', 'driveTrain']" :key="typeIndex"
+                class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-md">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">
                   {{ imageType === 'fullRobot' ? 'Full Robots Images' : 'Drive Train Images' }}
                 </h2>
+
+                <!-- Upload Area -->
                 <div @dragover.prevent @drop.prevent="handleDrop(imageType as 'fullRobot' | 'driveTrain', $event)"
-                  class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-indigo-500 transition-colors duration-300"
+                  class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-indigo-500 transition-colors duration-200"
                   @click="imageRefs[imageType + 'Input']?.click()">
-                  <input type="file" accept="image/*" @change="handleFileSelect(imageType as 'fullRobot' | 'driveTrain', $event)" class="hidden"
+                  <input type="file" accept="image/*"
+                    @change="handleFileSelect(imageType as 'fullRobot' | 'driveTrain', $event)" class="hidden"
                     :ref="el => { if (el) imageRefs[imageType + 'Input'] = el as HTMLInputElement }" multiple />
+
                   <Icon icon="fa6-solid:image" class="mx-auto h-12 w-12 text-gray-400" aria-hidden="true" />
-                  <div class="mt-4 flex flex-col text-sm leading-6 text-gray-600 justify-center">
-                    <span class="relative cursor-pointer rounded-md font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500">
+
+                  <div class="mt-4 flex flex-col items-center text-sm text-gray-600">
+                    <span class="font-semibold text-indigo-600 hover:text-indigo-500">
                       Upload a file
                     </span>
-                    <!-- <Icon icon="mdi:upload" class="absolute top-0 left-0 w-5 h-5 m-1" aria-hidden="true" /> -->
-                    <p class="pl-1">or drag and drop</p>
+                    <p class="mt-1">or drag and drop</p>
+                    <p class="text-xs text-gray-500 mt-2">
+                      PNG, JPG, JPEG, HEIC, GIF up to 50MB each
+                    </p>
                   </div>
-                  <p class="text-xs leading-5 text-gray-400 md:text-gray-600">PNG, JPG, JPEG, HEIC, GIF up to 50MB each</p>
                 </div>
-                <div v-if="(imageType === 'fullRobot' ? fullRobotImages : driveTrainImages).length > 0" class="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  <div v-for="(image, index) in (imageType === 'fullRobot' ? fullRobotImages : driveTrainImages)" :key="index" class="relative bg-white p-2 rounded-lg shadow">
-                    <img :src="image.url" :alt="image.name" class="w-full h-32 object-cover rounded-lg" />
-                    <div class="mt-2 text-xs text-gray-600 truncate">{{ image.name }}</div>
-                    <div class="text-xs text-gray-500">{{ formatFileSize(image.size) }}</div>
-                    <button @click="confirmRemoveImage(imageType as 'fullRobot' | 'driveTrain', index)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 focus:outline-none">
-                      <Icon icon="mdi:close" />
+
+                <!-- Image Preview Grid -->
+                <div v-if="(imageType === 'fullRobot' ? fullRobotImages : driveTrainImages).length > 0"
+                  class="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  <div v-for="(image, index) in (imageType === 'fullRobot' ? fullRobotImages : driveTrainImages)"
+                    :key="index"
+                    class="relative group rounded-lg overflow-hidden bg-white shadow-sm hover:shadow-md transition-all duration-200">
+                    <img :src="image.url" :alt="image.name" class="w-full h-32 object-cover rounded-t-lg" />
+                    <div class="p-2">
+                      <div class="text-xs text-gray-600 truncate">{{ image.name }}</div>
+                      <div class="text-xs text-gray-500">{{ formatFileSize(image.size) }}</div>
+                    </div>
+                    <button @click="confirmRemoveImage(imageType as 'fullRobot' | 'driveTrain', index)"
+                      class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+                      <Icon icon="mdi:close" class="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -395,10 +410,16 @@ const formFields = ref<FormField[]>([
 
 const fullRobotImages = ref<ImageData[]>([]);
 const driveTrainImages = ref<ImageData[]>([]);
-const imageRefs = ref<{ [key: string]: HTMLInputElement | null }>({});
+const imageRefs = ref<{ [key: string]: HTMLInputElement }>({});
 const teamSuggestions = ref<any[]>([]);
 const showTeamSuggestions = ref(false);
 const showDebugButton = ref(false);
+const teamNumber = ref("");
+const isDebugMode = ref(false);
+
+watch(teamNumber, (newVal) => {
+  isDebugMode.value = newVal.toLowerCase() === "debug";
+});
 
 onMounted(async () => {
   await loadTeams('');
@@ -472,7 +493,7 @@ const loadEventId = async () => {
 };
 
 const filteredTeamSuggestions = computed(() => {
-  const query = formFields.value[0].value.toLowerCase();
+  const query = formFields.value[0]?.value?.toLowerCase() ?? '';
   return teamSuggestions.value.filter(
     (team) =>
       team.team_number.includes(query) ||
@@ -600,6 +621,7 @@ const clearCurrentTab = () => {
       formFields.value.map((field) => ({
         ...field,
         value: field.type === "checkbox" ? [] : null,
+        otherValue: field.showOtherInput ? '' : undefined,
         error: undefined,
       }))
     )
@@ -770,8 +792,10 @@ const removeImage = async (type: "fullRobot" | "driveTrain", index: number) => {
       title: "Error!",
       text: "Failed to delete the image from the server. Do you want to remove it locally?",
       icon: "error",
-      confirmButtonColor: "#3085d6",
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
       confirmButtonText: "Yes, remove it locally",
+      cancelButtonText: "Cancel",
     }).then((result) => {
       if (result.isConfirmed) {
         if (type === "fullRobot") {
