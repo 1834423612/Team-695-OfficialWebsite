@@ -1,20 +1,11 @@
 // Import vue-router dependencies 
 import { createRouter, createWebHistory } from 'vue-router';
-import NotFound from '../components/NotFound.vue';
 import Home from '../views/Home.vue';
-import AboutContainerPage from '@/views/AboutContainerPage.vue';
 // import About from '../views/About.vue';
-// import Mentors from '../views/Mentors.vue';
-// import mentorsData from "../components/Mentor/info.json";
 // import MentorDetail from '../views/MentorDetail.vue';
 // import Members from '../views/Members.vue';
 // import Robots from '../views/Robots.vue';
 // import News from '../views/News.vue';
-import Resources from '../views/Resources.vue';
-import Contact from '@/views/Contact.vue';
-import Gallery from '@/views/Gallery.vue';
-import PitScouting from '@/views/pit-scouting.vue'
-import PitScoutingDashboard from '@/views/Pit-scoutingDashboard.vue';
 
 // Define the routes 
 // A route is an object that contains the path and the component that should be rendered when the path is matched
@@ -25,10 +16,10 @@ const routes = [
   {
     path: '/:pathMatch(.*)*',
     name: '404NotFound',
-    component: NotFound
+    component: () => import('@/components/NotFound.vue'),
   },
   { path: '/', component: Home },
-  { path: '/about', component: AboutContainerPage },
+  { path: '/about', component: () => import('@/views/AboutContainerPage.vue') },
   // { path: '/aboutdetail', component: About },
   // { path: '/mentors', component: Mentors },
   // { path: '/mentors/:id', component: Mentors },
@@ -41,15 +32,14 @@ const routes = [
   //     return { mentor };
   //   }
   // },
-  { path: '/members', component: AboutContainerPage },
-  { path: '/achievements', component: AboutContainerPage },
+  { path: '/members', component: () => import('@/views/AboutContainerPage.vue') },
+  { path: '/achievements', component: () => import('@/views/AboutContainerPage.vue') },
   // { path: '/robots', component: Robots },
-  { path: '/gallery', component: Gallery },
-  // { path: '/news', component: News },
-  { path: '/resources', component: Resources },
-  { path: '/contact', component: Contact },
-  { path: '/pit-scouting', component: PitScouting},
-  { path: '/pit-scouting/dashboard', component: PitScoutingDashboard},
+  { path: '/gallery', component: () => import('@/views/Gallery.vue') },
+  { path: '/resources', component: () => import('@/views/Resources.vue') },
+  { path: '/contact', component: () => import('@/views/Contact.vue') },
+  { path: '/pit-scouting', component: () => import('@/views/Pit-scouting.vue') },
+  { path: '/pit-scouting/dashboard', component: () => import('@/views/Pit-scoutingDashboard.vue') },
 ];
 
 // Create a new router instance
