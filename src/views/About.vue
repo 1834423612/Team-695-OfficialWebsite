@@ -29,9 +29,14 @@
         <h2 class="text-4xl font-bold mb-12 text-center text-gray-800">Our Sponsors</h2>
         <div class="bg-white rounded-2xl shadow-lg p-8 md:p-12">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-            <div v-for="sponsor in sponsors" :key="sponsor.name"
-              class="flex justify-center items-center p-6 bg-gray-50 rounded-xl transition-all duration-300 hover:shadow-md">
-              <img :src="sponsor.logo" :alt="sponsor.name" class="max-h-24 w-auto object-contain" />
+            <div v-for="(sponsor, index) in sponsors" :key="sponsor.name"
+              :class="['flex justify-center items-center p-6 bg-gray-50 rounded-xl transition-all duration-300 hover:shadow-md', { 'md:col-span-2': sponsors.length % 2 !== 0 && index === sponsors.length - 1 }]">
+              <a v-if="sponsor.link" :href="sponsor.link" target="_blank" rel="noopener noreferrer" class="flex justify-center items-center w-full h-full">
+                <img :src="sponsor.logo" :alt="sponsor.name" class="max-h-24 w-auto object-contain" />
+              </a>
+              <div v-else class="flex justify-center items-center w-full h-full">
+                <img :src="sponsor.logo" :alt="sponsor.name" class="max-h-24 w-auto object-contain" />
+              </div>
             </div>
           </div>
         </div>
@@ -70,8 +75,14 @@ export default defineComponent({
         },
         {
           name: 'Beachwood City Schools',
-          logo: 'https://r2.fastbirdcdn.online/Robotics/Logo/66aed9821d766-20240804_Beachwood-City-Schools-LOGO.png'
+          logo: 'https://r2.fastbirdcdn.online/Robotics/Logo/66aed9821d766-20240804_Beachwood-City-Schools-LOGO.png',
+          link: 'https://beachwoodschools.org/'
         },
+        {
+          name: 'FabWorks',
+          logo: 'https://www.fabworks.com/fabworks.svg',
+          link: 'https://www.fabworks.com/'
+        }
       ],
       values: [
         {
