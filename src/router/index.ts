@@ -10,7 +10,6 @@ import AboutContainerPage from '@/views/AboutContainerPage.vue';
 // import Members from '../views/Members.vue';
 // import Robots from '../views/Robots.vue';
 // import News from '../views/News.vue';
-// import Sponsors from '../views/Sponsors.vue';
 import Resources from '../views/Resources.vue';
 import Contact from '@/views/Contact.vue';
 import Gallery from '@/views/Gallery.vue';
@@ -47,7 +46,6 @@ const routes = [
   // { path: '/robots', component: Robots },
   { path: '/gallery', component: Gallery },
   // { path: '/news', component: News },
-  // { path: '/sponsors', component: Sponsors },
   { path: '/resources', component: Resources },
   { path: '/contact', component: Contact },
   { path: '/pit-scouting', component: PitScouting},

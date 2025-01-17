@@ -1,410 +1,214 @@
 <template>
-  <div class="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
-    <div
-      class="max-w-4xl mx-auto bg-white shadow-md rounded-lg overflow-hidden"
-    >
-      <div class="px-4 py-5 sm:p-6">
-        <h1 class="text-center text-3xl font-bold text-gray-900 mb-8">
-          Pit-Scouting Form
-        </h1>
-
-        <!-- Tabs -->
-        <div class="p-4 bg-fuchsia-50 rounded-md">
-          <div class="flex flex-wrap gap-2 mb-2">
-            <button
-              v-for="(tab, index) in tabs"
-              :key="index"
-              @click="switchTab(index)"
-              class="px-4 py-2 rounded-md text-sm font-medium"
-              :class="
-                currentTab === index
-                  ? 'bg-blue-100 text-blue-600 border-2 border-blue-500'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300 border-2 border-gray-400'
-              "
-            >
-              {{ tab.name }}
-              <Icon
-                icon="mdi:close"
-                class="ml-2 inline-block"
-                @click.stop="confirmRemoveTab(index)"
-              />
-            </button>
-            <button
-              @click="addTab"
-              class="ml-2 px-4 py-2 rounded-md text-sm font-medium border-2 border-green-500 bg-green-100 text-green-700 hover:bg-green-200"
-            >
-              <Icon icon="mdi:plus" class="w-5 h-5 mr-1 inline-block" />
-              Add Tab
-            </button>
-          </div>
-
-          <div class="mt-2">
-            <button
-              @click="confirmClearCurrentTab"
-              class="px-4 py-2 rounded-md text-sm font-medium border-2 border-red-500 bg-red-100 text-red-600 hover:bg-red-200"
-            >
-              <Icon icon="mdi:refresh" class="mr-2 inline-block" />
-              Clear Current Tab
-            </button>
-            <button
-              v-if="showDebugButton"
-              class="ml-2 px-4 py-2 rounded-md text-sm font-medium border-4 border-amber-500/100 bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
-              @click="confirmDebugAction"
-            >
-              Debug
-            </button>
-          </div>
+  <div class="min-h-screen bg-gray-100">
+    <div class="bg-indigo-600 pb-32 rounded-b-md md:rounded-b-xl">
+      <header class="py-10">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h1 class="text-center text-3xl font-bold tracking-tight text-white">Pit-Scouting Form</h1>
         </div>
+      </header>
+    </div>
 
-        <!-- Event ID and Form ID -->
-        <div class="flex flex-col my-4">
-          <div class="mb-4">
-            <span class="text-sm font-medium text-gray-500">Event ID:</span>
-            <span
-              class="max-[640px]:text-xs ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded-md"
-              >{{ eventId }}</span
-            >
-          </div>
-          <div>
-            <span class="text-sm font-medium text-gray-500">Form ID:</span>
-            <span
-              class="max-[640px]:text-[10px] ml-2 px-2 py-1 bg-green-100 text-green-800 rounded-md"
-              >{{ currentFormId }}</span
-            >
-          </div>
-        </div>
+    <main class="-mt-32">
+      <div class="mx-auto md:mx-8 max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
+        <div class="bg-white rounded-lg shadow px-5 py-6 sm:px-6">
+          <!-- Tabs -->
+          <div class="mb-6 bg-gray-50 rounded-md p-4">
+            <div class="flex flex-wrap gap-2 mb-2">
+              <button v-for="(tab, index) in tabs" :key="index" @click="switchTab(index)"
+                class="px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200" :class="currentTab === index
+                  ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-500'
+                  : 'bg-white text-gray-700 hover:bg-gray-100 border-2 border-gray-300'
+                  ">
+                {{ tab.name }}
+                <Icon icon="mdi:close" class="ml-2 inline-block" @click.stop="confirmRemoveTab(index)" />
+              </button>
+              <button @click="addTab"
+                class="ml-2 px-4 py-2 rounded-md text-sm font-medium border-2 border-green-500 bg-green-50 text-green-700 hover:bg-green-100 transition-colors duration-200">
+                <Icon icon="mdi:plus" class="w-5 h-5 mr-1 inline-block" />
+                Add Tab
+              </button>
+            </div>
 
-        <form @submit.prevent="confirmSubmitForm">
+            <div class="mt-2">
+              <button @click="confirmClearCurrentTab"
+                class="px-4 py-2 rounded-md text-sm font-medium border-2 border-red-500 bg-red-50 text-red-600 hover:bg-red-100 transition-colors duration-200">
+                <Icon icon="mdi:refresh" class="mr-2 inline-block" />
+                Clear Current Tab
+              </button>
+              <button v-if="showDebugButton"
+                class="ml-2 px-4 py-2 rounded-md text-sm font-medium border-2 border-yellow-500 bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition-colors duration-200"
+                @click="confirmDebugAction">
+                Debug
+              </button>
+            </div>
+          </div>
+
+          <!-- Event ID and Form ID -->
           <div
-            v-for="(field, index) in formFields"
-            :key="index"
-            class="mb-8 max-[640px]:mb-4 bg-gray-50 p-6 rounded-lg shadow-sm"
-          >
-            <div v-if="field.type !== 'hidden'" class="mb-2">
-              <label
-                :for="'field-' + index"
-                class="block text-lg font-semibold text-gray-900 mb-2"
-              >
+            class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 bg-gray-50 p-4 rounded-md">
+            <div class="mb-2 sm:mb-0">
+              <span class="text-sm font-medium text-gray-500">Event ID:</span>
+              <span class="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-sm">{{ eventId }}</span>
+            </div>
+            <div>
+              <span class="text-sm font-medium text-gray-500">Form ID:</span>
+              <span class="ml-2 px-2 py-1 bg-green-100 text-green-800 rounded-md text-sm">{{ currentFormId }}</span>
+            </div>
+          </div>
+
+          <!-- Form Fields -->
+          <form @submit.prevent="confirmSubmitForm">
+            <div v-for="(field, index) in formFields" :key="index" class="mb-6">
+              <label :for="'field-' + index" class="block text-sm font-medium text-gray-700 mb-1">
                 {{ field.question }}
                 <span v-if="field.required" class="text-red-500">*</span>
               </label>
 
-              <div v-if="field.i" class="mt-4">
-                <button
-                  @click="toggleDescription(index)"
-                  type="button"
-                  class="w-full text-left px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded-md transition-colors duration-200 flex items-center justify-between"
-                >
-                  <span
-                    >{{
-                      field.showDescription ? "Hide" : "Show"
-                    }}
-                    Description</span
-                  >
-                  <Icon
-                    :icon="
-                      field.showDescription
-                        ? 'mdi:chevron-up'
-                        : 'mdi:chevron-down'
-                    "
-                  />
-                </button>
-                <transition name="fade">
-                  <div
-                    v-if="field.showDescription"
-                    class="mt-2 bg-white p-4 rounded-md border border-blue-200"
-                  >
-                    <img
-                      :src="field.i"
-                      :alt="field.question"
-                      :style="{ width: field.w || '100%' }"
-                      class="rounded-lg mb-4"
-                    />
-                    <p class="text-sm text-gray-600">
-                      {{
-                        field.description ||
-                        "No additional description available."
-                      }}
-                    </p>
-                  </div>
-                </transition>
-              </div>
+              <p v-if="field.description" class="text-sm text-gray-500 mb-2">{{ field.description }}</p>
 
-              <div v-if="field.type === 'radio'" class="mt-4">
-                <div
-                  v-for="(option, optionIndex) in field.options"
-                  :key="optionIndex"
-                  class="flex items-center mb-2"
-                >
-                  <input
-                    :id="'field-' + index + '-' + optionIndex"
-                    :type="field.type"
-                    :name="'field-' + index"
-                    :value="option"
-                    v-model="field.value"
-                    :required="field.required"
-                    class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
-                    @change="saveFormData"
-                  />
-                  <label
-                    :for="'field-' + index + '-' + optionIndex"
-                    class="ml-2 block text-sm text-gray-900"
-                  >
-                    {{ option }}
-                  </label>
+              <!-- Team Number Autofill -->
+              <div v-if="field.type === 'autocomplete'" class="relative rounded-md shadow-sm">
+                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                  <Icon icon="mdi:magnify" class="h-5 w-5 text-gray-400" aria-hidden="true" />
                 </div>
-                <div v-if="field.value === 'Other'" class="mt-2">
-                  <input
-                    v-model="field.otherValue"
-                    type="text"
-                    :placeholder="
-                      'Specify other ' + field.question.toLowerCase()
-                    "
-                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    @input="saveFormData"
-                  />
-                </div>
-              </div>
-
-              <div v-else-if="field.type === 'checkbox'" class="mt-4">
-                <div
-                  v-for="(option, optionIndex) in field.options"
-                  :key="optionIndex"
-                  class="flex items-center mb-2"
-                >
-                  <input
-                    :id="'field-' + index + '-' + optionIndex"
-                    type="checkbox"
-                    :value="option"
-                    v-model="field.value"
-                    class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                    @change="saveFormData"
-                  />
-                  <label
-                    :for="'field-' + index + '-' + optionIndex"
-                    class="ml-2 block text-sm text-gray-900"
-                  >
-                    {{ option }}
-                  </label>
-                </div>
-                <div
-                  v-if="
-                    Array.isArray(field.value) && field.value.includes('Other')
-                  "
-                  class="mt-2"
-                >
-                  <input
-                    v-model="field.otherValue"
-                    type="text"
-                    :placeholder="
-                      'Specify other ' + field.question.toLowerCase()
-                    "
-                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    @input="saveFormData"
-                  />
-                </div>
-              </div>
-
-              <div
-                v-else-if="field.type === 'autocomplete'"
-                class="mt-1 relative"
-              >
-                <input
-                  :id="'field-' + index"
-                  type="text"
-                  v-model="field.value"
-                  :required="field.required"
-                  @input="handleTeamNumberInput"
-                  @blur="hideTeamSuggestions"
-                  class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  :class="{ 'border-red-500': field.error }"
-                  :placeholder="'Enter team number'"
-                />
-                <div
-                  v-if="showTeamSuggestions"
-                  class="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
-                >
-                  <div
-                    v-for="team in filteredTeamSuggestions"
-                    :key="team.team_number"
+                <input :id="'field-' + index" type="text" v-model="field.value" :required="field.required" :class="[
+                  'block w-full rounded-md border-0 py-1.5 pl-10 pr-3 text-gray-900 ring-1 ring-inset focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6',
+                  field.error ? 'ring-red-300 placeholder:text-red-300 focus:ring-red-500' : 'ring-gray-300 placeholder:text-gray-400 focus:ring-indigo-600'
+                ]" placeholder="Search teams..." @input="handleTeamNumberInput" @focus="showTeamSuggestions = true"
+                  @blur="hideTeamSuggestions" />
+                <div v-if="showTeamSuggestions && filteredTeamSuggestions.length > 0"
+                  class="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+                  <div v-for="team in filteredTeamSuggestions" :key="team.team_number"
                     @mousedown.prevent="selectTeam(team)"
-                    class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-gray-100"
-                  >
+                    class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-gray-100">
                     <div class="flex items-center">
-                      <span class="font-normal truncate"
-                        >{{ team.team_number }} - {{ team.team_name }}</span
-                      >
+                      <span class="font-normal truncate">{{ team.team_number }} - {{ team.team_name }}</span>
                     </div>
                   </div>
                 </div>
-                <p v-if="field.error" class="mt-2 text-sm text-red-600">
-                  {{ field.error }}
-                </p>
+                <div v-if="field.error" class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                  <Icon icon="mingcute:alert-fill" class="h-5 w-5 text-red-500" aria-hidden="true" />
+                </div>
               </div>
 
-              <input
-                v-else-if="field.type === 'text' || field.type === 'number'"
-                :id="'field-' + index"
-                :type="field.type"
-                v-model="field.value"
-                :required="field.required"
-                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                :class="{ 'border-red-500': field.error }"
-                @input="saveFormData"
-                @blur="validateField(field)"
-              />
+              <!-- Input fields -->
+              <div v-if="field.type === 'text' || field.type === 'number'" class="relative rounded-md shadow-sm">
+                <input :id="'field-' + index" :type="field.type" v-model="field.value" :required="field.required"
+                  :class="[
+                    'block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6',
+                    'px-3',
+                    field.error ? 'ring-red-300 placeholder:text-red-300 focus:ring-red-500' : 'ring-gray-300 placeholder:text-gray-400 focus:ring-indigo-600'
+                  ]" @input="saveFormData()" @blur="validateField(field)" />
+                <div v-if="field.error" class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                  <Icon icon="mingcute:alert-fill" class="h-5 w-5 text-red-500" aria-hidden="true" />
+                </div>
+              </div>
 
-              <textarea
-                v-else-if="field.type === 'textarea'"
-                :id="'field-' + index"
-                v-model="field.value"
-                :required="field.required"
-                rows="3"
-                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                :class="{ 'border-red-500': field.error }"
-                @input="saveFormData"
-                @blur="validateField(field)"
-              ></textarea>
+              <!-- Textarea -->
+              <textarea v-else-if="field.type === 'textarea'" :id="'field-' + index" v-model="field.value"
+                :required="field.required" rows="3" :class="[
+                  'block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6',
+                  field.error ? 'ring-red-300 placeholder:text-red-300 focus:ring-red-500' : 'ring-gray-300 placeholder:text-gray-400 focus:ring-indigo-600'
+                ]" @input="saveFormData" @blur="validateField(field)"></textarea>
 
-              <p v-if="field.error" class="mt-2 text-sm text-red-600">
+              <!-- Radio buttons -->
+              <div v-else-if="field.type === 'radio'" class="mt-2">
+                <fieldset>
+                  <legend class="sr-only">{{ field.question }}</legend>
+                  <div class="space-y-4">
+                    <div v-for="(option, optionIndex) in field.options" :key="optionIndex" class="flex items-center">
+                      <input :id="'field-' + index + '-' + optionIndex" :name="'field-' + index" type="radio"
+                        :value="option" v-model="field.value" :required="field.required"
+                        class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600" @change="saveFormData" />
+                      <label :for="'field-' + index + '-' + optionIndex"
+                        class="ml-3 block text-sm font-medium leading-6 text-gray-900">
+                        {{ option }}
+                      </label>
+                    </div>
+                  </div>
+                </fieldset>
+                <input v-if="field.value === 'Other'" v-model="field.otherValue" type="text"
+                  :placeholder="'Specify other ' + field.question.toLowerCase()"
+                  class="mt-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  @input="saveFormData" />
+              </div>
+
+              <!-- Checkboxes -->
+              <div v-else-if="field.type === 'checkbox'" class="mt-2">
+                <fieldset>
+                  <legend class="sr-only">{{ field.question }}</legend>
+                  <div class="space-y-5">
+                    <div v-for="(option, optionIndex) in field.options" :key="optionIndex"
+                      class="relative flex items-start">
+                      <div class="flex h-6 items-center">
+                        <input :id="'field-' + index + '-' + optionIndex" type="checkbox" :value="option"
+                          v-model="field.value"
+                          class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                          @change="saveFormData" />
+                      </div>
+                      <div class="ml-3 text-sm leading-6">
+                        <label :for="'field-' + index + '-' + optionIndex" class="font-medium text-gray-900">{{ option
+                          }}</label>
+                      </div>
+                    </div>
+                  </div>
+                </fieldset>
+                <input v-if="Array.isArray(field.value) && field.value.includes('Other')" v-model="field.otherValue"
+                  type="text" :placeholder="'Specify other ' + field.question.toLowerCase()"
+                  class="mt-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  @input="saveFormData" />
+              </div>
+
+              <p v-if="field.error" class="mt-2 text-sm text-red-600" :id="'field-' + index + '-error'">
                 {{ field.error }}
               </p>
             </div>
-          </div>
 
-          <!-- Image upload sections -->
-          <div class="mb-8 bg-gray-50 p-6 rounded-lg shadow-sm">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">
-              Full Robots Images
-            </h2>
-            <div
-              @dragover.prevent
-              @drop.prevent="handleDrop('fullRobot', $event)"
-              class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-indigo-500 transition-colors duration-300"
-            >
-              <input
-                type="file"
-                accept="image/*"
-                @change="handleFileSelect('fullRobot', $event)"
-                class="hidden"
-                ref="fullRobotInput"
-                multiple
-              />
-              <button
-                type="button"
-                @click="$refs.fullRobotInput.click()"
-                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                <Icon icon="mdi:upload" class="mr-2" />
-                Select Files
-              </button>
-              <p class="mt-2 text-sm text-gray-500">or drag and drop</p>
-              <p class="mt-1 text-xs text-gray-500">
-                PNG, JPG, JPEG, HEIC, GIF up to 50MB each
-              </p>
-            </div>
-            <div
-              v-if="fullRobotImages.length > 0"
-              class="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"
-            >
-              <div
-                v-for="(image, index) in fullRobotImages"
-                :key="index"
-                class="relative bg-white p-2 rounded-lg shadow"
-              >
-                <img
-                  :src="image.url"
-                  :alt="image.name"
-                  class="w-full h-32 object-cover rounded-lg"
-                />
-                <div class="mt-2 text-xs text-gray-600 truncate">
-                  {{ image.name }}
+            <!-- Image upload sections -->
+            <div class="space-y-6">
+              <div v-for="(imageType, typeIndex) in ['fullRobot', 'driveTrain']" :key="typeIndex" class="bg-gray-50 p-6 rounded-lg shadow-sm">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                  {{ imageType === 'fullRobot' ? 'Full Robots Images' : 'Drive Train Images' }}
+                </h2>
+                <div @dragover.prevent @drop.prevent="handleDrop(imageType as 'fullRobot' | 'driveTrain', $event)"
+                  class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-indigo-500 transition-colors duration-300"
+                  @click="imageRefs[imageType + 'Input']?.click()">
+                  <input type="file" accept="image/*" @change="handleFileSelect(imageType as 'fullRobot' | 'driveTrain', $event)" class="hidden"
+                    :ref="el => { if (el) imageRefs[imageType + 'Input'] = el as HTMLInputElement }" multiple />
+                  <Icon icon="fa6-solid:image" class="mx-auto h-12 w-12 text-gray-400" aria-hidden="true" />
+                  <div class="mt-4 flex flex-col text-sm leading-6 text-gray-600 justify-center">
+                    <span class="relative cursor-pointer rounded-md font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500">
+                      Upload a file
+                    </span>
+                    <!-- <Icon icon="mdi:upload" class="absolute top-0 left-0 w-5 h-5 m-1" aria-hidden="true" /> -->
+                    <p class="pl-1">or drag and drop</p>
+                  </div>
+                  <p class="text-xs leading-5 text-gray-400 md:text-gray-600">PNG, JPG, JPEG, HEIC, GIF up to 50MB each</p>
                 </div>
-                <div class="text-xs text-gray-500">
-                  {{ formatFileSize(image.size) }}
+                <div v-if="(imageType === 'fullRobot' ? fullRobotImages : driveTrainImages).length > 0" class="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  <div v-for="(image, index) in (imageType === 'fullRobot' ? fullRobotImages : driveTrainImages)" :key="index" class="relative bg-white p-2 rounded-lg shadow">
+                    <img :src="image.url" :alt="image.name" class="w-full h-32 object-cover rounded-lg" />
+                    <div class="mt-2 text-xs text-gray-600 truncate">{{ image.name }}</div>
+                    <div class="text-xs text-gray-500">{{ formatFileSize(image.size) }}</div>
+                    <button @click="confirmRemoveImage(imageType as 'fullRobot' | 'driveTrain', index)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 focus:outline-none">
+                      <Icon icon="mdi:close" />
+                    </button>
+                  </div>
                 </div>
-                <button
-                  @click="confirmRemoveImage('fullRobot', index)"
-                  class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 focus:outline-none"
-                >
-                  <Icon icon="mdi:close" />
-                </button>
               </div>
             </div>
-          </div>
 
-          <div class="mb-8 bg-gray-50 p-6 rounded-lg shadow-sm">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">
-              Drive Train Images
-            </h2>
-            <div
-              @dragover.prevent
-              @drop.prevent="handleDrop('driveTrain', $event)"
-              class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-indigo-500 transition-colors duration-300"
-            >
-              <input
-                type="file"
-                accept="image/*"
-                @change="handleFileSelect('driveTrain', $event)"
-                class="hidden"
-                ref="driveTrainInput"
-                multiple
-              />
-              <button
-                type="button"
-                @click="$refs.driveTrainInput.click()"
-                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                <Icon icon="mdi:upload" class="mr-2" />
-                Select Files
+            <div class="mt-8">
+              <button type="submit"
+                class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                <Icon icon="mdi:send" class="mr-2" />
+                Submit Questionnaire
               </button>
-              <p class="mt-2 text-sm text-gray-500">or drag and drop</p>
-              <p class="mt-1 text-xs text-gray-500">
-                PNG, JPG, JPEG, HEIC, GIF up to 50MB each
-              </p>
             </div>
-            <div
-              v-if="driveTrainImages.length > 0"
-              class="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"
-            >
-              <div
-                v-for="(image, index) in driveTrainImages"
-                :key="index"
-                class="relative bg-white p-2 rounded-lg shadow"
-              >
-                <img
-                  :src="image.url"
-                  :alt="image.name"
-                  class="w-full h-32 object-cover rounded-lg"
-                />
-                <div class="mt-2 text-xs text-gray-600 truncate">
-                  {{ image.name }}
-                </div>
-                <div class="text-xs text-gray-500">
-                  {{ formatFileSize(image.size) }}
-                </div>
-                <button
-                  @click="confirmRemoveImage('driveTrain', index)"
-                  class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 focus:outline-none"
-                >
-                  <Icon icon="mdi:close" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="mt-8">
-            <button
-              type="submit"
-              class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              <Icon icon="mdi:send" class="mr-2" />
-              Submit Questionnaire
-            </button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
-    </div>
+    </main>
   </div>
 </template>
 
@@ -591,12 +395,13 @@ const formFields = ref<FormField[]>([
 
 const fullRobotImages = ref<ImageData[]>([]);
 const driveTrainImages = ref<ImageData[]>([]);
+const imageRefs = ref<{ [key: string]: HTMLInputElement | null }>({});
 const teamSuggestions = ref<any[]>([]);
 const showTeamSuggestions = ref(false);
 const showDebugButton = ref(false);
 
 onMounted(async () => {
-  await loadTeams();
+  await loadTeams('');
   await loadEventId();
   const isNewUser = !localStorage.getItem("surveyTabs");
   if (isNewUser) {
@@ -613,14 +418,13 @@ const checkDebugInput = () => {
   }
 };
 
-const handleTeamNumberInput = (event: Event) => {
-  const input = event.target as HTMLInputElement;
-  const teamNumberField = formFields.value.find(field => field.question === 'Team number');
-  if (teamNumberField) {
-    teamNumberField.value = input.value;
+const handleTeamNumberInput = async (event: Event) => {
+  const input = (event.target as HTMLInputElement).value;
+  if (input.length >= 2) { // Only search when at least 2 characters are entered
+    await loadTeams(input);
+  } else {
+    teamSuggestions.value = [];
   }
-  checkDebugInput();
-  searchTeams();
 };
 
 const confirmDebugAction = () => {
@@ -641,10 +445,10 @@ const confirmDebugAction = () => {
 };
 
 const clearLocalStorageAndRefresh = () => {
-  // 清除所有 localStorage 内容
+  // Clear all localStorage content
   localStorage.clear();
 
-  // 清除缓存
+  // Clear all caches
   if ('caches' in window) {
     caches.keys().then((names) => {
       names.forEach((name) => {
@@ -653,7 +457,7 @@ const clearLocalStorageAndRefresh = () => {
     });
   }
 
-  // 强制刷新页面
+  // Force refresh the page
   location.reload();
 };
 
@@ -700,7 +504,7 @@ const addTab = () => {
   };
   tabs.value.push(newTab);
   switchTab(tabs.value.length - 1);
-  saveToLocalStorage(); // 确保新标签页添加后立即保存到本地存储
+  saveToLocalStorage(); // Once the new tab is added, save it to localStorage immediately
 };
 
 const confirmRemoveTab = (index: number) => {
@@ -806,14 +610,14 @@ const clearCurrentTab = () => {
   saveFormData();
 };
 
-const toggleDescription = (index: number) => {
-  formFields.value[index].showDescription =
-    !formFields.value[index].showDescription;
-};
+// const toggleDescription = (index: number) => {
+//   formFields.value[index].showDescription =
+//     !formFields.value[index].showDescription;
+// };
 
-const searchTeams = () => {
-  showTeamSuggestions.value = true;
-};
+// const searchTeams = () => {
+//   showTeamSuggestions.value = true;
+// };
 
 const selectTeam = (team: Team) => {
   formFields.value[0].value = team.team_number;
@@ -831,9 +635,9 @@ const selectTeam = (team: Team) => {
 //   showTeamSuggestions.value = teamSuggestions.value.length > 0
 // }
 
-const loadTeams = async () => {
+const loadTeams = async (query: string) => {
   try {
-    const response = await fetch("https://api.frc695.com/api/team/teams");
+    const response = await fetch(`https://api.frc695.com/api/team/teams?query=${query}&limit=20`);
     const data = await response.json();
     teamSuggestions.value = data;
   } catch (error) {
@@ -847,6 +651,13 @@ const hideTeamSuggestions = () => {
   }, 200);
 };
 
+onMounted(() => {
+  imageRefs.value = {
+    fullRobotInput: document.querySelector('input[ref="fullRobotInput"]') as HTMLInputElement,
+    driveTrainInput: document.querySelector('input[ref="driveTrainInput"]') as HTMLInputElement,
+  };
+});
+
 const handleFileSelect = async (
   type: "fullRobot" | "driveTrain",
   event: Event
@@ -859,7 +670,7 @@ const handleFileSelect = async (
       } else {
         Swal.fire(
           "Invalid File Type",
-          "Please upload only JPEG, PNG, or GIF images.",
+          "Please upload only JPEG, JPG, PNG, HEIC, or GIF images.",
           "error"
         );
       }
@@ -880,7 +691,7 @@ const handleDrop = async (
       } else {
         Swal.fire(
           "Invalid File Type",
-          "Please upload only JPEG, PNG, or GIF images.",
+          "Please upload only JPEG, JPG, PNG, HEIC, or GIF images.",
           "error"
         );
       }
@@ -900,7 +711,7 @@ const uploadImage = async (type: "fullRobot" | "driveTrain", file: File) => {
     });
     const data = await response.json();
     const imageData: ImageData = {
-      id: data.id, // 从响应中获取 id
+      id: data.id, // Get the image ID from the response
       url: data.url,
       name: file.name,
       size: file.size,
@@ -946,7 +757,7 @@ const removeImage = async (type: "fullRobot" | "driveTrain", index: number) => {
   try {
     const imageId = type === "fullRobot" ? fullRobotImages.value[index].id : driveTrainImages.value[index].id;
     await axios.delete(`https://api.frc695.com/api/images/${imageId}`);
-    
+
     if (type === "fullRobot") {
       fullRobotImages.value.splice(index, 1);
     } else {
