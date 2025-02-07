@@ -17,6 +17,7 @@
     "axios": "^1.7.5",
     "chart.js": "^4.4.4",
     "lodash": "^4.17.21",
+    "lodash-es": "^4.17.21",
     "sweetalert2": "^11.14.1",
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^11.0.1",
