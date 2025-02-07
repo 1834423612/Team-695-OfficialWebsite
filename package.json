@@ -12,6 +12,7 @@
     "@headlessui/vue": "^1.7.22",
     "@heroicons/vue": "^2.1.5",
     "@iconify/json": "^2.2.233",
+    "@tailwindcss/postcss": "^4.0.4",
     "@yeger/vue-masonry-wall": "^5.0.14",
     "axios": "^1.7.5",
     "chart.js": "^4.4.4",
