@@ -74,10 +74,10 @@
                             <option value="wheelType">Wheel Types</option>
                             <option value="scoringLocations">Scoring Locations</option>
                         </select>
-                        <div
+                        <!-- <div
                             class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                             <Icon icon="mdi:chevron-down" class="w-5 h-5" />
-                        </div>
+                        </div> -->
                     </div>
                     <div v-if="selectedChartType === 'all' || selectedChartType === 'driveTrain'" class="mb-8">
                         <h3 class="text-xl font-semibold mb-2">Drive Train Types</h3>
