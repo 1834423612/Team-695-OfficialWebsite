@@ -174,7 +174,7 @@
                   class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-indigo-500 transition-colors duration-300"
                   @click="imageRefs[imageType + 'Input']?.click()">
                   <input type="file" accept="image/*" @change="handleFileSelect(imageType as 'fullRobot' | 'driveTrain', $event)" class="hidden"
-                    :ref="(el: HTMLInputElement) => { if (el) imageRefs[imageType + 'Input'] = el as HTMLInputElement }" multiple />
+                    :ref="el => { if (el) imageRefs[imageType + 'Input'] = el as HTMLInputElement }" multiple />
                   <Icon icon="fa6-solid:image" class="mx-auto h-12 w-12 text-gray-400" aria-hidden="true" />
                   <div class="mt-4 flex flex-col text-sm leading-6 text-gray-600 justify-center">
                     <span class="relative cursor-pointer rounded-md font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500">
