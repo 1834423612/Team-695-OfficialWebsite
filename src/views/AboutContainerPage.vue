@@ -16,7 +16,7 @@
             <nav class="flex justify-center mb-8" aria-label="Tabs">
                 <div class="flex flex-wrap justify-center bg-white rounded-2xl md:rounded-full shadow-lg p-1">
                     <button v-for="tab in tabs" :key="tab.name" @click="selectTab(tab)"
-                        class="rounded-full px-6 py-3 text-sm font-medium transition-all duration-200 focus:outline-none"
+                        class="rounded-full px-6 py-3 text-sm font-medium transition-all duration-200 focus:outline-hidden"
                         :class="getTabClasses(tab)" :aria-current="tab.current ? 'page' : undefined">
                         {{ tab.name }}
                     </button>
