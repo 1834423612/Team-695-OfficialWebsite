@@ -1,12 +1,12 @@
 <template>
     <div class="flex min-h-screen flex-col bg-yellow-50">
-        <main class="flex-grow mb-8">
+        <main class="grow mb-8">
             <div class="relative overflow-hidden bg-yellow-100 py-16">
-                <!-- <div class="absolute left-0 top-0 h-1/2 w-1/2 bg-gradient-to-br from-yellow-200 to-transparent">
+                <!-- <div class="absolute left-0 top-0 h-1/2 w-1/2 bg-linear-to-br from-yellow-200 to-transparent">
                     <img src="https://r2.fastbirdcdn.online/Robotics/Robots/66ac2099b1841-20240802_Screenshot%202024-08-01%20193902.png" alt=""
                         class="h-full w-full object-cover opacity-30 mix-blend-overlay" />
                 </div>
-                <div class="absolute bottom-0 right-0 h-1/2 w-1/2 bg-gradient-to-tl from-yellow-200 to-transparent">
+                <div class="absolute bottom-0 right-0 h-1/2 w-1/2 bg-linear-to-tl from-yellow-200 to-transparent">
                     <img src="https://r2.fastbirdcdn.online/Robotics/Robots/66ac2099b1841-20240802_Screenshot%202024-08-01%20193902.png" alt=""
                         class="h-full w-full object-cover opacity-30 mix-blend-overlay" />
                 </div> -->
