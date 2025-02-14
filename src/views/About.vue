@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 min-h-screen py-16 px-4 sm:px-6 lg:px-8">
+  <div class="bg-linear-to-br from-blue-50 via-purple-50 to-pink-50 min-h-screen py-16 px-4 sm:px-6 lg:px-8">
     <div class="max-w-7xl mx-auto">
       <!-- Mission Section -->
       <section class="mb-24">
@@ -16,7 +16,7 @@
           </div>
           <div class="md:w-1/3 flex flex-col justify-center">
             <div v-for="stat in stats" :key="stat.label"
-              class="bg-gradient-to-r from-blue-100 to-purple-100 rounded-xl p-6 mb-6 transform transition-all duration-300 hover:scale-105">
+              class="bg-linear-to-r from-blue-100 to-purple-100 rounded-xl p-6 mb-6 transform transition-all duration-300 hover:scale-105">
               <dt class="text-lg font-medium text-gray-600 mb-2">{{ stat.label }}</dt>
               <dd class="text-4xl font-bold text-gray-800">{{ stat.value }}</dd>
             </div>

@@ -1,5 +1,5 @@
 <template>
-    <div class="bg-gray-100 p-4 rounded shadow overflow-x-auto">
+    <div class="bg-gray-100 p-4 rounded-sm shadow-sm overflow-x-auto">
         <form @submit.prevent="submitFeedback">
             <div class="mb-4">
                 <label for="nickname" class="block mb-2">Your Name
