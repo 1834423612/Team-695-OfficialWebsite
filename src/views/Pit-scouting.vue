@@ -10,7 +10,7 @@
 
     <main class="-mt-32">
       <div class="mx-auto md:mx-8 max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
-        <div class="bg-white rounded-lg shadow-sm px-5 py-6 sm:px-6">
+        <div class="bg-white rounded-lg shadow px-5 py-6 sm:px-6">
           <!-- Tabs -->
           <div class="mb-6 bg-gray-50 rounded-md p-4">
             <div class="flex flex-wrap gap-2 mb-2">
@@ -67,7 +67,7 @@
               <p v-if="field.description" class="text-sm text-gray-500 mb-2">{{ field.description }}</p>
 
               <!-- Team Number Autofill -->
-              <div v-if="field.type === 'autocomplete'" class="relative rounded-md shadow-xs">
+              <div v-if="field.type === 'autocomplete'" class="relative rounded-md shadow-sm">
                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                   <Icon icon="mdi:magnify" class="h-5 w-5 text-gray-400" aria-hidden="true" />
                 </div>
@@ -77,7 +77,7 @@
                 ]" placeholder="Search teams..." @input="handleTeamNumberInput" @focus="showTeamSuggestions = true"
                   @blur="hideTeamSuggestions" />
                 <div v-if="showTeamSuggestions && filteredTeamSuggestions.length > 0"
-                  class="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-hidden sm:text-sm">
+                  class="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
                   <div v-for="team in filteredTeamSuggestions" :key="team.team_number"
                     @mousedown.prevent="selectTeam(team)"
                     class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-gray-100">
@@ -92,7 +92,7 @@
               </div>
 
               <!-- Input fields -->
-              <div v-if="field.type === 'text' || field.type === 'number'" class="relative rounded-md shadow-xs">
+              <div v-if="field.type === 'text' || field.type === 'number'" class="relative rounded-md shadow-sm">
                 <input :id="'field-' + index" :type="field.type" v-model="field.value" :required="field.required"
                   :class="[
                     'block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6',
@@ -107,7 +107,7 @@
               <!-- Textarea -->
               <textarea v-else-if="field.type === 'textarea'" :id="'field-' + index" v-model="field.value"
                 :required="field.required" rows="3" :class="[
-                  'block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-xs ring-1 ring-inset focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6',
+                  'block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6',
                   field.error ? 'ring-red-300 placeholder:text-red-300 focus:ring-red-500' : 'ring-gray-300 placeholder:text-gray-400 focus:ring-indigo-600'
                 ]" @input="saveFormData" @blur="validateField(field)"></textarea>
 
@@ -129,7 +129,7 @@
                 </fieldset>
                 <input v-if="field.value === 'Other'" v-model="field.otherValue" type="text"
                   :placeholder="'Specify other ' + field.question.toLowerCase()"
-                  class="mt-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  class="mt-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                   @input="saveFormData" />
               </div>
 
@@ -143,7 +143,7 @@
                       <div class="flex h-6 items-center">
                         <input :id="'field-' + index + '-' + optionIndex" type="checkbox" :value="option"
                           v-model="field.value"
-                          class="h-4 w-4 rounded-sm border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                          class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
                           @change="saveFormData" />
                       </div>
                       <div class="ml-3 text-sm leading-6">
@@ -155,7 +155,7 @@
                 </fieldset>
                 <input v-if="Array.isArray(field.value) && field.value.includes('Other')" v-model="field.otherValue"
                   type="text" :placeholder="'Specify other ' + field.question.toLowerCase()"
-                  class="mt-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  class="mt-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                   @input="saveFormData" />
               </div>
 
@@ -166,7 +166,7 @@
 
             <!-- Image upload sections -->
             <div class="space-y-6">
-              <div v-for="(imageType, typeIndex) in ['fullRobot', 'driveTrain']" :key="typeIndex" class="bg-gray-50 p-6 rounded-lg shadow-xs">
+              <div v-for="(imageType, typeIndex) in ['fullRobot', 'driveTrain']" :key="typeIndex" class="bg-gray-50 p-6 rounded-lg shadow-sm">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">
                   {{ imageType === 'fullRobot' ? 'Full Robots Images' : 'Drive Train Images' }}
                 </h2>
@@ -177,7 +177,7 @@
                     :ref="el => { if (el) imageRefs[imageType + 'Input'] = el as HTMLInputElement }" multiple />
                   <Icon icon="fa6-solid:image" class="mx-auto h-12 w-12 text-gray-400" aria-hidden="true" />
                   <div class="mt-4 flex flex-col text-sm leading-6 text-gray-600 justify-center">
-                    <span class="relative cursor-pointer rounded-md font-semibold text-indigo-600 focus-within:outline-hidden focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500">
+                    <span class="relative cursor-pointer rounded-md font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500">
                       Upload a file
                     </span>
                     <!-- <Icon icon="mdi:upload" class="absolute top-0 left-0 w-5 h-5 m-1" aria-hidden="true" /> -->
@@ -186,11 +186,11 @@
                   <p class="text-xs leading-5 text-gray-400 md:text-gray-600">PNG, JPG, JPEG, HEIC, GIF up to 50MB each</p>
                 </div>
                 <div v-if="(imageType === 'fullRobot' ? fullRobotImages : driveTrainImages).length > 0" class="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  <div v-for="(image, index) in (imageType === 'fullRobot' ? fullRobotImages : driveTrainImages)" :key="index" class="relative bg-white p-2 rounded-lg shadow-sm">
+                  <div v-for="(image, index) in (imageType === 'fullRobot' ? fullRobotImages : driveTrainImages)" :key="index" class="relative bg-white p-2 rounded-lg shadow">
                     <img :src="image.url" :alt="image.name" class="w-full h-32 object-cover rounded-lg" />
                     <div class="mt-2 text-xs text-gray-600 truncate">{{ image.name }}</div>
                     <div class="text-xs text-gray-500">{{ formatFileSize(image.size) }}</div>
-                    <button @click="confirmRemoveImage(imageType as 'fullRobot' | 'driveTrain', index)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 focus:outline-hidden">
+                    <button @click="confirmRemoveImage(imageType as 'fullRobot' | 'driveTrain', index)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 focus:outline-none">
                       <Icon icon="mdi:close" />
                     </button>
                   </div>
@@ -200,7 +200,7 @@
 
             <div class="mt-8">
               <button type="submit"
-                class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-xs text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
                 <Icon icon="mdi:send" class="mr-2" />
                 Submit Questionnaire
               </button>
