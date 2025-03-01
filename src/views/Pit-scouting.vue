@@ -425,7 +425,18 @@ const handleTeamNumberInput = async (event: Event) => {
   } else {
     teamSuggestions.value = [];
   }
+  showTeamSuggestions.value = true; // Add this line to ensure suggestions are shown
 };
+
+const filteredTeamSuggestions = computed(() => {
+  const query = formFields.value[0]?.value?.toLowerCase() || '';
+  if (!query) return [];
+  return teamSuggestions.value.filter(
+    (team) =>
+      team.team_number.includes(query) ||
+      team.team_name.toLowerCase().includes(query)
+  );
+});
 
 const confirmDebugAction = () => {
   Swal.fire({
@@ -470,15 +481,6 @@ const loadEventId = async () => {
     console.error("Error loading event ID:", error);
   }
 };
-
-const filteredTeamSuggestions = computed(() => {
-  const query = formFields.value[0].value.toLowerCase();
-  return teamSuggestions.value.filter(
-    (team) =>
-      team.team_number.includes(query) ||
-      team.team_name.toLowerCase().includes(query)
-  );
-});
 
 watch(
   [tabs, currentTab],
