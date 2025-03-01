@@ -3,7 +3,7 @@
     <Menu as="div" class="relative md:hidden">
         <div>
             <MenuButton
-                class="inline-flex justify-center rounded-md bg-black/20 px-4 py-2 text-sm font-medium text-white hover:bg-black/30 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-white/75">
+                class="inline-flex justify-center rounded-md bg-black/20 px-4 py-2 text-sm font-medium text-white hover:bg-black/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75">
                 {{ buttonText }}
                 <Icon class="ml-2 h-5 w-5 text-violet-200 hover:text-violet-100" icon="mingcute:menu-fill" aria-hidden="true" />
                 <!-- <ChevronDownIcon class="-mr-1 ml-2 h-5 w-5 text-violet-200 hover:text-violet-100" aria-hidden="true" /> -->
@@ -16,7 +16,7 @@
             leave-active-class="transition duration-75 ease-in" leave-from-class="transform scale-100 opacity-100"
             leave-to-class="transform scale-95 opacity-0">
             <MenuItems
-                class="absolute right-0 z-20 mt-2 w-28 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black/5 focus:outline-hidden overflow-hidden">
+                class="absolute right-0 z-20 mt-2 w-28 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black/5 focus:outline-none overflow-hidden">
                 <div>
                     <MenuItem v-for="(item, index) in menuItems" :key="index">
                         <router-link :to="item.link"

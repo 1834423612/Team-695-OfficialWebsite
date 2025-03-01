@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-100">
-    <div class="bg-indigo-600 pb-32 rounded-b-md md:rounded-b-xl">
+    <div class="bg-indigo-600 pb-32 rounded-b-md md:rounded-b-xl w-full">
       <header class="py-10">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h1 class="text-center text-3xl font-bold tracking-tight text-white">Pit-Scouting Form</h1>
@@ -8,8 +8,8 @@
       </header>
     </div>
 
-    <main class="-mt-32">
-      <div class="mx-auto md:mx-8 max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
+    <main class="-mt-32 w-full flex justify-center">
+      <div class="mx-auto md:mx-8 max-w-7xl px-4 pb-12 sm:px-6 lg:px-8 w-full">
         <div class="bg-white rounded-lg shadow px-5 py-6 sm:px-6">
           <!-- Tabs -->
           <div class="mb-6 bg-gray-50 rounded-md p-4">
@@ -425,7 +425,18 @@ const handleTeamNumberInput = async (event: Event) => {
   } else {
     teamSuggestions.value = [];
   }
+  showTeamSuggestions.value = true; // Add this line to ensure suggestions are shown
 };
+
+const filteredTeamSuggestions = computed(() => {
+  const query = formFields.value[0]?.value?.toLowerCase() || '';
+  if (!query) return [];
+  return teamSuggestions.value.filter(
+    (team) =>
+      team.team_number.includes(query) ||
+      team.team_name.toLowerCase().includes(query)
+  );
+});
 
 const confirmDebugAction = () => {
   Swal.fire({
@@ -470,15 +481,6 @@ const loadEventId = async () => {
     console.error("Error loading event ID:", error);
   }
 };
-
-const filteredTeamSuggestions = computed(() => {
-  const query = formFields.value[0].value.toLowerCase();
-  return teamSuggestions.value.filter(
-    (team) =>
-      team.team_number.includes(query) ||
-      team.team_name.toLowerCase().includes(query)
-  );
-});
 
 watch(
   [tabs, currentTab],

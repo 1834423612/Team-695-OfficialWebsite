@@ -39,9 +39,9 @@
                                         </div>
                                         <div class="mt-6">
                                             <h4 class="text-base font-semibold leading-6 text-gray-900">
-                                                <!-- Previous code: <a :href="action.link" class="focus:outline-hidden"> -->
+                                                <!-- Previous code: <a :href="action.link" class="focus:outline-none"> -->
                                                 <a :href="action.link" target="_blank" rel="noopener noreferrer"
-                                                    class="focus:outline-hidden">
+                                                    class="focus:outline-none">
                                                     <span class="absolute inset-0" aria-hidden="true" />
                                                     {{ action.title }}
                                                 </a>

@@ -1,5 +1,5 @@
 <template>
-    <div class="rounded-sm overflow-hidden shadow-lg">
+    <div class="rounded overflow-hidden shadow-lg">
         <img class="w-full" :src="image" alt="Gallery Image" />
         <div class="p-4">
             <h3 class="font-bold text-lg">{{ title }}</h3>

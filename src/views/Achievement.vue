@@ -1,5 +1,5 @@
 <template>
-    <div class="min-h-screen bg-linear-to-br from-teal-50 to-emerald-100 py-16 px-4 sm:px-6 lg:px-8">
+    <div class="min-h-screen bg-gradient-to-br from-teal-50 to-emerald-100 py-16 px-4 sm:px-6 lg:px-8">
         <div class="max-w-7xl mx-auto">
             <h1 class="text-5xl max-[425px]:text-4xl max-[320px]:text-2xl font-extrabold text-center mb-16 text-emerald-800 tracking-tight">
                 Our Achievements
