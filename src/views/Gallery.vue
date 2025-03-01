@@ -1,5 +1,5 @@
 <template>
-    <div class="min-h-screen bg-linear-to-br from-sky-100 to-indigo-200">
+    <div class="min-h-screen bg-gradient-to-br from-sky-100 to-indigo-200">
         <header class="relative">
             <img src="https://r2.fastbirdcdn.online/Robotics/Robots/66ad276113a1c-20240803_RoboticsTeamPittsburghRegional.jpg"
                 alt="Team Photo" class="w-full h-[40vh] object-cover" />

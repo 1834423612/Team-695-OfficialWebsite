@@ -10,7 +10,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="relative">
                         <select v-model="queryParams.eventId" id="eventId"
-                            class="peer h-10 w-full border-b-2 border-gray-300 text-gray-900 bg-transparent appearance-none focus:outline-hidden focus:border-blue-500">
+                            class="peer h-10 w-full border-b-2 border-gray-300 text-gray-900 bg-transparent appearance-none focus:outline-none focus:border-blue-500">
                             <option value="">Select Event ID</option>
                             <option v-for="eventId in uniqueEventIds" :key="eventId" :value="eventId">{{ eventId }}
                             </option>
@@ -22,7 +22,7 @@
                     </div>
                     <div class="relative">
                         <input v-model="queryParams.formId" type="text" id="formId"
-                            class="peer h-10 w-full border-b-2 border-gray-300 text-gray-900 placeholder-transparent focus:outline-hidden focus:border-blue-500"
+                            class="peer h-10 w-full border-b-2 border-gray-300 text-gray-900 placeholder-transparent focus:outline-none focus:border-blue-500"
                             placeholder="Form ID" />
                         <label for="formId"
                             class="absolute left-0 -top-3.5 text-gray-600 text-sm transition-all peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-gray-600 peer-focus:text-sm">
@@ -31,7 +31,7 @@
                     </div>
                     <div class="relative">
                         <input v-model="queryParams.teamNumber" type="text" id="teamNumber"
-                            class="peer h-10 w-full border-b-2 border-gray-300 text-gray-900 placeholder-transparent focus:outline-hidden focus:border-blue-500"
+                            class="peer h-10 w-full border-b-2 border-gray-300 text-gray-900 placeholder-transparent focus:outline-none focus:border-blue-500"
                             placeholder="Team Number" />
                         <label for="teamNumber"
                             class="absolute left-0 -top-3.5 text-gray-600 text-sm transition-all peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-gray-600 peer-focus:text-sm">
@@ -40,7 +40,7 @@
                     </div>
                 </div>
                 <button type="submit"
-                    class="mt-6 px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-300 ease-in-out transform hover:scale-105">
+                    class="mt-6 px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-300 ease-in-out transform hover:scale-105">
                     <Icon icon="mdi:magnify" class="inline-block mr-2" />
                     Search
                 </button>
@@ -68,7 +68,7 @@
                     <h2 class="text-2xl font-semibold mb-6 text-gray-800">Data Visualization</h2>
                     <div class="mb-6 relative">
                         <select v-model="selectedChartType" id="chartType"
-                            class="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 pr-8 rounded-md leading-tight focus:outline-hidden focus:bg-white focus:border-blue-500">
+                            class="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 pr-8 rounded-md leading-tight focus:outline-none focus:bg-white focus:border-blue-500">
                             <option value="all">All Charts</option>
                             <option value="driveTrain">Drive Train Types</option>
                             <option value="wheelType">Wheel Types</option>

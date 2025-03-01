@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-linear-to-br from-blue-50 via-purple-50 to-pink-50 min-h-screen py-16 px-4 sm:px-6 lg:px-8">
+  <div class="bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 min-h-screen py-16 px-4 sm:px-6 lg:px-8">
     <div class="max-w-7xl mx-auto">
       <!-- Mentors Section -->
       <section id="mentors" class="mb-20">
@@ -9,12 +9,12 @@
             class="bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl group">
             <div class="p-6 relative">
               <div
-                class="absolute top-0 right-0 w-24 h-24 bg-linear-to-br from-blue-200 to-purple-200 rounded-bl-full opacity-50 group-hover:opacity-75 transition-opacity duration-300">
+                class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-200 to-purple-200 rounded-bl-full opacity-50 group-hover:opacity-75 transition-opacity duration-300">
               </div>
               <h3 class="text-2xl font-semibold text-gray-800 mb-2 relative z-10">{{ mentor.name }}</h3>
               <p class="text-gray-600 mb-4 relative z-10">{{ mentor.role }}</p>
               <!-- <router-link :to="`/mentors/${mentor.name}`"
-                class="inline-block bg-linear-to-r from-blue-500 to-purple-500 text-white font-medium py-2 px-4 rounded-full hover:from-blue-600 hover:to-purple-600 transition-all duration-300 relative z-10">
+                class="inline-block bg-gradient-to-r from-blue-500 to-purple-500 text-white font-medium py-2 px-4 rounded-full hover:from-blue-600 hover:to-purple-600 transition-all duration-300 relative z-10">
                 Details
               </router-link> -->
             </div>
@@ -25,7 +25,7 @@
             class="hidden sm:block bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl group">
             <div class="p-6 relative">
               <div
-                class="absolute top-0 right-0 w-24 h-24 bg-linear-to-br from-blue-200 to-purple-200 rounded-bl-full opacity-50 group-hover:opacity-75 transition-opacity duration-300">
+                class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-200 to-purple-200 rounded-bl-full opacity-50 group-hover:opacity-75 transition-opacity duration-300">
               </div>
               <h3 class="text-2xl font-semibold text-center text-gray-800 mt-2 relative z-10">Thanks to these mentors
                 for their dedication!</h3>
@@ -61,7 +61,7 @@
             class="bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl group">
             <div class="p-6 relative">
               <div
-                class="absolute top-0 right-0 w-24 h-24 bg-linear-to-br from-green-200 to-blue-200 rounded-bl-full opacity-50 group-hover:opacity-75 transition-opacity duration-300">
+                class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-green-200 to-blue-200 rounded-bl-full opacity-50 group-hover:opacity-75 transition-opacity duration-300">
               </div>
               <h3 class="text-2xl font-semibold text-gray-800 mb-2 relative z-10">{{ maintainer.name }}</h3>
               <ul class="mb-4 relative z-10">
@@ -78,12 +78,12 @@
             class="hidden sm:flex sm:flex-col items-center bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl group">
             <div class="p-6 relative">
               <div
-                class="absolute top-0 right-0 w-24 h-24 bg-linear-to-br from-green-200 to-blue-200 rounded-bl-full opacity-50 group-hover:opacity-75 transition-opacity duration-300">
+                class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-green-200 to-blue-200 rounded-bl-full opacity-50 group-hover:opacity-75 transition-opacity duration-300">
               </div>
               <h3 class="text-2xl font-semibold text-center text-gray-800 mt-2 relative z-10">Want to know more?</h3>
             </div>
             <router-link to="/resources"
-              class="mb-4 inline-block bg-linear-to-r from-green-500 to-blue-500 text-white font-medium py-2 px-4 rounded-full hover:from-green-600 hover:to-blue-600 transition-all duration-300 relative z-10">
+              class="mb-4 inline-block bg-gradient-to-r from-green-500 to-blue-500 text-white font-medium py-2 px-4 rounded-full hover:from-green-600 hover:to-blue-600 transition-all duration-300 relative z-10">
               Go to Resources Page
             </router-link>
           </div>

@@ -7,11 +7,11 @@
                         
                         <nav class="flex" aria-label="Breadcrumb">
                             <ol role="list"
-                                class="flex flex-wrap py-2 space-x-2 rounded-md bg-white px-4 lg:px-6 shadow-sm">
+                                class="flex flex-wrap py-2 space-x-2 rounded-md bg-white px-4 lg:px-6 shadow">
                                 <li>
                                     <div>
                                         <a href="/" class="text-gray-400 hover:text-gray-500 flex items-center">
-                                            <Icon icon="ic:round-home" class="h-5 w-5 shrink-0"
+                                            <Icon icon="ic:round-home" class="h-5 w-5 flex-shrink-0"
                                                 aria-hidden="true" />
                                             <span class="sr-only">Home</span>
                                         </a>
@@ -20,7 +20,7 @@
                                 <li v-for="page in pages" :key="page.name">
                                     <div class="flex items-center">
                                         <Icon icon="iconamoon:arrow-right-2-duotone"
-                                            class="h-5 w-5 shrink-0 text-gray-500" aria-hidden="true" />
+                                            class="h-5 w-5 flex-shrink-0 text-gray-500" aria-hidden="true" />
                                         <a :href="page.href" class="ml-2 text-sm font-medium hover:text-gray-700"
                                             :class="page.current ? 'text-indigo-600 hover:text-indigo-400 hover:underline hover:decoration-2 hover:underline-offset-4' : 'text-gray-500'"
                                             :aria-current="page.current ? 'page' : undefined">
@@ -50,7 +50,7 @@
                                 </div>-->
                                 <div class="flex flex-col items-center text-center justify-center">
                                     <h2 class="font-medium title-font mt-4 text-gray-900 text-lg">{{ mentor.name }}</h2>
-                                    <div class="w-12 h-1 bg-blue-500 rounded-sm mt-2 mb-4"></div>
+                                    <div class="w-12 h-1 bg-blue-500 rounded mt-2 mb-4"></div>
                                     <p class="text-base">{{ mentor.role }}</p>
                                     <a :href="'mailto:' + mentor.email" class="flex mt-3 hover:text-gray-600">
                                         <i-line-md:email-twotone class="text-xl" />
