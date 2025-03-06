@@ -200,8 +200,8 @@
 
             <div class="mt-8">
               <button type="submit"
-                class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
-                <Icon icon="mdi:send" class="mr-2" />
+                class="w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                <Icon icon="mdi:send" class="mr-2 w-4 h-4" />
                 Submit Questionnaire
               </button>
             </div>
@@ -275,6 +275,7 @@ const formFields = ref<FormField[]>([
     i: "https://lh7-us.googleusercontent.com/pUWvHrPDa5IfrQcFalk4lO0e4PhD3sLMP0jyLJU8PTWWGfw5r-Wa4qDQNHhbu0byYLzXScP5lfTSUCsvbNI-FlwDY2L7Ra0-TgYqf5Eabw0INSFE3ah4QCqCqHFrsaPKyCOt8m2Yo-H2ie9E7apzh6c8AO147A",
     w: "50%",
     question: "Type of drive train",
+    description: "Select the type of drive train used in your robot design.",
     type: "radio",
     options: [
       'Tank Drive ("skid steer", plates on both sides of wheels)',
@@ -287,12 +288,12 @@ const formFields = ref<FormField[]>([
     showOtherInput: false,
     otherValue: "",
     showDescription: false,
-    description: "Select the type of drive train used in your robot design.",
   },
   {
     i: "https://lh7-us.googleusercontent.com/PCI7CaG88MiY50L7AM0CVTs9dRd3NQgqW4B2rd64vmjHaNDMEHR0EkWYqv-rzHBnGBC08NzWtr7W97lIk226Q9WVCPuTKuOSZcpb6eyNC5Q3HGmFQwp8005gRcxiS09RjeWUJQJTK-vQGDWd0QAbpSipLSkExw",
     w: "100%",
     question: "Type of wheels used",
+    description: "Choose the type of wheels used on your robot.",
     type: "radio",
     options: [
       "Traction",
@@ -305,7 +306,6 @@ const formFields = ref<FormField[]>([
     showOtherInput: false,
     otherValue: "",
     showDescription: false,
-    description: "Choose the type of wheels used on your robot.",
   },
   {
     question: "Intake Use:",
@@ -319,35 +319,50 @@ const formFields = ref<FormField[]>([
   {
     question: "Scoring Locations:",
     type: "checkbox",
-    options: ["Amp", "Speaker", "Trap", "Hang", "Harmony", "None", "Other"],
+    options: ["L1", "L2", "L3", "L4", "Algae in Processor", "Algae in Net", "Other"],
     value: [],
     required: true,
     showOtherInput: false,
     otherValue: "",
   },
   {
-    question: "Robot Weight (in pounds)",
+    question: "Cage Climbing:",
+    type: "checkbox",
+    options: ["Deep Climb", "Shallow Climb", "No Climb"],
+    value: [],
+    required: true,
+  },
+  {
+    question: "Robot Weight",
+    description: "Enter the weight of the robot in pounds.",
     type: "number",
     required: true,
     value: null,
   },
   {
-    question:
-      "Robot Dimension (Length in Inches) without bumpers - front to back",
+    question: "Robot Length",
+    description: "Enter the length of the robot in inches without bumpers(front to back).",
     type: "number",
     required: true,
     value: null,
   },
   {
-    question:
-      "Robot Dimension (Width in Inches) without bumpers - left to right",
+    question: "Robot Width",
+    description: "Enter the width of the robot in inches without bumpers(left to right).",
     type: "number",
     required: true,
     value: null,
   },
   {
-    question:
-      "Robot Dimension (Height in Inches) from floor to highest point on robot at the start of the match",
+    question: "Robot Height",
+    description: "Enter the height of the robot in inches from the floor to the highest point on the robot at the start of the match.",
+    type: "number",
+    required: true,
+    value: null,
+  },
+  {
+    question: "Height when fully extended",
+    description: "In inches.",
     type: "number",
     required: true,
     value: null,
@@ -363,21 +378,6 @@ const formFields = ref<FormField[]>([
     required: true,
     showOtherInput: false,
     otherValue: "",
-  },
-  {
-    question: "Maneuverability",
-    type: "checkbox",
-    options: ["Can it drive under the core", "Other"],
-    value: [],
-    required: false,
-    showOtherInput: false,
-    otherValue: "",
-  },
-  {
-    question: "Height when fully extended (in inches)",
-    type: "number",
-    required: true,
-    value: null,
   },
   {
     question: "Hours/Weeks of Practice",
