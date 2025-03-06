@@ -17,6 +17,7 @@ declare module 'vue' {
     CardHeader: typeof import('./src/components/CardHeader.vue')['default']
     CardStack: typeof import('./src/components/CardStack.vue')['default']
     CardTitle: typeof import('./src/components/CardTitle.vue')['default']
+    DebugTools: typeof import('./src/components/DebugTools/index.vue')['default']
     DesktopMenu: typeof import('./src/components/Header/DesktopMenu.vue')['default']
     DeviceInfoTable: typeof import('./src/components/Form/DeviceInfoTable.vue')['default']
     FeedBack: typeof import('./src/components/Form/FeedBack.vue')['default']

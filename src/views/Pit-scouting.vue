@@ -35,11 +35,13 @@
                 <Icon icon="mdi:refresh" class="mr-2 inline-block" />
                 Clear Current Tab
               </button>
-              <button v-if="showDebugButton"
+              <!-- v-if="showDebugButton" -->
+              <!-- <button
                 class="ml-2 px-4 py-2 rounded-md text-sm font-medium border-2 border-yellow-500 bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition-colors duration-200"
                 @click="confirmDebugAction">
                 Debug
-              </button>
+              </button> -->
+              <DebugTools />
             </div>
           </div>
 
@@ -218,6 +220,7 @@ import { Icon } from "@iconify/vue";
 import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
 import Swal from "sweetalert2";
+import DebugTools from "@/components/DebugTools/index.vue"
 
 interface FormField {
   // id: string;
@@ -398,7 +401,7 @@ const driveTrainImages = ref<ImageData[]>([]);
 const imageRefs = ref<{ [key: string]: HTMLInputElement | null }>({});
 const teamSuggestions = ref<any[]>([]);
 const showTeamSuggestions = ref(false);
-const showDebugButton = ref(false);
+// const showDebugButton = ref(true);
 
 onMounted(async () => {
   await loadTeams('');
@@ -411,12 +414,12 @@ onMounted(async () => {
   }
 });
 
-const checkDebugInput = () => {
-  const teamNumberField = formFields.value.find(field => field.question === 'Team number');
-  if (teamNumberField) {
-    showDebugButton.value = teamNumberField.value === 'debug';
-  }
-};
+// const checkDebugInput = () => {
+//   const teamNumberField = formFields.value.find(field => field.question === 'Team number');
+//   if (teamNumberField) {
+//     showDebugButton.value = teamNumberField.value === 'debug';
+//   }
+// };
 
 const handleTeamNumberInput = async (event: Event) => {
   const input = (event.target as HTMLInputElement).value;
@@ -438,39 +441,39 @@ const filteredTeamSuggestions = computed(() => {
   );
 });
 
-const confirmDebugAction = () => {
-  Swal.fire({
-    title: "Debug Action",
-    text: "Are you sure you want to clear all local storage and cache? This action cannot be undone.",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonColor: "#d33",
-    cancelButtonColor: "#3085d6",
-    confirmButtonText: "Yes, clear it!",
-    reverseButtons: true,
-  }).then((result) => {
-    if (result.isConfirmed) {
-      clearLocalStorageAndRefresh();
-    }
-  });
-};
+// const confirmDebugAction = () => {
+//   Swal.fire({
+//     title: "Debug Action",
+//     text: "Are you sure you want to clear all local storage and cache? This action cannot be undone.",
+//     icon: "warning",
+//     showCancelButton: true,
+//     confirmButtonColor: "#d33",
+//     cancelButtonColor: "#3085d6",
+//     confirmButtonText: "Yes, clear it!",
+//     reverseButtons: true,
+//   }).then((result) => {
+//     if (result.isConfirmed) {
+//       clearLocalStorageAndRefresh();
+//     }
+//   });
+// };
 
-const clearLocalStorageAndRefresh = () => {
-  // Clear all localStorage content
-  localStorage.clear();
+// const clearLocalStorageAndRefresh = () => {
+//   // Clear all localStorage content
+//   localStorage.clear();
 
-  // Clear all caches
-  if ('caches' in window) {
-    caches.keys().then((names) => {
-      names.forEach((name) => {
-        caches.delete(name);
-      });
-    });
-  }
+//   // Clear all caches
+//   if ('caches' in window) {
+//     caches.keys().then((names) => {
+//       names.forEach((name) => {
+//         caches.delete(name);
+//       });
+//     });
+//   }
 
-  // Force refresh the page
-  location.reload();
-};
+//   // Force refresh the page
+//   location.reload();
+// };
 
 const loadEventId = async () => {
   try {
@@ -562,7 +565,7 @@ const switchTab = (index: number) => {
   currentTab.value = index;
   formFields.value = JSON.parse(JSON.stringify(tabs.value[index].formData));
   loadImagesFromLocalStorage();
-  checkDebugInput();
+  // checkDebugInput();
 };
 
 const confirmClearCurrentTab = () => {
