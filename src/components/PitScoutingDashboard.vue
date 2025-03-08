@@ -17,13 +17,13 @@
                     </h2>
                     <form @submit.prevent="handleSearch" class="space-y-6">
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <!-- Event ID Filter -->
+                            <!-- Event ID Filter - This one triggers search immediately -->
                             <div class="relative">
-                                <select v-model="queryParams.eventId" id="eventId"
+                                <select v-model="queryParams.eventId" id="eventId" @change="handleEventChange"
                                     class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white">
                                     <option value="">All Events</option>
                                     <option v-for="eventId in uniqueEventIds" :key="eventId" :value="eventId">{{ eventId
-                                    }}</option>
+                                        }}</option>
                                 </select>
                                 <label for="eventId"
                                     class="absolute -top-2.5 left-2 bg-white px-1 text-xs font-medium text-indigo-600">
@@ -31,7 +31,7 @@
                                 </label>
                             </div>
 
-                            <!-- Form ID Filter -->
+                            <!-- Form ID Filter - Only searches when button is clicked -->
                             <div class="relative">
                                 <input v-model="queryParams.formId" type="text" id="formId"
                                     class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
@@ -42,7 +42,7 @@
                                 </label>
                             </div>
 
-                            <!-- Team Number Filter -->
+                            <!-- Team Number Filter - Only searches when button is clicked -->
                             <div class="relative">
                                 <input v-model="queryParams.teamNumber" type="text" id="teamNumber"
                                     class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
@@ -86,7 +86,8 @@
             </div>
 
             <!-- Empty State -->
-            <div v-else-if="filteredSurveyData.length === 0" class="text-center py-12 bg-white rounded-xl shadow-md">
+            <div v-else-if="filteredSurveyData.length === 0"
+                class="flex flex-col items-center text-center py-12 bg-white rounded-xl shadow-md">
                 <Icon icon="mdi:robot-confused" class="text-6xl text-gray-400 mb-4" />
                 <p class="text-xl text-gray-600">
                     No data available. Try adjusting your search criteria.
@@ -104,7 +105,7 @@
                             Data Visualization
                         </h2>
 
-                        <!-- Modified Chart Type Selector -->
+                        <!-- Chart Type Selector -->
                         <div class="mb-6 relative">
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 Select Charts to Display
@@ -137,17 +138,84 @@
                             </div>
                         </div>
 
-                        <!-- Modified Chart Display -->
-                        <div v-if="selectedChartTypes.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div v-for="field in selectedChartTypes" :key="field"
-                                class="bg-gray-50 p-4 rounded-lg shadow-md">
-                                <h3 class="text-lg font-semibold mb-4 text-gray-800">{{ formatFieldName(field) }}</h3>
-                                <div class="h-64">
-                                    <Bar :data="generateChartData(field).data" :options="getChartOptions() as any" />
+                        <!-- Chart Display with Adaptive Layout -->
+                        <div v-if="selectedChartTypes.length > 0" class="space-y-6">
+                            <!-- First row: Always 2 columns if there are at least 2 charts -->
+                            <div v-if="selectedChartTypes.length >= 2" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div v-for="(field, index) in selectedChartTypes.slice(0, 2)" :key="field"
+                                    class="bg-gray-50 p-4 rounded-lg shadow-md border-2 border-dashed border-blue-300 hover:border-blue-500 transition-colors duration-200">
+                                    <h3 class="text-lg font-semibold mb-4 text-gray-800 flex items-center">
+                                        <span
+                                            class="w-6 h-6 flex items-center justify-center bg-blue-500 text-white rounded-full text-xs mr-2">
+                                            {{ index + 1 }}
+                                        </span>
+                                        {{ formatFieldName(field) }}
+                                    </h3>
+                                    <div class="h-64">
+                                        <Bar :data="generateChartData(field).data"
+                                            :options="getChartOptions() as any" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Single chart (either the only one or the first one) -->
+                            <div v-if="selectedChartTypes.length === 1" class="grid grid-cols-1 gap-6">
+                                <div
+                                    class="bg-gray-50 p-4 rounded-lg shadow-md border-2 border-dashed border-blue-300 hover:border-blue-500 transition-colors duration-200">
+                                    <h3 class="text-lg font-semibold mb-4 text-gray-800 flex items-center">
+                                        <span
+                                            class="w-6 h-6 flex items-center justify-center bg-blue-500 text-white rounded-full text-xs mr-2">
+                                            1
+                                        </span>
+                                        {{ formatFieldName(selectedChartTypes[0]) }}
+                                    </h3>
+                                    <div class="h-64">
+                                        <Bar :data="generateChartData(selectedChartTypes[0]).data"
+                                            :options="getChartOptions() as any" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Remaining charts (3rd and beyond) -->
+                            <div v-if="selectedChartTypes.length > 2" class="space-y-6">
+                                <!-- For the 3rd chart, full width -->
+                                <div v-if="selectedChartTypes.length === 3" class="grid grid-cols-1 gap-6">
+                                    <div
+                                        class="bg-gray-50 p-4 rounded-lg shadow-md border-2 border-dashed border-blue-300 hover:border-blue-500 transition-colors duration-200">
+                                        <h3 class="text-lg font-semibold mb-4 text-gray-800 flex items-center">
+                                            <span
+                                                class="w-6 h-6 flex items-center justify-center bg-blue-500 text-white rounded-full text-xs mr-2">
+                                                3
+                                            </span>
+                                            {{ formatFieldName(selectedChartTypes[2]) }}
+                                        </h3>
+                                        <div class="h-64">
+                                            <Bar :data="generateChartData(selectedChartTypes[2]).data"
+                                                :options="getChartOptions() as any" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- For 4+ charts, pair them in rows of 2 -->
+                                <div v-if="selectedChartTypes.length > 3" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div v-for="(field, index) in selectedChartTypes.slice(2)" :key="field"
+                                        class="bg-gray-50 p-4 rounded-lg shadow-md border-2 border-dashed border-blue-300 hover:border-blue-500 transition-colors duration-200">
+                                        <h3 class="text-lg font-semibold mb-4 text-gray-800 flex items-center">
+                                            <span
+                                                class="w-6 h-6 flex items-center justify-center bg-blue-500 text-white rounded-full text-xs mr-2">
+                                                {{ index + 3 }}
+                                            </span>
+                                            {{ formatFieldName(field) }}
+                                        </h3>
+                                        <div class="h-64">
+                                            <Bar :data="generateChartData(field).data"
+                                                :options="getChartOptions() as any" />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div v-else class="text-center py-8 bg-gray-50 rounded-lg">
+                        <div v-else class="flex flex-col items-center text-center py-8 bg-gray-50 rounded-lg">
                             <Icon icon="mdi:chart-line" class="text-4xl text-gray-400 mb-2" />
                             <p class="text-gray-600">Select charts to display visualization</p>
                         </div>
@@ -163,7 +231,7 @@
                             Event: {{ eventId }}
                         </h2>
 
-                        <!-- Modified Column Selector -->
+                        <!-- Column Selector -->
                         <div class="relative mb-4">
                             <button @click="showColumnSelector = !showColumnSelector"
                                 class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
@@ -174,75 +242,104 @@
                                 </span>
                             </button>
 
-                            <!-- Column Selector Modal -->
                             <div v-if="showColumnSelector"
-                                class="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center pt-20 z-50"
+                                class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-start justify-center pt-16 z-50 transition-all duration-300"
                                 @click="showColumnSelector = false">
-                                <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4" @click.stop>
-                                    <div class="px-6 py-4 border-b border-gray-200">
-                                        <h3 class="text-lg font-medium text-gray-900">Customize Columns</h3>
+                                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl mx-4 transform transition-all duration-300 scale-100 opacity-100"
+                                    @click.stop>
+                                    <div
+                                        class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-t-xl flex justify-between items-center">
+                                        <h3 class="text-lg font-bold flex items-center">
+                                            <Icon icon="mdi:view-column-outline" class="mr-2 w-5 h-5" />
+                                            Customize Columns
+                                        </h3>
+                                        <button @click="showColumnSelector = false"
+                                            class="text-white hover:text-gray-200 transition-colors duration-200 focus:outline-none">
+                                            <Icon icon="mdi:close" class="w-6 h-6" />
+                                        </button>
                                     </div>
                                     <div class="px-6 py-4 max-h-[60vh] overflow-y-auto">
-                                        <div class="space-y-2">
+                                        <div class="space-y-4">
                                             <!-- Available Fields -->
-                                            <div class="mb-4">
-                                                <h4 class="text-sm font-medium text-gray-700 mb-2">Available Fields</h4>
-                                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            <div class="mb-6">
+                                                <h4
+                                                    class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                                                    <Icon icon="mdi:playlist-plus" class="mr-2 w-5 h-5 text-blue-500" />
+                                                    Available Fields
+                                                </h4>
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                     <div v-for="field in availableFieldsNotSelected" :key="field"
-                                                        class="flex items-center p-2 bg-gray-50 rounded-md hover:bg-gray-100">
-                                                        <span class="truncate flex-1" :title="formatFieldName(field)">
+                                                        class="flex items-center p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-800/40 transition-all duration-200 group">
+                                                        <span class="truncate flex-1 text-gray-800 dark:text-gray-200"
+                                                            :title="formatFieldName(field)">
                                                             {{ formatFieldName(field) }}
                                                         </span>
                                                         <button @click="addField(field)"
-                                                            class="ml-2 text-gray-400 hover:text-green-500">
-                                                            <Icon icon="mdi:plus" />
+                                                            class="ml-2 p-1.5 rounded-full bg-white dark:bg-gray-700 text-blue-500 hover:text-white hover:bg-blue-500 dark:hover:bg-blue-600 transition-all duration-200 shadow-sm hover:shadow transform hover:scale-105">
+                                                            <Icon icon="mdi:plus" class="w-4 h-4" />
                                                         </button>
                                                     </div>
                                                 </div>
                                             </div>
+                                            <div class="border-t border-gray-200 dark:border-gray-700 my-4 opacity-60">
+                                            </div>
 
                                             <!-- Selected Fields with Enhanced HTML5 Drag and Drop -->
-                                            <h4 class="text-sm font-medium text-gray-700 mb-2">Selected Fields (Drag to
-                                                reorder)</h4>
-                                            <div class="space-y-2 relative" ref="draggableContainer">
-                                                <!-- Placeholder for drag target -->
-                                                <div v-if="isDragging"
-                                                    class="absolute border-2 border-dashed border-indigo-500 bg-indigo-100 bg-opacity-50 rounded-md p-2 pointer-events-none transition-all duration-200"
-                                                    :style="placeholderStyle">
-                                                </div>
+                                            <div>
+                                                <h4
+                                                    class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                                                    <Icon icon="mdi:sort" class="mr-2 w-5 h-5 text-purple-500" />
+                                                    Selected Fields (Drag to reorder)
+                                                </h4>
+                                                <div class="space-y-2 relative" ref="draggableContainer">
+                                                    <!-- Placeholder for drag target -->
+                                                    <div v-if="isDragging"
+                                                        class="absolute border-2 border-dashed border-purple-500 bg-purple-100 dark:bg-purple-900/30 bg-opacity-70 rounded-lg p-3 pointer-events-none transition-all duration-200"
+                                                        :style="placeholderStyle">
+                                                    </div>
 
-                                                <div v-for="(field, index) in selectedFields" :key="field"
-                                                    class="flex items-center p-2 rounded-md cursor-move hover:bg-gray-100"
-                                                    :class="[
-                                                        draggedItem === index ? 'bg-indigo-200 shadow-lg' : 'bg-gray-50',
-                                                        dragOverIndex === index ? 'border border-indigo-500' : ''
-                                                    ]" draggable="true" @dragstart="dragStart($event, index)"
-                                                    @dragover.prevent="dragOver($event, index)"
-                                                    @dragenter.prevent="dragEnter($event, index)"
-                                                    @dragleave="dragLeave($event, index)" @drop="drop($event, index)"
-                                                    @dragend="dragEnd" @mousedown="preventMultiSelection">
-                                                    <Icon icon="mdi:drag" class="mr-2 text-gray-400" />
-                                                    <span class="truncate flex-1 select-none"
-                                                        :title="formatFieldName(field)">
-                                                        {{ formatFieldName(field) }}
-                                                    </span>
-                                                    <span class="ml-2 text-xs font-medium text-gray-500">
-                                                        {{ index + 1 }}
-                                                    </span>
-                                                    <button @click="removeField(field)"
-                                                        class="ml-2 text-gray-400 hover:text-red-500">
-                                                        <Icon icon="mdi:close" />
-                                                    </button>
+                                                    <div v-for="(field, index) in selectedFields" :key="field"
+                                                        class="flex items-center p-3 rounded-lg cursor-move transition-all duration-200 select-none"
+                                                        :class="[
+                                                            draggedItem === index ? 'bg-purple-200 dark:bg-purple-800 shadow-lg scale-[1.02] z-10' : 'bg-gray-50 dark:bg-gray-700/50',
+                                                            dragOverIndex === index ? 'border-2 border-purple-500 dark:border-purple-400' : 'border border-gray-200 dark:border-gray-700',
+                                                            'hover:bg-gray-100 dark:hover:bg-gray-700/70'
+                                                        ]" draggable="true" @dragstart="dragStart($event, index)"
+                                                        @dragover.prevent="dragOver($event, index)"
+                                                        @dragenter.prevent="dragEnter($event, index)"
+                                                        @dragleave="dragLeave($event, index)"
+                                                        @drop="drop($event, index)" @dragend="dragEnd"
+                                                        @mousedown="preventMultiSelection">
+                                                        <div
+                                                            class="p-1.5 mr-2 rounded-md bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400 group-hover:bg-gray-300 dark:group-hover:bg-gray-500">
+                                                            <Icon icon="mdi:drag" class="w-4 h-4" />
+                                                        </div>
+                                                        <span class="truncate flex-1" :title="formatFieldName(field)">
+                                                            {{ formatFieldName(field) }}
+                                                        </span>
+                                                        <span
+                                                            class="mx-2 px-2 py-0.5 bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 rounded-full text-xs font-medium">
+                                                            {{ index + 1 }}
+                                                        </span>
+                                                        <button @click="removeField(field)"
+                                                            class="p-1.5 rounded-full bg-white dark:bg-gray-700 text-red-400 hover:text-white hover:bg-red-500 dark:hover:bg-red-600 transition-all duration-200 shadow-sm hover:shadow transform hover:scale-105">
+                                                            <Icon icon="mdi:close" class="w-4 h-4" />
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-between">
-                                        <button @click="resetColumns" class="text-gray-700 hover:text-gray-900">
+                                    <div
+                                        class="px-6 py-4 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 rounded-b-xl flex justify-between">
+                                        <button @click="resetColumns"
+                                            class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 flex items-center">
+                                            <Icon icon="mdi:refresh" class="mr-2 w-4 h-4" />
                                             Reset to Default
                                         </button>
                                         <button @click="showColumnSelector = false"
-                                            class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
+                                            class="px-5 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:translate-y-[-1px] flex items-center">
+                                            <Icon icon="mdi:check" class="mr-2 w-4 h-4" />
                                             Done
                                         </button>
                                     </div>
@@ -452,6 +549,23 @@ const placeholderStyle = ref({
     zIndex: '-1'
 });
 const draggableContainer = ref<HTMLElement | null>(null);
+
+// Throttled search function
+const handleSearch = throttle(async () => {
+    if (isSearching.value) return;
+
+    isSearching.value = true;
+    try {
+        await fetchData();
+    } finally {
+        isSearching.value = false;
+    }
+}, 1000, { trailing: false });
+
+// Search throttling
+const handleEventChange = () => {
+    handleSearch();
+};
 
 // Load saved column preferences
 const loadSavedPreferences = () => {
@@ -768,18 +882,6 @@ const formatFileSize = (bytes: number): string => {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 };
-
-// Throttled search function
-const handleSearch = throttle(async () => {
-    if (isSearching.value) return;
-
-    isSearching.value = true;
-    try {
-        await fetchData();
-    } finally {
-        isSearching.value = false;
-    }
-}, 1000, { trailing: false });
 
 // Chart selector toggles
 const toggleChartType = (field: string) => {
