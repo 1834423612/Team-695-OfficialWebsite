@@ -40,6 +40,7 @@ const routes = [
   { path: '/contact', component: () => import('@/views/Contact.vue') },
   { path: '/pit-scouting', component: () => import('@/views/Pit-scouting.vue') },
   { path: '/pit-scouting/dashboard', component: () => import('@/views/Pit-scoutingDashboard.vue') },
+  { path: '/2025strategy', component: () => import('@/views/strategy/2025chart.vue') },
 ];
 
 // Create a new router instance

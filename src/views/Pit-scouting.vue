@@ -12,7 +12,7 @@
       <div class="mx-auto md:mx-8 max-w-7xl px-4 pb-12 sm:px-6 lg:px-8 w-full">
         <div class="bg-white rounded-lg shadow px-5 py-6 sm:px-6">
           <!-- Tabs -->
-          <div class="mb-6 bg-gray-50 rounded-md p-4">
+          <div class="mb-6 bg-gray-50 rounded-md p-4 border-2 border-dashed border-amber-500">
             <div class="flex flex-wrap gap-2 mb-2">
               <button v-for="(tab, index) in tabs" :key="index" @click="switchTab(index)"
                 class="px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200" :class="currentTab === index
@@ -35,17 +35,13 @@
                 <Icon icon="mdi:refresh" class="mr-2 inline-block" />
                 Clear Current Tab
               </button>
-              <button v-if="showDebugButton"
-                class="ml-2 px-4 py-2 rounded-md text-sm font-medium border-2 border-yellow-500 bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition-colors duration-200"
-                @click="confirmDebugAction">
-                Debug
-              </button>
+              <DebugTools />
             </div>
           </div>
 
           <!-- Event ID and Form ID -->
           <div
-            class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 bg-gray-50 p-4 rounded-md">
+            class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 bg-gray-50 p-4 rounded-md border-2 border-dotted border-pink-500">
             <div class="mb-2 sm:mb-0">
               <span class="text-sm font-medium text-gray-500">Event ID:</span>
               <span class="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-sm">{{ eventId }}</span>
@@ -118,7 +114,7 @@
                   <div class="space-y-4">
                     <div v-for="(option, optionIndex) in field.options" :key="optionIndex" class="flex items-center">
                       <input :id="'field-' + index + '-' + optionIndex" :name="'field-' + index" type="radio"
-                        :value="option" v-model="field.value" :required="field.required"
+                        :value="getOptionValue(option)" v-model="field.value" :required="field.required"
                         class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600" @change="saveFormData" />
                       <label :for="'field-' + index + '-' + optionIndex"
                         class="ml-3 block text-sm font-medium leading-6 text-gray-900">
@@ -141,7 +137,7 @@
                     <div v-for="(option, optionIndex) in field.options" :key="optionIndex"
                       class="relative flex items-start">
                       <div class="flex h-6 items-center">
-                        <input :id="'field-' + index + '-' + optionIndex" type="checkbox" :value="option"
+                        <input :id="'field-' + index + '-' + optionIndex" type="checkbox" :value="getOptionValue(option)"
                           v-model="field.value"
                           class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
                           @change="saveFormData" />
@@ -180,7 +176,6 @@
                     <span class="relative cursor-pointer rounded-md font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500">
                       Upload a file
                     </span>
-                    <!-- <Icon icon="mdi:upload" class="absolute top-0 left-0 w-5 h-5 m-1" aria-hidden="true" /> -->
                     <p class="pl-1">or drag and drop</p>
                   </div>
                   <p class="text-xs leading-5 text-gray-400 md:text-gray-600">PNG, JPG, JPEG, HEIC, GIF up to 50MB each</p>
@@ -200,8 +195,8 @@
 
             <div class="mt-8">
               <button type="submit"
-                class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
-                <Icon icon="mdi:send" class="mr-2" />
+                class="w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                <Icon icon="mdi:send" class="mr-2 w-4 h-4" />
                 Submit Questionnaire
               </button>
             </div>
@@ -218,9 +213,21 @@ import { Icon } from "@iconify/vue";
 import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
 import Swal from "sweetalert2";
+import DebugTools from "@/components/DebugTools/index.vue"
+// Import the required functions from the PageSpy library
+import PageSpy from '@huolala-tech/page-spy-browser';
+import DataHarborPlugin from '@huolala-tech/page-spy-plugin-data-harbor';
+import RRWebPlugin from '@huolala-tech/page-spy-plugin-rrweb';
+
+declare global {
+  interface Window {
+    $harbor: any;
+    $rrweb: any;
+    $pageSpy: any;
+  }
+}
 
 interface FormField {
-  // id: string;
   question: string;
   type: string;
   required: boolean;
@@ -233,6 +240,10 @@ interface FormField {
   showDescription?: boolean;
   description?: string;
   error?: string;
+  // New property to store clean option values without descriptions
+  optionValues?: string[];
+  // Original index to maintain order
+  originalIndex?: number;
 }
 
 interface Tab {
@@ -253,11 +264,6 @@ interface Team {
   team_name: string;
 }
 
-interface FormField {
-  value: any;
-  error?: string;
-}
-
 const tabs = ref<Tab[]>([{ name: "Tab 1", formData: [], formId: uuidv4() }]);
 const currentTab = ref(0);
 const eventId = ref("");
@@ -270,15 +276,23 @@ const formFields = ref<FormField[]>([
     type: "autocomplete",
     required: true,
     value: null,
+    originalIndex: 0
   },
   {
     i: "https://lh7-us.googleusercontent.com/pUWvHrPDa5IfrQcFalk4lO0e4PhD3sLMP0jyLJU8PTWWGfw5r-Wa4qDQNHhbu0byYLzXScP5lfTSUCsvbNI-FlwDY2L7Ra0-TgYqf5Eabw0INSFE3ah4QCqCqHFrsaPKyCOt8m2Yo-H2ie9E7apzh6c8AO147A",
     w: "50%",
     question: "Type of drive train",
+    description: "Select the type of drive train used in your robot design.",
     type: "radio",
     options: [
       'Tank Drive ("skid steer", plates on both sides of wheels)',
       "West Coast Drive (wheels mounted off one side of tube)",
+      "Swerve Drive",
+      "Other",
+    ],
+    optionValues: [
+      'Tank Drive',
+      "West Coast Drive",
       "Swerve Drive",
       "Other",
     ],
@@ -287,12 +301,13 @@ const formFields = ref<FormField[]>([
     showOtherInput: false,
     otherValue: "",
     showDescription: false,
-    description: "Select the type of drive train used in your robot design.",
+    originalIndex: 1
   },
   {
     i: "https://lh7-us.googleusercontent.com/PCI7CaG88MiY50L7AM0CVTs9dRd3NQgqW4B2rd64vmjHaNDMEHR0EkWYqv-rzHBnGBC08NzWtr7W97lIk226Q9WVCPuTKuOSZcpb6eyNC5Q3HGmFQwp8005gRcxiS09RjeWUJQJTK-vQGDWd0QAbpSipLSkExw",
     w: "100%",
     question: "Type of wheels used",
+    description: "Choose the type of wheels used on your robot.",
     type: "radio",
     options: [
       "Traction",
@@ -300,57 +315,89 @@ const formFields = ref<FormField[]>([
       "Omni (rollers at 90° angle)",
       "Other",
     ],
+    optionValues: [
+      "Traction",
+      "Mecanum",
+      "Omni",
+      "Other",
+    ],
     value: null,
     required: true,
     showOtherInput: false,
     otherValue: "",
     showDescription: false,
-    description: "Choose the type of wheels used on your robot.",
+    originalIndex: 2
   },
   {
     question: "Intake Use:",
     type: "checkbox",
     options: ["Ground", "Station", "None", "Other"],
+    optionValues: ["Ground", "Station", "None", "Other"],
     value: [],
     required: true,
     showOtherInput: false,
     otherValue: "",
+    originalIndex: 3
   },
   {
     question: "Scoring Locations:",
     type: "checkbox",
-    options: ["Amp", "Speaker", "Trap", "Hang", "Harmony", "None", "Other"],
+    options: ["L1", "L2", "L3", "L4", "Algae in Processor", "Algae in Net", "Other"],
+    optionValues: ["L1", "L2", "L3", "L4", "Algae in Processor", "Algae in Net", "Other"],
     value: [],
     required: true,
     showOtherInput: false,
     otherValue: "",
+    originalIndex: 4
   },
   {
-    question: "Robot Weight (in pounds)",
+    question: "Cage Climbing:",
+    type: "checkbox",
+    options: ["Deep Climb", "Shallow Climb", "No Climb"],
+    optionValues: ["Deep Climb", "Shallow Climb", "No Climb"],
+    value: [],
+    required: true,
+    originalIndex: 5
+  },
+  {
+    question: "Robot Weight",
+    description: "Enter the weight of the robot in pounds.",
     type: "number",
     required: true,
     value: null,
+    originalIndex: 6
   },
   {
-    question:
-      "Robot Dimension (Length in Inches) without bumpers - front to back",
+    question: "Robot Length",
+    description: "Enter the length of the robot in inches without bumpers(front to back).",
     type: "number",
     required: true,
     value: null,
+    originalIndex: 7
   },
   {
-    question:
-      "Robot Dimension (Width in Inches) without bumpers - left to right",
+    question: "Robot Width",
+    description: "Enter the width of the robot in inches without bumpers(left to right).",
     type: "number",
     required: true,
     value: null,
+    originalIndex: 8
   },
   {
-    question:
-      "Robot Dimension (Height in Inches) from floor to highest point on robot at the start of the match",
+    question: "Robot Height",
+    description: "Enter the height of the robot in inches from the floor to the highest point on the robot at the start of the match.",
     type: "number",
     required: true,
     value: null,
+    originalIndex: 9
+  },
+  {
+    question: "Height when fully extended",
+    description: "In inches.",
+    type: "number",
+    required: true,
+    value: null,
+    originalIndex: 10
   },
   {
     question: "Drive Team Members",
@@ -359,37 +406,29 @@ const formFields = ref<FormField[]>([
       "One person driving and operating the robot during a match",
       "Other",
     ],
+    optionValues: [
+      "One person driving and operating the robot during a match",
+      "Other",
+    ],
     value: null,
     required: true,
     showOtherInput: false,
     otherValue: "",
-  },
-  {
-    question: "Maneuverability",
-    type: "checkbox",
-    options: ["Can it drive under the core", "Other"],
-    value: [],
-    required: false,
-    showOtherInput: false,
-    otherValue: "",
-  },
-  {
-    question: "Height when fully extended (in inches)",
-    type: "number",
-    required: true,
-    value: null,
+    originalIndex: 11
   },
   {
     question: "Hours/Weeks of Practice",
     type: "text",
     required: true,
     value: null,
+    originalIndex: 12
   },
   {
     question: "Additional Comments",
     type: "textarea",
     required: false,
     value: null,
+    originalIndex: 13
   },
 ]);
 
@@ -398,7 +437,6 @@ const driveTrainImages = ref<ImageData[]>([]);
 const imageRefs = ref<{ [key: string]: HTMLInputElement | null }>({});
 const teamSuggestions = ref<any[]>([]);
 const showTeamSuggestions = ref(false);
-const showDebugButton = ref(false);
 
 onMounted(async () => {
   await loadTeams('');
@@ -411,11 +449,15 @@ onMounted(async () => {
   }
 });
 
-const checkDebugInput = () => {
-  const teamNumberField = formFields.value.find(field => field.question === 'Team number');
-  if (teamNumberField) {
-    showDebugButton.value = teamNumberField.value === 'debug';
+// Function to extract clean option value without descriptions
+const getOptionValue = (option: string): string => {
+  // If the option contains parentheses, extract just the main part
+  const parenIndex = option.indexOf('(');
+  if (parenIndex > 0) {
+    // Return the part before the parenthesis, trimmed
+    return option.substring(0, parenIndex).trim();
   }
+  return option;
 };
 
 const handleTeamNumberInput = async (event: Event) => {
@@ -425,7 +467,7 @@ const handleTeamNumberInput = async (event: Event) => {
   } else {
     teamSuggestions.value = [];
   }
-  showTeamSuggestions.value = true; // Add this line to ensure suggestions are shown
+  showTeamSuggestions.value = true;
 };
 
 const filteredTeamSuggestions = computed(() => {
@@ -437,40 +479,6 @@ const filteredTeamSuggestions = computed(() => {
       team.team_name.toLowerCase().includes(query)
   );
 });
-
-const confirmDebugAction = () => {
-  Swal.fire({
-    title: "Debug Action",
-    text: "Are you sure you want to clear all local storage and cache? This action cannot be undone.",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonColor: "#d33",
-    cancelButtonColor: "#3085d6",
-    confirmButtonText: "Yes, clear it!",
-    reverseButtons: true,
-  }).then((result) => {
-    if (result.isConfirmed) {
-      clearLocalStorageAndRefresh();
-    }
-  });
-};
-
-const clearLocalStorageAndRefresh = () => {
-  // Clear all localStorage content
-  localStorage.clear();
-
-  // Clear all caches
-  if ('caches' in window) {
-    caches.keys().then((names) => {
-      names.forEach((name) => {
-        caches.delete(name);
-      });
-    });
-  }
-
-  // Force refresh the page
-  location.reload();
-};
 
 const loadEventId = async () => {
   try {
@@ -562,7 +570,23 @@ const switchTab = (index: number) => {
   currentTab.value = index;
   formFields.value = JSON.parse(JSON.stringify(tabs.value[index].formData));
   loadImagesFromLocalStorage();
-  checkDebugInput();
+};
+
+const clearCurrentTab = () => {
+  tabs.value[currentTab.value].formData = JSON.parse(
+    JSON.stringify(
+      formFields.value.map((field) => ({
+        ...field,
+        value: field.type === "checkbox" ? [] : null,
+        otherValue: "",
+        error: undefined,
+      }))
+    )
+  );
+  formFields.value = tabs.value[currentTab.value].formData;
+  fullRobotImages.value = [];
+  driveTrainImages.value = [];
+  saveFormData();
 };
 
 const confirmClearCurrentTab = () => {
@@ -596,46 +620,10 @@ const confirmClearCurrentTab = () => {
   });
 };
 
-const clearCurrentTab = () => {
-  tabs.value[currentTab.value].formData = JSON.parse(
-    JSON.stringify(
-      formFields.value.map((field) => ({
-        ...field,
-        value: field.type === "checkbox" ? [] : null,
-        error: undefined,
-      }))
-    )
-  );
-  formFields.value = tabs.value[currentTab.value].formData;
-  fullRobotImages.value = [];
-  driveTrainImages.value = [];
-  saveFormData();
-};
-
-// const toggleDescription = (index: number) => {
-//   formFields.value[index].showDescription =
-//     !formFields.value[index].showDescription;
-// };
-
-// const searchTeams = () => {
-//   showTeamSuggestions.value = true;
-// };
-
 const selectTeam = (team: Team) => {
   formFields.value[0].value = team.team_number;
   showTeamSuggestions.value = false;
 };
-
-// const searchTeams = async () => {
-//   // Simulated API call for team suggestions
-//   const mockTeams = [
-//     { number: '254', name: 'The Cheesy Poofs', avatar: 'https://example.com/team254.jpg' },
-//     { number: '1114', name: 'Simbotics', avatar: 'https://example.com/team1114.jpg' },
-//     // Add more mock teams as needed
-//   ]
-//   teamSuggestions.value = mockTeams.filter(team => team.number.includes(formFields.value[0].value) || team.name.toLowerCase().includes(formFields.value[0].value.toLowerCase()))
-//   showTeamSuggestions.value = teamSuggestions.value.length > 0
-// }
 
 const loadTeams = async (query: string) => {
   try {
@@ -849,7 +837,17 @@ const loadFromLocalStorage = () => {
   if (savedTabs) {
     tabs.value = JSON.parse(savedTabs);
     currentTab.value = savedCurrentTab ? parseInt(savedCurrentTab) : 0;
-    formFields.value = tabs.value[currentTab.value].formData;
+    
+    // 确保所有表单字段都有otherValue属性
+    formFields.value = tabs.value[currentTab.value].formData.map(field => {
+      if ((field.type === 'radio' || field.type === 'checkbox') && field.options?.includes('Other')) {
+        return {
+          ...field,
+          otherValue: field.otherValue || ""
+        };
+      }
+      return field;
+    });
   }
   loadImagesFromLocalStorage();
 };
@@ -896,6 +894,112 @@ const validateForm = (): boolean => {
   return isValid;
 };
 
+const deviceInfo = ref({
+  userAgent: navigator.userAgent,
+  ip: '',
+  language: navigator.language,
+});
+
+const submitForm = async () => {
+  try {
+    // 按照originalIndex排序表单字段
+    const sortedFields = [...formFields.value].sort((a, b) => 
+      (a.originalIndex || 0) - (b.originalIndex || 0)
+    );
+    
+    // 创建一个有序的表单数据对象
+    const processedFormData = sortedFields.map(field => {
+      const processedField = { ...field };
+      
+      // 处理单选按钮的"Other"选项
+      if (field.type === "radio" && field.value === "Other" && field.otherValue) {
+        processedField.value = field.otherValue;
+      }
+      
+      // 处理复选框的"Other"选项
+      if (field.type === "checkbox" && Array.isArray(field.value)) {
+        if (field.value.includes("Other") && field.otherValue) {
+          processedField.value = field.value.map(val => 
+            val === "Other" ? field.otherValue : val
+          );
+        }
+      }
+      
+      return processedField;
+    });
+
+    // 创建提交对象
+    const submissionData = {
+      eventId: eventId.value,
+      tabs: [
+        {
+          name: tabs.value[currentTab.value].name,
+          formData: processedFormData, // 使用已排序的表单数据
+          formId: currentFormId.value
+        }
+      ],
+      images: {
+        fullRobotImages: fullRobotImages.value,
+        driveTrainImages: driveTrainImages.value
+      },
+      deviceInfo: deviceInfo.value
+    };
+
+    // 上传日志并获取URL
+    const url = await window.$harbor.upload();
+    submissionData.tabs[0].formData.push({
+      question: "Log URL",
+      type: "text",
+      required: false,
+      value: url,
+      originalIndex: processedFormData.length
+    });
+
+    const response = await fetch("https://api.frc695.com/api/survey/submit", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(submissionData),
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+      console.log("Form submitted:", data);
+
+      // 清除本地存储
+      localStorage.removeItem(`formData_${currentFormId.value}`);
+      localStorage.removeItem(`fullRobotImages_${currentFormId.value}`);
+      localStorage.removeItem(`driveTrainImages_${currentFormId.value}`);
+
+      // 显示成功消息，并在用户点击确定后再刷新页面
+      Swal.fire({
+        title: "Success!",
+        text: "Form submitted successfully!",
+        icon: "success",
+        confirmButtonText: "OK"
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // 删除当前标签页及其所有内容
+          removeTab(currentTab.value);
+          
+          // 刷新页面以确保没有本地存储缓存
+          location.reload();
+        }
+      });
+    } else {
+      throw new Error(data.error || "Failed to submit form");
+    }
+  } catch (error) {
+    console.error("Error submitting form:", error);
+    Swal.fire(
+      "Submission Error",
+      "There was an error submitting the form. Please try again.",
+      "error"
+    );
+  }
+};
+
 const confirmSubmitForm = () => {
   if (validateForm()) {
     Swal.fire({
@@ -921,115 +1025,40 @@ const confirmSubmitForm = () => {
   }
 };
 
-// const handleCheckboxChange = (event: Event) => {
-//   const target = event.target as HTMLInputElement;
-//   const fieldId = target.dataset.field;
-//   const option = target.value;
-
-//   if (!fieldId) return;
-
-//   const field = tabs.value[currentTab.value].formData.find((f) => f.id === fieldId);
-
-//   if (field && Array.isArray(field.value)) {
-//     if (field.value.includes(option)) {
-//       field.value = field.value.filter((val: string) => val !== option);
-//     } else {
-//       field.value.push(option);
-//     }
-//   }
-//   saveFormData(); // 确保每次更改复选框时保存数据
-// };
-
-
-const deviceInfo = ref({
-  userAgent: navigator.userAgent,
-  ip: '',
-  language: navigator.language,
-});
-
 onMounted(() => {
-  // 获取用户的 IP 地址
+  // Get user's IP address
   axios.get('https://api.ipify.org?format=json').then((response) => {
     deviceInfo.value.ip = response.data.ip;
   });
-});
 
-const submitForm = async () => {
-  try {
-    // 处理包含 "Other" 选项的字段
-    const processedTabs = tabs.value.map((tab) => {
-      const processedFormData = tab.formData.map((field) => {
-        if (field.type === "radio" && field.value === "Other" && field.otherValue) {
-          field.value = field.otherValue;
-        } else if (field.type === "checkbox" && field.value.includes("Other") && field.otherValue) {
-          field.value = field.value.map((val: string) => (val === "Other" ? field.otherValue : val));
-        }
-        return field;
-      });
-      return {
-        ...tab,
-        formData: processedFormData,
-      };
-    });
-
-    // 添加图片信息
-    const fullRobotImages = JSON.parse(localStorage.getItem(`fullRobotImages_${currentFormId.value}`) || '[]');
-    const driveTrainImages = JSON.parse(localStorage.getItem(`driveTrainImages_${currentFormId.value}`) || '[]');
-
-    const response = await fetch("https://api.frc695.com/api/survey/submit", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        eventId: eventId.value,
-        tabs: processedTabs,
-        images: {
-          fullRobotImages,
-          driveTrainImages,
-        },
-        deviceInfo: deviceInfo.value, // 使用已获取的设备信息
-      }),
-    });
-
-    const data = await response.json();
-    if (response.ok) {
-      console.log("Form submitted:", data);
-
-      // Clear local storage after successful submission
-      localStorage.removeItem(`formData_${currentFormId.value}`);
-      localStorage.removeItem(`fullRobotImages_${currentFormId.value}`);
-      localStorage.removeItem(`driveTrainImages_${currentFormId.value}`);
-
-      // Reset form fields and images
-      formFields.value = formFields.value.map((field) => ({
-        ...field,
-        value: field.type === "checkbox" ? [] : null,
-        error: undefined,
-      }));
-      fullRobotImages.value = [];
-      driveTrainImages.value = [];
-
-      // Show success message
-      Swal.fire("Success!", "Form submitted successfully!", "success");
-
-      // Delete the current tab and all its content
-      removeTab(currentTab.value);
-
-      // Refresh the page to ensure no localStorage cache
-      location.reload();
-    } else {
-      throw new Error(data.error || "Failed to submit form");
-    }
-  } catch (error) {
-    console.error("Error submitting form:", error);
-    Swal.fire(
-      "Submission Error",
-      "There was an error submitting the form. Please try again.",
-      "error"
-    );
+  // Initialize PageSpy
+  if (!window.$harbor) {
+    window.$harbor = new DataHarborPlugin();
+    PageSpy.registerPlugin(window.$harbor);
   }
-};
+
+  if (!window.$rrweb) {
+    window.$rrweb = new RRWebPlugin();
+    PageSpy.registerPlugin(window.$rrweb);
+  }
+
+  window.$pageSpy = new PageSpy({
+    lang: 'en',
+    api: 'report.makesome.cool',
+    clientOrigin: 'https://report.makesome.cool',
+    autoRender: false,
+    enableSSL: true,
+    project: '695_Web',
+    title: 'Pit',
+    logo: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgdmlld0JveD0iMCAwIDIwIDIwIj48cGF0aCBmaWxsPSIjNTM1MzUzIiBkPSJNMyA2YTMgMyAwIDAgMSAzLTNoOGEzIDMgMCAwIDEgMyAzdjIuMDNhNC41IDQuNSAwIDAgMC0xLS4wMDRWN0g0djdhMiAyIDAgMCAwIDIgMmgzLjQ5MmEyLjUgMi41IDAgMCAwLS40NDMgMUg2YTMgMyAwIDAgMS0zLTN6bTEwLjA0NCAzLjU4N2wtMS40NC0xLjQ0YS41LjUgMCAwIDAtLjcwOC43MDdsMS41NzggMS41NzdxLjIzMi0uNDQ3LjU3LS44NDRtLTMuOTQtLjczM2EuNS41IDAgMSAwLS43MDgtLjcwOGwtMi41IDIuNWEuNS41IDAgMCAwIDAgLjcwOGwyLjUgMi41YS41LjUgMCAwIDAgLjcwOC0uNzA4TDYuOTU3IDExem03Ljc4OC4xN2MuMzY2LjA0Mi40NzEuNDguMjEuNzQybC0uOTc1Ljk3NWExLjUwNyAxLjUwNyAwIDEgMCAyLjEzMiAyLjEzMmwuOTc1LS45NzVjLjI2MS0uMjYxLjctLjE1Ni43NDIuMjFhMy41MTggMy41MTggMCAwIDEtNC42NzYgMy43MjNsLTIuNzI2IDIuNzI3YTEuNTA3IDEuNTA3IDAgMSAxLTIuMTMyLTIuMTMybDIuNzI2LTIuNzI2YTMuNTE4IDMuNTE4IDAgMCAxIDMuNzI0LTQuNjc2Ii8+PC9zdmc+',
+    logoStyle: {
+      width: '10%',
+      height: '10%',
+    },
+  });
+
+  // window.$pageSpy.render();
+});
 </script>
 
 <style scoped>
