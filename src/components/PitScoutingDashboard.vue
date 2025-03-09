@@ -115,7 +115,7 @@
                                     class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-left flex justify-between items-center hover:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                     <span class="truncate">
                                         {{ selectedChartTypes.length ? `${selectedChartTypes.length} charts selected` :
-                                            'Select charts' }}
+                                        'Select charts' }}
                                     </span>
                                     <Icon :icon="isChartSelectorOpen ? 'mdi:chevron-up' : 'mdi:chevron-down'" />
                                 </button>
@@ -140,9 +140,9 @@
 
                         <!-- Chart Display with Adaptive Layout -->
                         <div v-if="selectedChartTypes.length > 0" class="space-y-6">
-                            <!-- First row: Always 2 columns if there are at least 2 charts -->
-                            <div v-if="selectedChartTypes.length >= 2" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div v-for="(field, index) in selectedChartTypes.slice(0, 2)" :key="field"
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div v-for="(field, index) in selectedChartTypes" :key="field"
+                                    :class="{ 'md:col-span-2': selectedChartTypes.length % 2 !== 0 && index === selectedChartTypes.length - 1 }"
                                     class="bg-gray-50 p-4 rounded-lg shadow-md border-2 border-dashed border-blue-300 hover:border-blue-500 transition-colors duration-200">
                                     <h3 class="text-lg font-semibold mb-4 text-gray-800 flex items-center">
                                         <span
@@ -154,63 +154,6 @@
                                     <div class="h-64">
                                         <Bar :data="generateChartData(field).data"
                                             :options="getChartOptions() as any" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Single chart (either the only one or the first one) -->
-                            <div v-if="selectedChartTypes.length === 1" class="grid grid-cols-1 gap-6">
-                                <div
-                                    class="bg-gray-50 p-4 rounded-lg shadow-md border-2 border-dashed border-blue-300 hover:border-blue-500 transition-colors duration-200">
-                                    <h3 class="text-lg font-semibold mb-4 text-gray-800 flex items-center">
-                                        <span
-                                            class="w-6 h-6 flex items-center justify-center bg-blue-500 text-white rounded-full text-xs mr-2">
-                                            1
-                                        </span>
-                                        {{ formatFieldName(selectedChartTypes[0]) }}
-                                    </h3>
-                                    <div class="h-64">
-                                        <Bar :data="generateChartData(selectedChartTypes[0]).data"
-                                            :options="getChartOptions() as any" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Remaining charts (3rd and beyond) -->
-                            <div v-if="selectedChartTypes.length > 2" class="space-y-6">
-                                <!-- For the 3rd chart, full width -->
-                                <div v-if="selectedChartTypes.length === 3" class="grid grid-cols-1 gap-6">
-                                    <div
-                                        class="bg-gray-50 p-4 rounded-lg shadow-md border-2 border-dashed border-blue-300 hover:border-blue-500 transition-colors duration-200">
-                                        <h3 class="text-lg font-semibold mb-4 text-gray-800 flex items-center">
-                                            <span
-                                                class="w-6 h-6 flex items-center justify-center bg-blue-500 text-white rounded-full text-xs mr-2">
-                                                3
-                                            </span>
-                                            {{ formatFieldName(selectedChartTypes[2]) }}
-                                        </h3>
-                                        <div class="h-64">
-                                            <Bar :data="generateChartData(selectedChartTypes[2]).data"
-                                                :options="getChartOptions() as any" />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- For 4+ charts, pair them in rows of 2 -->
-                                <div v-if="selectedChartTypes.length > 3" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div v-for="(field, index) in selectedChartTypes.slice(2)" :key="field"
-                                        class="bg-gray-50 p-4 rounded-lg shadow-md border-2 border-dashed border-blue-300 hover:border-blue-500 transition-colors duration-200">
-                                        <h3 class="text-lg font-semibold mb-4 text-gray-800 flex items-center">
-                                            <span
-                                                class="w-6 h-6 flex items-center justify-center bg-blue-500 text-white rounded-full text-xs mr-2">
-                                                {{ index + 3 }}
-                                            </span>
-                                            {{ formatFieldName(field) }}
-                                        </h3>
-                                        <div class="h-64">
-                                            <Bar :data="generateChartData(field).data"
-                                                :options="getChartOptions() as any" />
-                                        </div>
                                     </div>
                                 </div>
                             </div>
