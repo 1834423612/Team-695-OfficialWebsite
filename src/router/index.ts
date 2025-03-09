@@ -41,6 +41,7 @@ const routes = [
   { path: '/pit-scouting', component: () => import('@/views/Pit-scouting.vue') },
   { path: '/pit-scouting/dashboard', component: () => import('@/views/Pit-scoutingDashboard.vue') },
   { path: '/2025strategy', component: () => import('@/views/strategy/2025chart.vue') },
+  { path: '/2025strategy/html', component: () => import('@/views/strategy/2025chart-html.vue') },
 ];
 
 // Create a new router instance
