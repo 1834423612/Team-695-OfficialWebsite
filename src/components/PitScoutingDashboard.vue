@@ -1,5 +1,5 @@
 <template>
-    <div class="min-h-screen bg-gray-50">
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
         <!-- Header with gradient background -->
         <header class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-6 shadow-lg">
             <div class="container mx-auto px-4">
@@ -9,9 +9,9 @@
 
         <main class="container mx-auto p-4 mt-6">
             <!-- Search Panel -->
-            <div class="mb-8 bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg">
+            <div class="mb-8 bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg">
                 <div class="p-6">
-                    <h2 class="text-2xl font-semibold mb-6 text-gray-800 flex items-center">
+                    <h2 class="text-2xl font-semibold mb-6 text-gray-800 dark:text-gray-200 flex items-center">
                         <Icon icon="mdi:magnify" class="mr-2 text-indigo-500" />
                         Search Filters
                     </h2>
@@ -20,13 +20,13 @@
                             <!-- Event ID Filter - This one triggers search immediately -->
                             <div class="relative">
                                 <select v-model="queryParams.eventId" id="eventId" @change="handleEventChange"
-                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white">
+                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white dark:bg-gray-700 dark:text-gray-200">
                                     <option value="">All Events</option>
                                     <option v-for="eventId in uniqueEventIds" :key="eventId" :value="eventId">{{ eventId
                                         }}</option>
                                 </select>
                                 <label for="eventId"
-                                    class="absolute -top-2.5 left-2 bg-white px-1 text-xs font-medium text-indigo-600">
+                                    class="absolute -top-2.5 left-2 bg-white dark:bg-gray-800 px-1 text-xs font-medium text-indigo-600 dark:text-indigo-400">
                                     Event ID
                                 </label>
                             </div>
@@ -34,10 +34,10 @@
                             <!-- Form ID Filter - Only searches when button is clicked -->
                             <div class="relative">
                                 <input v-model="queryParams.formId" type="text" id="formId"
-                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white dark:bg-gray-700 dark:text-gray-200"
                                     placeholder="Enter Form ID" />
                                 <label for="formId"
-                                    class="absolute -top-2.5 left-2 bg-white px-1 text-xs font-medium text-indigo-600">
+                                    class="absolute -top-2.5 left-2 bg-white dark:bg-gray-800 px-1 text-xs font-medium text-indigo-600 dark:text-indigo-400">
                                     Form ID
                                 </label>
                             </div>
@@ -45,10 +45,10 @@
                             <!-- Team Number Filter - Only searches when button is clicked -->
                             <div class="relative">
                                 <input v-model="queryParams.teamNumber" type="text" id="teamNumber"
-                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white dark:bg-gray-700 dark:text-gray-200"
                                     placeholder="Enter Team Number" />
                                 <label for="teamNumber"
-                                    class="absolute -top-2.5 left-2 bg-white px-1 text-xs font-medium text-indigo-600">
+                                    class="absolute -top-2.5 left-2 bg-white dark:bg-gray-800 px-1 text-xs font-medium text-indigo-600 dark:text-indigo-400">
                                     Team Number
                                 </label>
                             </div>
@@ -72,12 +72,12 @@
                 <div
                     class="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-r-4 border-indigo-600 border-b-4 border-l-4 border-transparent">
                 </div>
-                <p class="mt-4 text-lg text-gray-600">Loading data...</p>
+                <p class="mt-4 text-lg text-gray-600 dark:text-gray-400">Loading data...</p>
             </div>
 
             <!-- Error State -->
             <div v-else-if="error"
-                class="bg-red-50 border-l-4 border-red-500 text-red-700 p-6 rounded-lg shadow-md mb-8" role="alert">
+                class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 text-red-700 dark:text-red-400 p-6 rounded-lg shadow-md mb-8" role="alert">
                 <div class="flex items-center">
                     <Icon icon="mdi:alert-circle" class="text-2xl mr-2" />
                     <p class="font-bold">Error</p>
@@ -87,9 +87,9 @@
 
             <!-- Empty State -->
             <div v-else-if="filteredSurveyData.length === 0"
-                class="flex flex-col items-center text-center py-12 bg-white rounded-xl shadow-md">
+                class="flex flex-col items-center text-center py-12 bg-white dark:bg-gray-800 rounded-xl shadow-md">
                 <Icon icon="mdi:robot-confused" class="text-6xl text-gray-400 mb-4" />
-                <p class="text-xl text-gray-600">
+                <p class="text-xl text-gray-600 dark:text-gray-400">
                     No data available. Try adjusting your search criteria.
                 </p>
             </div>
@@ -98,21 +98,21 @@
             <div v-else>
                 <!-- Data Visualization Section -->
                 <section v-if="filteredSurveyData.length > 0"
-                    class="mb-8 bg-white rounded-xl shadow-md overflow-hidden">
+                    class="mb-8 bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
                     <div class="p-6">
-                        <h2 class="text-2xl font-semibold mb-6 text-gray-800 flex items-center">
+                        <h2 class="text-2xl font-semibold mb-6 text-gray-800 dark:text-gray-200 flex items-center">
                             <Icon icon="mdi:chart-bar" class="mr-2 text-indigo-500" />
                             Data Visualization
                         </h2>
 
                         <!-- Chart Type Selector -->
                         <div class="mb-6 relative">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Select Charts to Display
                             </label>
                             <div class="relative chart-selector" @click.stop>
                                 <button @click.stop="isChartSelectorOpen = !isChartSelectorOpen"
-                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-left flex justify-between items-center hover:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-left flex justify-between items-center hover:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-gray-200">
                                     <span class="truncate">
                                         {{ selectedChartTypes.length ? `${selectedChartTypes.length} charts selected` :
                                         'Select charts' }}
@@ -122,14 +122,14 @@
 
                                 <!-- Chart Multi-select Dropdown -->
                                 <div v-if="isChartSelectorOpen"
-                                    class="absolute z-10 w-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 max-h-60 overflow-y-auto">
+                                    class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 max-h-60 overflow-y-auto">
                                     <div class="p-2">
                                         <div v-for="field in filteredChartFields" :key="field"
-                                            class="flex items-center px-3 py-2 hover:bg-gray-50 rounded-md cursor-pointer"
+                                            class="flex items-center px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md cursor-pointer"
                                             @click.stop="toggleChartType(field)">
                                             <input type="checkbox" :checked="selectedChartTypes.includes(field)"
-                                                class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
-                                            <span class="ml-2 truncate" :title="formatFieldName(field)">
+                                                class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded dark:border-gray-600 dark:bg-gray-700" />
+                                            <span class="ml-2 truncate dark:text-gray-200" :title="formatFieldName(field)">
                                                 {{ formatFieldName(field) }}
                                             </span>
                                         </div>
@@ -143,8 +143,8 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div v-for="(field, index) in selectedChartTypes" :key="field"
                                     :class="{ 'md:col-span-2': selectedChartTypes.length % 2 !== 0 && index === selectedChartTypes.length - 1 }"
-                                    class="bg-gray-50 p-4 rounded-lg shadow-md border-2 border-dashed border-blue-300 hover:border-blue-500 transition-colors duration-200">
-                                    <h3 class="text-lg font-semibold mb-4 text-gray-800 flex items-center">
+                                    class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg shadow-md border-2 border-dashed border-blue-300 dark:border-blue-700 hover:border-blue-500 dark:hover:border-blue-500 transition-colors duration-200">
+                                    <h3 class="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200 flex items-center">
                                         <span
                                             class="w-6 h-6 flex items-center justify-center bg-blue-500 text-white rounded-full text-xs mr-2">
                                             {{ index + 1 }}
@@ -158,18 +158,18 @@
                                 </div>
                             </div>
                         </div>
-                        <div v-else class="flex flex-col items-center text-center py-8 bg-gray-50 rounded-lg">
-                            <Icon icon="mdi:chart-line" class="text-4xl text-gray-400 mb-2" />
-                            <p class="text-gray-600">Select charts to display visualization</p>
+                        <div v-else class="flex flex-col items-center text-center py-8 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                            <Icon icon="mdi:chart-line" class="text-4xl text-gray-400 dark:text-gray-500 mb-2" />
+                            <p class="text-gray-600 dark:text-gray-400">Select charts to display visualization</p>
                         </div>
                     </div>
                 </section>
 
                 <!-- Data Tables Section -->
                 <section v-for="(eventData, eventId) in groupedSurveyData" :key="eventId"
-                    class="mb-8 bg-white rounded-xl shadow-md overflow-hidden">
+                    class="mb-8 bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
                     <div class="p-6">
-                        <h2 class="text-2xl font-semibold mb-6 text-gray-800 flex items-center">
+                        <h2 class="text-2xl font-semibold mb-6 text-gray-800 dark:text-gray-200 flex items-center">
                             <Icon icon="mdi:calendar-check" class="mr-2 text-indigo-500" />
                             Event: {{ eventId }}
                         </h2>
@@ -177,10 +177,10 @@
                         <!-- Column Selector -->
                         <div class="relative mb-4">
                             <button @click="showColumnSelector = !showColumnSelector"
-                                class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                <Icon icon="mdi:table-column" class="-ml-1 mr-2 h-5 w-5 text-gray-500" />
+                                class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                <Icon icon="mdi:table-column" class="-ml-1 mr-2 h-5 w-5 text-gray-500 dark:text-gray-400" />
                                 Customize Columns
-                                <span class="ml-2 bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-xs">
+                                <span class="ml-2 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full text-xs">
                                     {{ selectedFields.length }}
                                 </span>
                             </button>
@@ -247,17 +247,23 @@
                                                             draggedItem === index ? 'bg-purple-200 dark:bg-purple-800 shadow-lg scale-[1.02] z-10' : 'bg-gray-50 dark:bg-gray-700/50',
                                                             dragOverIndex === index ? 'border-2 border-purple-500 dark:border-purple-400' : 'border border-gray-200 dark:border-gray-700',
                                                             'hover:bg-gray-100 dark:hover:bg-gray-700/70'
-                                                        ]" draggable="true" @dragstart="dragStart($event, index)"
+                                                        ]" 
+                                                        @touchstart="touchStart($event, index)"
+                                                        @touchmove="touchMove($event)"
+                                                        @touchend="touchEnd($event, index)"
+                                                        draggable="true" 
+                                                        @dragstart="dragStart($event, index)"
                                                         @dragover.prevent="dragOver($event, index)"
                                                         @dragenter.prevent="dragEnter($event, index)"
                                                         @dragleave="dragLeave($event, index)"
-                                                        @drop="drop($event, index)" @dragend="dragEnd"
+                                                        @drop="drop($event, index)" 
+                                                        @dragend="dragEnd"
                                                         @mousedown="preventMultiSelection">
                                                         <div
                                                             class="p-1.5 mr-2 rounded-md bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400 group-hover:bg-gray-300 dark:group-hover:bg-gray-500">
                                                             <Icon icon="mdi:drag" class="w-4 h-4" />
                                                         </div>
-                                                        <span class="truncate flex-1" :title="formatFieldName(field)">
+                                                        <span class="truncate flex-1 text-gray-800 dark:text-gray-200" :title="formatFieldName(field)">
                                                             {{ formatFieldName(field) }}
                                                         </span>
                                                         <span
@@ -291,43 +297,43 @@
                         </div>
 
                         <!-- Data Table -->
-                        <div class="overflow-x-auto rounded-lg border border-gray-200">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
+                        <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                <thead class="bg-gray-50 dark:bg-gray-800">
                                     <tr>
                                         <th scope="col"
-                                            class="sticky left-0 z-10 bg-indigo-50 px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                            class="sticky left-0 z-10 bg-indigo-50 dark:bg-indigo-900/30 px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                                             Team Number
                                         </th>
                                         <th v-for="field in selectedFields" :key="field" scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                                             {{ formatFieldName(field) }}
                                         </th>
                                         <th scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                                             Images
                                         </th>
                                     </tr>
                                 </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
+                                <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
                                     <tr v-for="survey in eventData" :key="survey.id"
-                                        class="hover:bg-gray-50 transition-colors duration-150">
+                                        class="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150">
                                         <td
-                                            class="sticky left-0 z-10 px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-indigo-50">
+                                            class="sticky left-0 z-10 px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100 bg-indigo-50 dark:bg-indigo-900/30">
                                             {{ getFieldValue(survey.data, "Team number") || "N/A" }}
                                         </td>
                                         <td v-for="field in selectedFields" :key="field"
-                                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                             {{ formatFieldValue(survey.data, field) }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                             <div v-if="hasImages(survey)" class="flex justify-center">
                                                 <button @click="openImageModal(survey)"
-                                                    class="text-indigo-600 hover:text-indigo-900 transition-colors duration-150">
+                                                    class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 transition-colors duration-150">
                                                     <Icon icon="mdi:image" class="text-xl" />
                                                 </button>
                                             </div>
-                                            <span v-else class="text-gray-400">No images</span>
+                                            <span v-else class="text-gray-400 dark:text-gray-600">No images</span>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -343,26 +349,26 @@
             <div v-if="showImageModal"
                 class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
                 @click="closeImageModal">
-                <div class="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" @click.stop>
-                    <div class="flex justify-between items-center p-4 border-b">
-                        <h3 class="text-xl font-semibold text-gray-800">Robot Images</h3>
+                <div class="bg-white dark:bg-gray-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" @click.stop>
+                    <div class="flex justify-between items-center p-4 border-b dark:border-gray-700">
+                        <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Robot Images</h3>
                         <button @click="closeImageModal"
-                            class="text-gray-500 hover:text-gray-700 transition-colors duration-150 rounded-full p-1 hover:bg-gray-100">
+                            class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-150 rounded-full p-1 hover:bg-gray-100 dark:hover:bg-gray-700">
                             <Icon icon="mdi:close" class="text-2xl" />
                         </button>
                     </div>
                     <div class="p-6">
                         <div v-if="modalImages.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div v-for="(image, index) in modalImages" :key="index"
-                                class="flex flex-col items-center bg-gray-50 p-4 rounded-lg">
-                                <h4 class="font-semibold mb-2 text-indigo-700">{{ image.category }}</h4>
+                                class="flex flex-col items-center bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                                <h4 class="font-semibold mb-2 text-indigo-700 dark:text-indigo-400">{{ image.category }}</h4>
                                 <img :src="image.url" :alt="image.name"
                                     class="max-w-full max-h-[40vh] object-contain rounded-lg shadow-md" />
-                                <p class="mt-2 text-center text-gray-700">{{ image.name }}</p>
-                                <p class="text-sm text-gray-500">{{ formatFileSize(image.size) }}</p>
+                                <p class="mt-2 text-center text-gray-700 dark:text-gray-300">{{ image.name }}</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">{{ formatFileSize(image.size) }}</p>
                             </div>
                         </div>
-                        <p v-else class="text-center text-gray-500 my-4">No images available</p>
+                        <p v-else class="text-center text-gray-500 dark:text-gray-400 my-4">No images available</p>
                     </div>
                 </div>
             </div>
@@ -492,6 +498,11 @@ const placeholderStyle = ref({
     zIndex: '-1'
 });
 const draggableContainer = ref<HTMLElement | null>(null);
+
+// Touch drag state for mobile
+const touchStartY = ref(0);
+const touchCurrentIndex = ref(-1);
+const touchItem = ref<HTMLElement | null>(null);
 
 // Throttled search function
 const handleSearch = throttle(async () => {
@@ -951,6 +962,124 @@ const dragEnd = () => {
     });
 };
 
+// Touch-based drag and drop for mobile devices
+const touchStart = (event: TouchEvent, index: number) => {
+    // Store the starting position and element
+    touchStartY.value = event.touches[0].clientY;
+    touchCurrentIndex.value = index;
+    touchItem.value = event.currentTarget as HTMLElement;
+    
+    // Add visual feedback
+    touchItem.value.classList.add('bg-purple-200', 'dark:bg-purple-800', 'shadow-lg', 'scale-[1.02]', 'z-10');
+    
+    // Prevent scrolling while dragging
+    event.preventDefault();
+};
+
+const touchMove = (event: TouchEvent) => {
+    if (touchItem.value === null || touchCurrentIndex.value === -1) return;
+    
+    const currentY = event.touches[0].clientY;
+    const container = draggableContainer.value;
+    
+    if (!container) return;
+    
+    // Find the element we're currently over
+    const elements = Array.from(container.children) as HTMLElement[];
+    let targetIndex = -1;
+    
+    for (let i = 0; i < elements.length; i++) {
+        const element = elements[i];
+        const rect = element.getBoundingClientRect();
+        
+        if (currentY >= rect.top && currentY <= rect.bottom) {
+            targetIndex = i;
+            break;
+        }
+    }
+    
+    // If we found a valid target and it's different from the current item
+    if (targetIndex !== -1 && targetIndex !== touchCurrentIndex.value) {
+        // Remove highlight from all items
+        elements.forEach(el => {
+            el.classList.remove('border-2', 'border-purple-500', 'dark:border-purple-400');
+        });
+        
+        // Highlight the target
+        elements[targetIndex].classList.add('border-2', 'border-purple-500', 'dark:border-purple-400');
+        
+        // Update placeholder position for visual feedback
+        placeholderStyle.value = {
+            top: `${elements[targetIndex].offsetTop}px`,
+            height: `${elements[targetIndex].offsetHeight}px`,
+            width: '100%',
+            zIndex: '1'
+        };
+        
+        isDragging.value = true;
+    }
+    
+    // Prevent default to stop scrolling
+    event.preventDefault();
+};
+
+const touchEnd = (event: TouchEvent, _index: number) => {
+    if (touchItem.value === null || touchCurrentIndex.value === -1) return;
+    
+    const container = draggableContainer.value;
+    
+    if (!container) {
+        resetTouchState();
+        return;
+    }
+    
+    // Find the element we're ending over
+    const elements = Array.from(container.children) as HTMLElement[];
+    let targetIndex = -1;
+    
+    const currentY = event.changedTouches[0].clientY;
+    
+    for (let i = 0; i < elements.length; i++) {
+        const element = elements[i];
+        const rect = element.getBoundingClientRect();
+        
+        if (currentY >= rect.top && currentY <= rect.bottom) {
+            targetIndex = i;
+            break;
+        }
+    }
+    
+    // If we found a valid target and it's different from the current item
+    if (targetIndex !== -1 && targetIndex !== touchCurrentIndex.value) {
+        // Get the dragged item
+        const item = selectedFields.value[touchCurrentIndex.value];
+        // Remove it from the array
+        selectedFields.value.splice(touchCurrentIndex.value, 1);
+        // Add it at the new position
+        selectedFields.value.splice(targetIndex, 0, item);
+        // Save the new order
+        savePreferences();
+    }
+    
+    // Reset all visual states
+    elements.forEach(el => {
+        el.classList.remove('border-2', 'border-purple-500', 'dark:border-purple-400');
+    });
+    
+    resetTouchState();
+};
+
+const resetTouchState = () => {
+    if (touchItem.value) {
+        touchItem.value.classList.remove('bg-purple-200', 'dark:bg-purple-800', 'shadow-lg', 'scale-[1.02]', 'z-10');
+    }
+    
+    touchStartY.value = 0;
+    touchCurrentIndex.value = -1;
+    touchItem.value = null;
+    isDragging.value = false;
+};
+
 // Column selector functions
 const addField = (field: string) => {
     if (!selectedFields.value.includes(field)) {
@@ -1019,5 +1148,13 @@ const resetColumns = () => {
 .chart-selector-leave-to {
     opacity: 0;
     transform: translateY(-10px);
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #1a1a1a;
+        color: #f3f4f6;
+    }
 }
 </style>
