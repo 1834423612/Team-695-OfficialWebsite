@@ -55,6 +55,8 @@ export default defineComponent({
                 window.close();
             } catch (err: any) {
                 console.error('Callback error:', err);
+                error.value = err.message;
+                loading.value = false;
 
                 // Notify the parent window about the error
                 if (window.opener) {
