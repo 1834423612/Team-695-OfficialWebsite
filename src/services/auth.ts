@@ -2,15 +2,14 @@ import SDK from 'casdoor-js-sdk';
 
 // Casdoor configuration
 export const casdoorConfig = {
-    serverUrl: 'https://695cas.fastbirdcdn.online',
-    clientId: '300932808273326bac0c',
-    clientSecret: 'b134d448a828a80685c4fd5d0b661cc41f1a841f',
-    appName: '695_website',
-    organizationName: 'Team695',
+    serverUrl: import.meta.env.VITE_CASDOOR_SERVER_URL,
+    clientId: import.meta.env.VITE_CASDOOR_CLIENT_ID,
+    clientSecret: import.meta.env.VITE_CASDOOR_CLIENT_SECRET,
+    appName: import.meta.env.VITE_CASDOOR_APP_NAME,
+    organizationName: import.meta.env.VITE_CASDOOR_ORGANIZATION_NAME,
     redirectPath: '/callback',
     signinPath: '/api/signin',
-    // Use localStorage instead of sessionStorage to persist state across tabs
-    storage: localStorage
+    storage: localStorage, // Use localStorage to persist state across tabs
 };
 
 export interface UserInfo {
