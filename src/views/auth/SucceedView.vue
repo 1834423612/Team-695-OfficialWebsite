@@ -315,13 +315,23 @@ export default defineComponent({
     };
 
     const logoutCasdoor = async () => {
+      const originalError = error.value;
       try {
         await casdoorService.revokeToken();
         router.push({ name: 'login' }).catch(err => {
-          console.error('Failed to navigate to login:', err);
+          if (import.meta.env.DEV) {
+            console.error('Failed to navigate to login:', err);
+          }
         });
       } catch (err) {
-        console.error('Failed to revoke token:', err);
+        if (import.meta.env.DEV) {
+          console.error('Failed to revoke token:', err);
+        }
+        error.value = 'Failed to revoke login session. Please try again.';
+        // Reset error after 5 seconds
+        setTimeout(() => {
+          error.value = originalError;
+        }, 5000);
       }
     };
 
