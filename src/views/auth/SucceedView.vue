@@ -184,7 +184,7 @@
           </div>
         </div>
 
-        <div v-if="!loading && !error && import.meta.env.DEV" class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+        <div v-if="!loading && !error && isDev" class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
           <div class="px-4 py-5 sm:px-6">
             <h3 class="text-lg leading-6 font-medium text-gray-900">Debug Information</h3>
             <p class="mt-1 max-w-2xl text-sm text-gray-500">Raw user data</p>
@@ -229,6 +229,9 @@ export default defineComponent({
       owner: ''
     });
     const dropdownVisible = ref(false);
+
+    // Check if in development mode
+    const isDev = import.meta.env.DEV;
 
     // Computed property to get Google-related properties
     const googleProperties = computed(() => {
@@ -353,6 +356,7 @@ export default defineComponent({
       userInfo,
       loading,
       error,
+      isDev,
       googleProperties,
       otherProperties,
       formatPropertyKey,
