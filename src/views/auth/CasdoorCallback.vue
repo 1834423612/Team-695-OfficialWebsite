@@ -46,9 +46,6 @@ export default defineComponent({
                 // Process the callback
                 await casdoorService.handleCallback(code, state);
 
-                // Store login status in localStorage
-                localStorage.setItem('isLoggedIn', 'true');
-
                 // Notify the parent window about the success
                 if (window.opener) {
                     window.opener.postMessage({ success: true }, casdoorService.getServerUrl());
