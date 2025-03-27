@@ -44,6 +44,13 @@ export default defineComponent({
                 'width=500,height=600'
             );
 
+            if (!loginWindow || loginWindow.closed || typeof loginWindow.closed === 'undefined') {
+                console.error('Popup blocked or window failed to open');
+                // Show user-friendly error message about popup blockers
+                alert('Please allow popups for this site to continue with login');
+                return;
+            }
+
             // Listen for messages from the login window
             const messageListener = (event: MessageEvent) => {
                 if (event.origin !== casdoorService.getServerUrl()) {
@@ -58,6 +65,9 @@ export default defineComponent({
                 } else if (error) {
                     // Handle login error
                     console.error('Login failed:', error);
+                    isLoggedIn.value = false;
+                    // Provide user feedback about the error
+                    alert(`Login failed: ${error || 'Unknown error'}`);
                 }
 
                 // Clean up listener and close the login window
@@ -68,6 +78,7 @@ export default defineComponent({
             window.addEventListener('message', messageListener);
         };
 
+        // Check if user is already logged in
         const checkLoginStatus = () => {
             if (localStorage.getItem('casdoorToken')) {
                 router.push({ name: 'login-success' });
@@ -82,11 +93,6 @@ export default defineComponent({
             window.addEventListener('storage', () => {
                 checkLoginStatus();
             });
-
-            // 强制重定向已登录用户
-            if (localStorage.getItem('isLoggedIn') === 'true') {
-                router.push({ name: 'login-success' });
-            }
         });
 
         return {
