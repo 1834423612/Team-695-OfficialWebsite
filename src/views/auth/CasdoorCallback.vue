@@ -38,33 +38,33 @@ export default defineComponent({
             try {
                 const code = route.query.code as string;
                 const state = route.query.state as string;
-
+        
                 if (!code || !state) {
                     throw new Error('Invalid authorization code or state');
                 }
-
+        
                 // Process the callback
                 await casdoorService.handleCallback(code, state);
-
+        
                 // Notify the parent window about the success
                 if (window.opener) {
                     window.opener.postMessage({ success: true }, casdoorService.getServerUrl());
                 }
-
+        
                 // Close the current window
                 window.close();
             } catch (err: any) {
                 console.error('Callback error:', err);
                 error.value = err.message;
                 loading.value = false;
-
+        
                 // Notify the parent window about the error
                 if (window.opener) {
                     window.opener.postMessage({ success: false, error: err.message }, casdoorService.getServerUrl());
                 }
-
-                // Close the current window
-                window.close();
+        
+                // Do not close the window on error
+                // window.close(); // Removed this line
             }
         });
 
