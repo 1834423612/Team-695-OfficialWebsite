@@ -18,6 +18,7 @@
     "@tailwindcss/postcss": "^4.0.4",
     "@yeger/vue-masonry-wall": "^5.0.14",
     "axios": "^1.7.5",
+    "casdoor-js-sdk": "^0.16.0",
     "chart.js": "^4.4.8",
     "lodash": "^4.17.21",
     "lodash-es": "^4.17.21",
@@ -26,8 +27,7 @@
     "uuid": "^11.0.1",
     "vue": "^3.4.29",
     "vue-chartjs": "^5.3.1",
-    "vue-router": "4",
-    "vuedraggable": "^2.24.3"
+    "vue-router": "4"
   },
   "devDependencies": {
     "@iconify-json/mdi": "^1.1.67",
