@@ -289,12 +289,12 @@ export default defineComponent({
       try {
         // Get user info
         const userData = await casdoorService.getUserInfo();
-        console.log('Raw user data from service:', userData);
+        // console.log('Raw user data from service:', userData);
         
         // Make sure we're getting all properties
         userInfo.value = { ...userData };
         
-        console.log('User info after assignment:', userInfo.value);
+        // console.log('User info after assignment:', userInfo.value);
         loading.value = false;
       } catch (err: any) {
         console.error('Error loading user info:', err);
