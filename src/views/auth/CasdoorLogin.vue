@@ -69,7 +69,7 @@ export default defineComponent({
         };
 
         const checkLoginStatus = () => {
-            if (localStorage.getItem('isLoggedIn') === 'true') {
+            if (localStorage.getItem('casdoorToken')) {
                 router.push({ name: 'login-success' });
             }
         };
