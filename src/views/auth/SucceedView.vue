@@ -184,24 +184,24 @@
           </div>
         </div>
 
-        <div v-if="!loading && !error" class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
-        <div class="px-4 py-5 sm:px-6">
-          <h3 class="text-lg leading-6 font-medium text-gray-900">Debug Information</h3>
-          <p class="mt-1 max-w-2xl text-sm text-gray-500">Raw user data</p>
-        </div>
+        <div v-if="!loading && !error && import.meta.env.DEV" class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+          <div class="px-4 py-5 sm:px-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">Debug Information</h3>
+            <p class="mt-1 max-w-2xl text-sm text-gray-500">Raw user data</p>
+          </div>
         
-        <div class="border-t border-gray-200">
-          <!-- open -->
-          <details class="w-full">
-            <summary class="cursor-pointer text-sm font-medium text-indigo-600 hover:text-indigo-500 focus:outline-none px-4 py-3">
-              View Raw Data
-            </summary>
-            <div class="border-t border-gray-200 p-4">
-              <pre class="text-xs overflow-auto bg-gray-100 p-2 rounded">{{ JSON.stringify(userInfo, null, 2) }}</pre>
-            </div>
-          </details>
+          <div class="border-t border-gray-200">
+            <!-- open -->
+            <details class="w-full">
+              <summary class="cursor-pointer text-sm font-medium text-indigo-600 hover:text-indigo-500 focus:outline-none px-4 py-3">
+                View Raw Data
+              </summary>
+              <div class="border-t border-gray-200 p-4">
+                <pre class="text-xs overflow-auto bg-gray-100 p-2 rounded">{{ JSON.stringify(userInfo, null, 2) }}</pre>
+              </div>
+            </details>
+          </div>
         </div>
-      </div>
       </div>
     </div>
   </div>
