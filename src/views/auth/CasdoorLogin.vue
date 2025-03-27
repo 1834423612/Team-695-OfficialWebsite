@@ -78,11 +78,14 @@ export default defineComponent({
             window.addEventListener('message', messageListener);
         };
 
-        // Check if user is already logged in
-        const checkLoginStatus = () => {
-            if (localStorage.getItem('casdoorToken')) {
-                router.push({ name: 'login-success' });
-            }
+        // Check if user is already logged in  
+        const checkLoginStatus = () => {  
+            if (localStorage.getItem('casdoorToken')) {  
+                isLoggedIn.value = true;  
+                router.push({ name: 'login-success' });  
+            } else {  
+                isLoggedIn.value = false;  
+            }  
         };
 
         onMounted(() => {
