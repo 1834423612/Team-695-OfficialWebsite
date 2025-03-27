@@ -21,7 +21,6 @@
 import { defineComponent, ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { casdoorService } from '@/services/auth';
-import { Icon } from '@iconify/vue';
 
 export default defineComponent({
     name: 'CallbackView',
