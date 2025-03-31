@@ -1,17 +1,20 @@
 <template>
-    <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-md w-full text-center">
-            <div v-if="loading" class="space-y-4">
-                <Icon icon="mdi:loading" class="h-12 w-12 mx-auto animate-spin text-indigo-600" />
-                <p class="text-lg font-medium text-gray-700">Processing login...</p>
-            </div>
-            <div v-if="error" class="space-y-4 text-red-500">
-                <Icon icon="mdi:alert-circle" class="h-12 w-12 mx-auto text-red-500" />
-                <p class="text-lg font-medium">{{ error }}</p>
-                <button @click="goToLogin"
-                    class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                    Return to Login Page
-                </button>
+    <div class="min-h-screen flex items-center justify-center bg-gray-50">
+        <div class="max-w-md w-full p-6">
+            <div class="text-center">
+                <Icon icon="mdi:loading" class="h-16 w-16 mx-auto animate-spin text-indigo-600" />
+                <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
+                    {{ message }}
+                </h2>
+                <p v-if="error" class="mt-2 text-sm text-red-600">
+                    {{ error }}
+                </p>
+                <div v-if="error" class="mt-6">
+                    <button @click="goToLogin"
+                        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Return to Login
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -19,57 +22,46 @@
 
 <script lang="ts">
 import { defineComponent, ref, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { casdoorService } from '@/services/auth';
+import { Icon } from '@iconify/vue';
 
 export default defineComponent({
-    name: 'CallbackView',
+    name: 'CasdoorCallback',
+    components: {
+        Icon
+    },
     setup() {
-        const loading = ref(true);
-        const error = ref('');
-        const route = useRoute();
         const router = useRouter();
+        const message = ref('Processing your login...');
+        const error = ref('');
 
         const goToLogin = () => {
-            router.push('/login');
+            router.push({ name: 'login' });
         };
 
         onMounted(async () => {
             try {
-                const code = route.query.code as string;
-                const state = route.query.state as string;
-        
-                if (!code || !state) {
-                    throw new Error('Invalid authorization code or state');
-                }
-        
-                // Process the callback
-                await casdoorService.handleCallback(code, state);
-        
-                // Notify the parent window about the success
-                if (window.opener) {
-                    window.opener.postMessage({ success: true }, casdoorService.getServerUrl());
-                }
-        
-                // Close the current window
-                window.close();
+                // Process the authentication using PKCE flow
+                // The SDK will automatically extract the code from the URL
+                await casdoorService.signin();
+
+                // Update message
+                message.value = 'Login successful! Redirecting...';
+
+                // Redirect to profile page
+                setTimeout(() => {
+                    router.push({ name: 'profile' });
+                }, 1000);
             } catch (err: any) {
-                console.error('Callback error:', err);
-                error.value = err.message;
-                loading.value = false;
-        
-                // Notify the parent window about the error
-                if (window.opener) {
-                    window.opener.postMessage({ success: false, error: err.message }, casdoorService.getServerUrl());
-                }
-        
-                // Do not close the window on error
-                // window.close(); // Removed this line
+                console.error('Authentication error:', err);
+                message.value = 'Authentication failed';
+                error.value = err.message || 'An unexpected error occurred';
             }
         });
 
         return {
-            loading,
+            message,
             error,
             goToLogin
         };
