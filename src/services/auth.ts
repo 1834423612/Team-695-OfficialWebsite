@@ -1,334 +1,343 @@
-import SDK from 'casdoor-js-sdk';
+import Sdk from 'casdoor-js-sdk';
 
-// Casdoor configuration
-export const casdoorConfig = {
-    // serverUrl: import.meta.env.VITE_CASDOOR_SERVER_URL,
-    // clientId: import.meta.env.VITE_CASDOOR_CLIENT_ID,
-    // clientSecret: import.meta.env.VITE_CASDOOR_CLIENT_SECRET,
-    // appName: import.meta.env.VITE_CASDOOR_APP_NAME,
-    // organizationName: import.meta.env.VITE_CASDOOR_ORGANIZATION_NAME,
+// Define the Casdoor configuration
+const config = {
     serverUrl: 'https://695cas.fastbirdcdn.online',
     clientId: '300932808273326bac0c',
-    clientSecret: 'b134d448a828a80685c4fd5d0b661cc41f1a841f',
     appName: '695_website',
     organizationName: 'Team695',
     redirectPath: '/callback',
-    signinPath: '/api/signin',
-    storage: localStorage, // Use localStorage to persist state across tabs
+    // Use sessionStorage for PKCE state
+    storage: sessionStorage
 };
 
+// Initialize the SDK
+const sdk = new Sdk(config);
+
+// Define user info interface
 export interface UserInfo {
     id: string;
     name: string;
     displayName?: string;
-    email: string;
-    phone?: string;
     avatar?: string;
-    owner: string;
-    [key: string]: any;
+    email?: string;
+    phone?: string;
+    address?: string;
+    affiliation?: string;
+    tag?: string;
+    score?: number;
+    ranking?: number;
+    isOnline?: boolean;
+    isAdmin?: boolean;
+    isForbidden?: boolean;
+    signupApplication?: string;
+    createdTime?: string;
+    updatedTime?: string;
+    type?: string;
+    password?: string;
+    passwordSalt?: string;
+    github?: string;
+    google?: string;
+    qq?: string;
+    wechat?: string;
+    facebook?: string;
+    dingtalk?: string;
+    weibo?: string;
+    gitee?: string;
+    linkedin?: string;
+    wecom?: string;
+    lark?: string;
+    gitlab?: string;
+    adfs?: string;
+    baidu?: string;
+    alipay?: string;
+    casdoor?: string;
+    infoflow?: string;
+    apple?: string;
+    azuread?: string;
+    slack?: string;
+    steam?: string;
+    bilibili?: string;
+    okta?: string;
+    douyin?: string;
+    line?: string;
+    amazon?: string;
+    auth0?: string;
+    battlenet?: string;
+    bitbucket?: string;
+    box?: string;
+    cloudfoundry?: string;
+    dailymotion?: string;
+    deezer?: string;
+    digitalocean?: string;
+    discord?: string;
+    dropbox?: string;
+    eveonline?: string;
+    fitbit?: string;
+    gitea?: string;
+    heroku?: string;
+    influxcloud?: string;
+    instagram?: string;
+    intercom?: string;
+    kakao?: string;
+    lastfm?: string;
+    mailru?: string;
+    meetup?: string;
+    microsoftonline?: string;
+    naver?: string;
+    nextcloud?: string;
+    onedrive?: string;
+    oura?: string;
+    patreon?: string;
+    paypal?: string;
+    salesforce?: string;
+    shopify?: string;
+    soundcloud?: string;
+    spotify?: string;
+    strava?: string;
+    stripe?: string;
+    tiktok?: string;
+    tumblr?: string;
+    twitch?: string;
+    twitter?: string;
+    typetalk?: string;
+    uber?: string;
+    vk?: string;
+    wepay?: string;
+    xero?: string;
+    yahoo?: string;
+    yammer?: string;
+    yandex?: string;
+    zoom?: string;
+    custom?: string;
+    webauthnCredentials?: any[];
+    recoveryCodesEnabled?: boolean;
+    totpSecret?: string;
+    properties?: Record<string, string>;
+    roles?: string[];
+    permissions?: string[];
+    groups?: string[];
+    owner?: string;
 }
 
+// Token response interface
+// interface TokenResponse {
+//     access_token: string;
+//     token_type: string;
+//     expires_in: number;
+//     refresh_token?: string;
+//     scope?: string;
+// }
+
+// Create a service to handle authentication
 class CasdoorService {
-    // Remove the sdk property to avoid the TypeScript warning
-    
+    private accessToken: string | null = null;
+    private refreshToken: string | null = null;
+    private userInfoCache: UserInfo | null = null;
+
     constructor() {
-        // Initialize SDK but don't store it since we're not using it directly
-        new SDK(casdoorConfig);
+        // Initialize tokens from localStorage if available
+        this.accessToken = localStorage.getItem('casdoor-token');
+        this.refreshToken = localStorage.getItem('casdoor-refresh-token');
     }
 
-    /**
-     * Get the sign-in URL from Casdoor
-     * This will also generate and store a state parameter
-     */
-    getSigninUrl(): string {
-        // Generate a random state value and store it
-        const state = Math.random().toString(36).substring(2);
-        localStorage.setItem('casdoorState', state);
+    // Start the PKCE authorization flow
+    startLogin(provider?: string): void {
+        // Additional parameters for the authorization URL
+        const additionalParams: Record<string, string> = {};
 
-        // Build the authorization URL manually to ensure state is included
-        const redirectUri = `${window.location.origin}${casdoorConfig.redirectPath}`;
-        const authUrl = `${casdoorConfig.serverUrl}/login/oauth/authorize?` +
-            `client_id=${casdoorConfig.clientId}` +
-            `&response_type=code` +
-            `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-            `&scope=read` +
-            `&state=${state}`;
+        // If a specific provider is requested (e.g., Google)
+        if (provider) {
+            additionalParams.provider = provider;
+        }
 
-        return authUrl;
+        // Redirect to the authorization URL
+        sdk.signin_redirect(additionalParams);
     }
 
-    /**
-     * Handle the OAuth callback
-     * @param code The authorization code from Casdoor
-     * @param state The state parameter for CSRF protection
-     * @returns Promise with the access token response
-     */
-    async handleCallback(code: string, state: string): Promise<any> {
+    // Get the sign-in URL (for compatibility with existing code)
+    getSigninUrl(provider?: string): string {
+        // This is just for compatibility, we'll use startLogin instead
+        return sdk.getSigninUrl() + (provider ? `&provider=${provider}` : '');
+    }
+
+    // Handle the callback from Casdoor
+    async signin(): Promise<string> {
         try {
-            // Verify state to prevent CSRF attacks
-            const savedState = localStorage.getItem('casdoorState');
-            if (!state || state !== savedState) {
-                throw new Error('Invalid state parameter');
+            // Exchange the authorization code for an access token using PKCE
+            const tokenResponse = await sdk.exchangeForAccessToken();
+
+            if (!tokenResponse || !tokenResponse.access_token) {
+                throw new Error('Failed to exchange code for token');
             }
 
-            // Clear the stored state
-            localStorage.removeItem('casdoorState');
+            // Store the tokens
+            this.accessToken = tokenResponse.access_token;
+            localStorage.setItem('casdoor-token', tokenResponse.access_token);
 
-            // Exchange the code for an access token
-            const redirectUri = `${window.location.origin}${casdoorConfig.redirectPath}`;
-
-            // Use the SDK's token endpoint directly
-            const tokenUrl = `${casdoorConfig.serverUrl}/api/login/oauth/access_token`;
-            const response = await fetch(tokenUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    grant_type: 'authorization_code',
-                    client_id: casdoorConfig.clientId,
-                    client_secret: casdoorConfig.clientSecret,
-                    code: code,
-                    redirect_uri: redirectUri,
-                }),
-            });
-
-            const tokenResponse = await response.json();
-
-            if (tokenResponse.error) {
-                throw tokenResponse;
+            if (tokenResponse.refresh_token) {
+                this.refreshToken = tokenResponse.refresh_token;
+                localStorage.setItem('casdoor-refresh-token', tokenResponse.refresh_token);
             }
 
-            // Store the token in localStorage
-            if (tokenResponse.access_token) {
-                localStorage.setItem('casdoorToken', tokenResponse.access_token);
-                if (tokenResponse.refresh_token) {
-                    localStorage.setItem('casdoorRefreshToken', tokenResponse.refresh_token);
-                }
-            }
-
-            return tokenResponse;
+            return tokenResponse.access_token;
         } catch (error) {
-            console.error('Authentication error:', error);
+            console.error('Signin error:', error);
             throw error;
         }
     }
 
-    /**
-     * Get user information using the access token
-     * @param accessToken The access token
-     * @returns Promise with user information
-     */
-    async getUserInfo(accessToken?: string): Promise<UserInfo> {
-        const token = accessToken || localStorage.getItem('casdoorToken');
-        if (!token) {
-            throw new Error('No access token available');
-        }
-
-        try {
-            // First, try to parse the JWT token to get basic user info
-            const tokenParts = token.split('.');
-            if (tokenParts.length === 3) {
-                try {
-                    const payload = JSON.parse(atob(tokenParts[1]));
-                    console.log("Token payload:", payload);
-                    if (payload.name && payload.owner) {
-                        // If we have basic info from the token, fetch complete user info
-                        const response = await fetch(`${casdoorConfig.serverUrl}/api/get-user?id=${payload.owner}/${payload.name}`, {
-                            headers: {
-                                'Authorization': `Bearer ${token}`
-                            }
-                        });
-
-                        if (response.ok) {
-                            const responseData = await response.json();
-                            console.log("Full response from API:", responseData);
-                            
-                            // Extract user data from the 'data' property
-                            if (responseData.status === "ok" && responseData.data) {
-                                console.log("User data extracted from 'data' property:", responseData.data);
-                                return responseData.data;
-                            }
-                            
-                            return responseData;
-                        }
-                    }
-                } catch (e) {
-                    console.error('Error parsing token:', e);
-                }
-            }
-
-            // Fallback to userinfo endpoint
-            const response = await fetch(`${casdoorConfig.serverUrl}/api/userinfo`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`Failed to fetch user info: ${response.status} ${response.statusText}`);
-            }
-
-            const responseData = await response.json();
-            console.log("Full response from userinfo endpoint:", responseData);
-            
-            // Extract user data from the 'data' property if it exists
-            if (responseData.status === "ok" && responseData.data) {
-                console.log("User data extracted from 'data' property:", responseData.data);
-                return responseData.data;
-            }
-
-            // If we still don't have complete user info, try to get it by name
-            if (responseData.name && responseData.owner && (!responseData.email || !responseData.id)) {
-                try {
-                    const detailResponse = await fetch(`${casdoorConfig.serverUrl}/api/get-user?id=${responseData.owner}/${responseData.name}`, {
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    });
-
-                    if (detailResponse.ok) {
-                        const detailData = await detailResponse.json();
-                        console.log("Detail response:", detailData);
-                        
-                        // Extract user data from the 'data' property if it exists
-                        if (detailData.status === "ok" && detailData.data) {
-                            console.log("User data extracted from 'data' property:", detailData.data);
-                            return detailData.data;
-                        }
-                        
-                        return detailData;
-                    }
-                } catch (e) {
-                    console.error('Error fetching detailed user info:', e);
-                }
-            }
-
-            return responseData;
-        } catch (error) {
-            console.error('Error getting user info:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Get the Casdoor server URL
-     */
-    getServerUrl(): string {
-        return casdoorConfig.serverUrl;
-    }
-
-    /**
-     * Check if the user is logged in
-     */
-    isLoggedIn(): boolean {
-        return !!localStorage.getItem('casdoorToken');
-    }
-
-    /**
-     * Log out the user
-     */
-    logout(): void {
-        localStorage.removeItem('casdoorToken');
-        localStorage.removeItem('casdoorRefreshToken');
-        localStorage.removeItem('casdoorState');
-    }
-
-    /**
-     * Refresh the access token
-     */
-    async refreshToken(): Promise<any> {
-        const refreshToken = localStorage.getItem('casdoorRefreshToken');
-        if (!refreshToken) {
+    // Refresh the access token
+    async refreshAccessToken(): Promise<string> {
+        if (!this.refreshToken) {
             throw new Error('No refresh token available');
         }
 
         try {
-            const response = await fetch(`${casdoorConfig.serverUrl}/api/login/oauth/refresh_token`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    grant_type: 'refresh_token',
-                    refresh_token: refreshToken,
-                    client_id: casdoorConfig.clientId,
-                    client_secret: casdoorConfig.clientSecret,
-                }),
-            });
+            const tokenResponse = await sdk.refreshAccessToken(this.refreshToken);
 
-            const tokenResponse = await response.json();
-
-            if (tokenResponse.access_token) {
-                localStorage.setItem('casdoorToken', tokenResponse.access_token);
-                if (tokenResponse.refresh_token) {
-                    localStorage.setItem('casdoorRefreshToken', tokenResponse.refresh_token);
-                }
+            if (!tokenResponse || !tokenResponse.access_token) {
+                throw new Error('Failed to refresh token');
             }
 
-            return tokenResponse;
+            // Update the tokens
+            this.accessToken = tokenResponse.access_token;
+            localStorage.setItem('casdoor-token', tokenResponse.access_token);
+
+            if (tokenResponse.refresh_token) {
+                this.refreshToken = tokenResponse.refresh_token;
+                localStorage.setItem('casdoor-refresh-token', tokenResponse.refresh_token);
+            }
+
+            return tokenResponse.access_token;
         } catch (error) {
-            console.error('Error refreshing token:', error);
+            console.error('Token refresh error:', error);
+            // If refresh fails, clear tokens and force re-login
+            this.logout();
             throw error;
         }
     }
 
-    /**
-     * Parse the JWT token to get basic user info
-     * @param token The JWT token
-     * @returns The decoded token payload
-     */
-    parseToken(token: string): any {
+    // Check if the user is logged in
+    isLoggedIn(): boolean {
+        return !!this.accessToken;
+    }
+
+    // Get the token
+    getToken(): string | null {
+        return this.accessToken;
+    }
+
+    // Parse JWT token to get user info
+    parseAccessToken(token: string): { header: any, payload: any } | null {
         try {
-            const base64Url = token.split('.')[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = decodeURIComponent(
-                atob(base64)
-                    .split('')
-                    .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-                    .join('')
-            );
-            return JSON.parse(jsonPayload);
-        } catch (error) {
-            console.error('Error parsing token:', error);
+            return sdk.parseAccessToken(token);
+        } catch (e) {
+            console.error('Error parsing JWT:', e);
             return null;
         }
     }
 
-    /**
-     * Revoke the access token
-     */
-    async revokeToken(): Promise<void> {
-        const token = localStorage.getItem('casdoorToken');
-        if (!token) {
-            throw new Error('No access token available');
+    // Add this method to the CasdoorService class to ensure we're properly fetching user info
+
+    // Get user information with retry mechanism
+    async getUserInfo(forceRefresh = false): Promise<UserInfo> {
+        if (!this.accessToken) {
+            throw new Error('Not authenticated');
+        }
+
+        // If we have cached user info and don't need to refresh, return it
+        if (this.userInfoCache && !forceRefresh) {
+            return this.userInfoCache;
         }
 
         try {
-            const response = await fetch(`${casdoorConfig.serverUrl}/api/logout`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    token: token,
-                    client_id: casdoorConfig.clientId,
-                    client_secret: casdoorConfig.clientSecret,
-                }),
-            });
+            // Use the SDK to get user info
+            const response = await sdk.getUserInfo(this.accessToken);
 
-            if (!response.ok) {
-                throw new Error(`Failed to revoke token: ${response.status} ${response.statusText}`);
+            // Check if response is a Response object
+            if (response instanceof Response) {
+                if (!response.ok) {
+                    throw new Error(`Failed to get user info: ${response.statusText}`);
+                }
+
+                // Parse the response JSON
+                const userInfo: UserInfo = await response.json();
+
+                // Cache the user info
+                this.userInfoCache = userInfo;
+
+                return userInfo;
+            } else {
+                // If it's already a UserInfo object (in case SDK implementation changes)
+                this.userInfoCache = response as unknown as UserInfo;
+                return this.userInfoCache;
             }
-
-            // Clear local storage
-            this.logout();
         } catch (error) {
-            console.error('Error revoking token:', error);
-            throw error;
+            console.error('Get user info error:', error);
+
+            // Try to get user info directly from Casdoor API
+            try {
+                const userInfoUrl = `${config.serverUrl}/api/get-account`;
+                const response = await fetch(userInfoUrl, {
+                    headers: {
+                        'Authorization': `Bearer ${this.accessToken}`,
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to get user info: ${response.statusText}`);
+                }
+
+                const userInfo: UserInfo = await response.json();
+                this.userInfoCache = userInfo;
+                return userInfo;
+            } catch (secondError) {
+                console.error('Second attempt to get user info failed:', secondError);
+
+                // If we can't get detailed info, try to get basic info from token
+                if (this.accessToken) {
+                    const tokenInfo = this.parseAccessToken(this.accessToken);
+                    if (tokenInfo && tokenInfo.payload) {
+                        const payload = tokenInfo.payload;
+                        const basicUserInfo: UserInfo = {
+                            id: payload.sub || '',
+                            name: payload.name || '',
+                            email: payload.email || '',
+                            owner: payload.owner || '',
+                            displayName: payload.preferred_username || payload.name || '',
+                        };
+                        return basicUserInfo;
+                    }
+                }
+
+                throw error;
+            }
         }
+    }
+
+    // Logout the user
+    logout(): void {
+        this.accessToken = null;
+        this.refreshToken = null;
+        this.userInfoCache = null;
+        localStorage.removeItem('casdoor-token');
+        localStorage.removeItem('casdoor-refresh-token');
+        sessionStorage.clear(); // Clear PKCE state
+    }
+
+    // Revoke the token and logout
+    async revokeToken(): Promise<void> {
+        // Just perform a local logout for now
+        this.logout();
+
+        // Redirect to Casdoor logout page if needed
+        // window.location.href = `${config.serverUrl}/logout`;
     }
 }
 
-// Export as a singleton
+// Export a singleton instance
 export const casdoorService = new CasdoorService();
+
+// Export the SDK for direct access if needed
+export { sdk };

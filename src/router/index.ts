@@ -1,5 +1,5 @@
 // Import vue-router dependencies 
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 import Home from '../views/Home.vue';
 import { casdoorService } from '@/services/auth';
 // import About from '../views/About.vue';
@@ -13,7 +13,7 @@ import { casdoorService } from '@/services/auth';
 // The path is the URL that the user will navigate to
 // The component is the Vue component that should be rendered when the path is matched
 // Example: https://example.com/[path] [path] -> [component]
-const routes = [
+const routes: Array<RouteRecordRaw> = [
   {
     path: '/:pathMatch(.*)*',
     name: '404NotFound',
@@ -45,9 +45,24 @@ const routes = [
   { path: '/2025strategy/html', component: () => import('@/views/strategy/2025chart-html.vue') },
   { path: '/legal/PrivacyPolicy', component: () => import('@/views/legal/PrivacyPolicy.vue') },
   { path: '/legal/TermsOfService', component: () => import('@/views/legal/TermsOfService.vue') },
-  { path: '/login', name: 'login', component: () => import('@/views/auth/CasdoorLogin.vue') },
-  { path: '/callback', component: () => import('@/views/auth/CasdoorCallback.vue') },
-  { path: '/login-success', name: 'login-success', component: () => import('@/views/auth/SucceedView.vue'), meta: { requiresAuth: true } },
+  {
+    path: '/login',
+    name: 'login',
+    component: () => import('@/views/auth/CasdoorLogin.vue'),
+    meta: { guest: true }
+  },
+  {
+    path: '/callback',
+    name: 'callback',
+    component: () => import('@/views/auth/CasdoorCallback.vue'),
+    meta: { guest: true }
+  },
+  {
+    path: '/profile',
+    name: 'profile',
+    component: () => import('@/views/auth/SucceedView.vue'),
+    meta: { requiresAuth: true }
+  },
 ];
 
 // Create a new router instance
@@ -56,23 +71,27 @@ const router = createRouter({
   routes,
 });
 
-// 全局路由守卫
+// Navigation guard
 router.beforeEach((to, _from, next) => {
-  const isLoggedIn = casdoorService.isLoggedIn(); // 使用 casdoorService 检查登录状态
-
-  if (to.name === 'login' && isLoggedIn) {
-    // 如果用户已登录并试图访问登录页面，重定向到成功页面
-    next({ name: 'login-success' });
-  } else if (to.name === 'login-success' && !isLoggedIn) {
-    // 如果用户未登录并试图访问成功页面，重定向到登录页面
-    next({ name: 'login' });
-  } else if (to.meta.requiresAuth && !isLoggedIn) {
-    // 如果需要登录并且用户未登录，重定向到登录页面
-    next({ name: 'login' });
-  } else {
-    // 否则允许访问
-    next();
+  const isLoggedIn = casdoorService.isLoggedIn();
+  
+  // Routes that require authentication
+  if (to.matched.some(record => record.meta.requiresAuth)) {
+    if (!isLoggedIn) {
+      next({ name: 'login' });
+      return;
+    }
   }
+  
+  // Routes for guests only (like login)
+  if (to.matched.some(record => record.meta.guest)) {
+    if (isLoggedIn && to.name !== 'callback') {
+      next({ name: 'profile' });
+      return;
+    }
+  }
+  
+  next();
 });
 
 export default router;
