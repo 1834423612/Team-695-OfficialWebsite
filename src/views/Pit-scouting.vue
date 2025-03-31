@@ -94,7 +94,7 @@
                     'block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6',
                     'px-3',
                     field.error ? 'ring-red-300 placeholder:text-red-300 focus:ring-red-500' : 'ring-gray-300 placeholder:text-gray-400 focus:ring-indigo-600'
-                  ]" @input="saveFormData()" @blur="validateField(field)" />
+                  ]" @input="debouncedSaveFormData()" @blur="validateField(field)" />
                 <div v-if="field.error" class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
                   <Icon icon="mingcute:alert-fill" class="h-5 w-5 text-red-500" aria-hidden="true" />
                 </div>
@@ -105,7 +105,7 @@
                 :required="field.required" rows="3" :class="[
                   'block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6',
                   field.error ? 'ring-red-300 placeholder:text-red-300 focus:ring-red-500' : 'ring-gray-300 placeholder:text-gray-400 focus:ring-indigo-600'
-                ]" @input="saveFormData" @blur="validateField(field)"></textarea>
+                ]" @blur="() => { debouncedSaveFormData(); validateField(field); }"></textarea>
 
               <!-- Radio buttons -->
               <div v-else-if="field.type === 'radio'" class="mt-2">
@@ -115,7 +115,7 @@
                     <div v-for="(option, optionIndex) in field.options" :key="optionIndex" class="flex items-center">
                       <input :id="'field-' + index + '-' + optionIndex" :name="'field-' + index" type="radio"
                         :value="getOptionValue(option)" v-model="field.value" :required="field.required"
-                        class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600" @change="saveFormData" />
+                        class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600" @blur="debouncedSaveFormData" />
                       <label :for="'field-' + index + '-' + optionIndex"
                         class="ml-3 block text-sm font-medium leading-6 text-gray-900">
                         {{ option }}
@@ -126,7 +126,7 @@
                 <input v-if="field.value === 'Other'" v-model="field.otherValue" type="text"
                   :placeholder="'Specify other ' + field.question.toLowerCase()"
                   class="mt-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                  @input="saveFormData" />
+                  @blur="debouncedSaveFormData" />
               </div>
 
               <!-- Checkboxes -->
@@ -140,7 +140,7 @@
                         <input :id="'field-' + index + '-' + optionIndex" type="checkbox" :value="getOptionValue(option)"
                           v-model="field.value"
                           class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
-                          @change="saveFormData" />
+                          @change="debouncedSaveFormData" />
                       </div>
                       <div class="ml-3 text-sm leading-6">
                         <label :for="'field-' + index + '-' + optionIndex" class="font-medium text-gray-900">{{ option
@@ -152,7 +152,7 @@
                 <input v-if="Array.isArray(field.value) && field.value.includes('Other')" v-model="field.otherValue"
                   type="text" :placeholder="'Specify other ' + field.question.toLowerCase()"
                   class="mt-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                  @input="saveFormData" />
+                  @blur="debouncedSaveFormData" />
               </div>
 
               <p v-if="field.error" class="mt-2 text-sm text-red-600" :id="'field-' + index + '-error'">
@@ -492,8 +492,10 @@ const loadEventId = async () => {
 
 watch(
   [tabs, currentTab],
-  () => {
-    saveToLocalStorage();
+  (newValues, oldValues) => {
+    if (JSON.stringify(newValues) !== JSON.stringify(oldValues)) {
+      saveToLocalStorage();
+    }
   },
   { deep: true }
 );
@@ -784,13 +786,46 @@ const formatFileSize = (bytes: number): string => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 };
 
+const escapeInput = (input: string): string => {
+  return input.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\//g, "\\/").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+};
+
 const saveFormData = () => {
-  tabs.value[currentTab.value].formData = formFields.value;
+  // Deep copy the formFields to avoid directly modifying the reactive data
+  const updatedFields = formFields.value.map(field => {
+    // Fix: Escape input values before saving to localStorage
+    if (field.type === "text" || field.type === "textarea" || field.type === "autocomplete") {
+      field.value = typeof field.value === "string" ? escapeInput(field.value) : field.value;
+    }
+
+    // Fix: Ensure checkbox options are saved in the order of the question
+    if (field.type === "checkbox" && Array.isArray(field.value)) {
+      field.value = field.optionValues?.filter(option => field.value.includes(option)) || [];
+    }
+
+    // Won't directly modify the field value, just return a new object with the processed value
+    return { ...field, value: processValue(field.value) };
+  });
+
+  // Update the current tab's formData with the updated fields
+  tabs.value[currentTab.value].formData = updatedFields;
+
+  // Fix: Use the currentFormId to save the form data
   localStorage.setItem(
     `formData_${currentFormId.value}`,
-    JSON.stringify(formFields.value)
+    JSON.stringify(updatedFields)
   );
 };
+
+const debounce = (func: Function, delay: number) => {
+  let timer: NodeJS.Timeout;
+  return (...args: any[]) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => func(...args), delay);
+  };
+};
+
+const debouncedSaveFormData = debounce(saveFormData, 300);
 
 const saveImagesToLocalStorage = () => {
   localStorage.setItem(
@@ -1059,6 +1094,11 @@ onMounted(() => {
 
   // window.$pageSpy.render();
 });
+
+function processValue(value: any): any {
+  // 如果需要对值进行特殊处理，可以在这里实现逻辑
+  return value; // 默认直接返回原值
+}
 </script>
 
 <style scoped>
