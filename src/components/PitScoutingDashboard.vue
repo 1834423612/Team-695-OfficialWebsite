@@ -227,7 +227,7 @@
                                             <div class="border-t border-gray-200 dark:border-gray-700 my-4 opacity-60">
                                             </div>
 
-                                            <!-- Selected Fields with Enhanced HTML5 Drag and Drop -->
+                                            <!-- Selected Fields with Enhanced Mobile Drag and Drop -->
                                             <div>
                                                 <h4
                                                     class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
@@ -242,15 +242,17 @@
                                                     </div>
 
                                                     <div v-for="(field, index) in selectedFields" :key="field"
-                                                        class="flex items-center p-3 rounded-lg cursor-move transition-all duration-200 select-none"
+                                                        class="flex items-center p-3 rounded-lg transition-all duration-200 select-none"
                                                         :class="[
                                                             draggedItem === index ? 'bg-purple-200 dark:bg-purple-800 shadow-lg scale-[1.02] z-10' : 'bg-gray-50 dark:bg-gray-700/50',
                                                             dragOverIndex === index ? 'border-2 border-purple-500 dark:border-purple-400' : 'border border-gray-200 dark:border-gray-700',
                                                             'hover:bg-gray-100 dark:hover:bg-gray-700/70'
                                                         ]" 
-                                                        @touchstart="touchStart($event, index)"
-                                                        @touchmove="touchMove($event)"
-                                                        @touchend="touchEnd($event, index)"
+                                                        ref="draggableItems"
+                                                        @touchstart.passive="touchStart($event, index)"
+                                                        @touchmove.prevent="touchMove($event, index)"
+                                                        @touchend="touchEnd($event)"
+                                                        @touchcancel="touchEnd($event)"
                                                         draggable="true" 
                                                         @dragstart="dragStart($event, index)"
                                                         @dragover.prevent="dragOver($event, index)"
@@ -260,7 +262,7 @@
                                                         @dragend="dragEnd"
                                                         @mousedown="preventMultiSelection">
                                                         <div
-                                                            class="p-1.5 mr-2 rounded-md bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400 group-hover:bg-gray-300 dark:group-hover:bg-gray-500">
+                                                            class="p-1.5 mr-2 rounded-md bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400 drag-handle">
                                                             <Icon icon="mdi:drag" class="w-4 h-4" />
                                                         </div>
                                                         <span class="truncate flex-1 text-gray-800 dark:text-gray-200" :title="formatFieldName(field)">
@@ -498,11 +500,18 @@ const placeholderStyle = ref({
     zIndex: '-1'
 });
 const draggableContainer = ref<HTMLElement | null>(null);
+const draggableItems = ref<HTMLElement[]>([]);
 
 // Touch drag state for mobile
 const touchStartY = ref(0);
+const touchStartX = ref(0);
+const touchCurrentY = ref(0);
+const touchCurrentX = ref(0);
 const touchCurrentIndex = ref(-1);
 const touchItem = ref<HTMLElement | null>(null);
+const touchScrolling = ref(false);
+const touchDragging = ref(false);
+const touchStartTime = ref(0);
 
 // Throttled search function
 const handleSearch = throttle(async () => {
@@ -581,7 +590,7 @@ const handleClickOutside = (event: MouseEvent) => {
 
 // Prevent text selection during drag operations
 const preventTextSelection = (event: Event) => {
-    if (isDragging.value) {
+    if (isDragging.value || touchDragging.value) {
         event.preventDefault();
     }
 };
@@ -911,7 +920,7 @@ const dragEnter = (event: DragEvent, index: number) => {
 
     // Highlight the drop target
     const element = event.currentTarget as HTMLElement;
-    element.classList.add('bg-indigo-100', 'border', 'border-indigo-500');
+    element.classList.add('bg-indigo-100', 'dark:bg-indigo-900/30', 'border-2', 'border-indigo-500');
 };
 
 const dragLeave = (event: DragEvent, index: number) => {
@@ -921,7 +930,7 @@ const dragLeave = (event: DragEvent, index: number) => {
 
     // Remove highlight from the drop target
     const element = event.currentTarget as HTMLElement;
-    element.classList.remove('bg-indigo-100', 'border', 'border-indigo-500');
+    element.classList.remove('bg-indigo-100', 'dark:bg-indigo-900/30', 'border-2', 'border-indigo-500');
 };
 
 const drop = (event: DragEvent, index: number) => {
@@ -929,7 +938,7 @@ const drop = (event: DragEvent, index: number) => {
 
     // Remove highlight from the drop target
     const element = event.currentTarget as HTMLElement;
-    element.classList.remove('bg-indigo-100', 'border', 'border-indigo-500');
+    element.classList.remove('bg-indigo-100', 'dark:bg-indigo-900/30', 'border-2', 'border-indigo-500');
 
     if (draggedItem.value !== -1 && draggedItem.value !== index) {
         // Get the dragged item
@@ -956,58 +965,85 @@ const dragEnd = () => {
 
     // Remove any lingering highlight classes
     document.querySelectorAll('.bg-indigo-100, .border-indigo-500').forEach(el => {
-        if (el.classList.contains('bg-gray-50')) {
-            el.classList.remove('bg-indigo-100', 'border', 'border-indigo-500');
-        }
+        el.classList.remove('bg-indigo-100', 'dark:bg-indigo-900/30', 'border-2', 'border-indigo-500');
     });
 };
 
-// Touch-based drag and drop for mobile devices
+// Improved Touch-based drag and drop for mobile devices
 const touchStart = (event: TouchEvent, index: number) => {
-    // Store the starting position and element
+    // Store the starting position, time, and element
     touchStartY.value = event.touches[0].clientY;
+    touchStartX.value = event.touches[0].clientX;
+    touchCurrentY.value = touchStartY.value;
+    touchCurrentX.value = touchStartX.value;
     touchCurrentIndex.value = index;
     touchItem.value = event.currentTarget as HTMLElement;
+    touchStartTime.value = Date.now();
     
-    // Add visual feedback
-    touchItem.value.classList.add('bg-purple-200', 'dark:bg-purple-800', 'shadow-lg', 'scale-[1.02]', 'z-10');
-    
-    // Prevent scrolling while dragging
-    event.preventDefault();
+    // Don't add visual feedback immediately - wait to see if it's a drag or scroll
+    touchScrolling.value = false;
+    touchDragging.value = false;
+
+    // Add a delay to distinguish between tap and drag
+    setTimeout(() => {
+        if (!touchScrolling.value && !touchDragging.value) {
+            touchDragging.value = true;
+            touchItem.value?.classList.add('bg-purple-200', 'dark:bg-purple-800', 'shadow-lg', 'scale-[1.02]', 'z-10');
+            isDragging.value = true;
+        }
+    }, 200); // Adjust the delay as needed
 };
 
-const touchMove = (event: TouchEvent) => {
+const touchMove = (event: TouchEvent, _index: number) => {
     if (touchItem.value === null || touchCurrentIndex.value === -1) return;
-    
+
     const currentY = event.touches[0].clientY;
+    const currentX = event.touches[0].clientX;
+    const deltaY = currentY - touchStartY.value;
+    const deltaX = currentX - touchStartX.value;
+
+    // Update current position
+    touchCurrentY.value = currentY;
+    touchCurrentX.value = currentX;
+
+    // Determine if this is a scroll or a drag
+    // If horizontal movement is greater than vertical, it's likely a scroll
+    if (!touchDragging.value && !touchScrolling.value) {
+        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            touchScrolling.value = true;
+            return; // Allow normal scrolling
+        }
+    }
+
+    if (!touchDragging.value) return;
+
     const container = draggableContainer.value;
-    
-    if (!container) return;
-    
+    if (!container || !container.children) return;
+
     // Find the element we're currently over
     const elements = Array.from(container.children) as HTMLElement[];
     let targetIndex = -1;
-    
+
     for (let i = 0; i < elements.length; i++) {
         const element = elements[i];
         const rect = element.getBoundingClientRect();
-        
+
         if (currentY >= rect.top && currentY <= rect.bottom) {
             targetIndex = i;
             break;
         }
     }
-    
+
     // If we found a valid target and it's different from the current item
     if (targetIndex !== -1 && targetIndex !== touchCurrentIndex.value) {
         // Remove highlight from all items
         elements.forEach(el => {
             el.classList.remove('border-2', 'border-purple-500', 'dark:border-purple-400');
         });
-        
+
         // Highlight the target
         elements[targetIndex].classList.add('border-2', 'border-purple-500', 'dark:border-purple-400');
-        
+
         // Update placeholder position for visual feedback
         placeholderStyle.value = {
             top: `${elements[targetIndex].offsetTop}px`,
@@ -1015,69 +1051,68 @@ const touchMove = (event: TouchEvent) => {
             width: '100%',
             zIndex: '1'
         };
-        
-        isDragging.value = true;
+
+        dragOverIndex.value = targetIndex;
     }
-    
-    // Prevent default to stop scrolling
-    event.preventDefault();
+
+    // Move the dragged item with the touch
+    if (touchDragging.value) {
+        // Apply transform to move the element with the finger
+        const translateY = currentY - touchStartY.value;
+        touchItem.value.style.transform = `translateY(${translateY}px) scale(1.02)`;
+        event.preventDefault(); // Prevent scrolling while dragging
+    }
 };
 
-const touchEnd = (event: TouchEvent, _index: number) => {
+const touchEnd = (_event: TouchEvent) => {
     if (touchItem.value === null || touchCurrentIndex.value === -1) return;
-    
-    const container = draggableContainer.value;
-    
-    if (!container) {
-        resetTouchState();
-        return;
-    }
-    
-    // Find the element we're ending over
-    const elements = Array.from(container.children) as HTMLElement[];
-    let targetIndex = -1;
-    
-    const currentY = event.changedTouches[0].clientY;
-    
-    for (let i = 0; i < elements.length; i++) {
-        const element = elements[i];
-        const rect = element.getBoundingClientRect();
-        
-        if (currentY >= rect.top && currentY <= rect.bottom) {
-            targetIndex = i;
-            break;
+
+    // Reset transform
+    touchItem.value.style.transform = '';
+
+    // Only process if we were dragging (not scrolling)
+    if (touchDragging.value) {
+        const container = draggableContainer.value;
+
+        if (container && container.children) {
+            // If we have a valid target index different from the current
+            if (dragOverIndex.value !== -1 && dragOverIndex.value !== touchCurrentIndex.value) {
+                // Get the dragged item
+                const item = selectedFields.value[touchCurrentIndex.value];
+                // Remove it from the array
+                selectedFields.value.splice(touchCurrentIndex.value, 1);
+                // Add it at the new position
+                selectedFields.value.splice(dragOverIndex.value, 0, item);
+                // Save the new order
+                savePreferences();
+            }
+
+            // Reset all visual states
+            Array.from(container.children).forEach(el => {
+                (el as HTMLElement).classList.remove('border-2', 'border-purple-500', 'dark:border-purple-400');
+            });
         }
     }
-    
-    // If we found a valid target and it's different from the current item
-    if (targetIndex !== -1 && targetIndex !== touchCurrentIndex.value) {
-        // Get the dragged item
-        const item = selectedFields.value[touchCurrentIndex.value];
-        // Remove it from the array
-        selectedFields.value.splice(touchCurrentIndex.value, 1);
-        // Add it at the new position
-        selectedFields.value.splice(targetIndex, 0, item);
-        // Save the new order
-        savePreferences();
-    }
-    
-    // Reset all visual states
-    elements.forEach(el => {
-        el.classList.remove('border-2', 'border-purple-500', 'dark:border-purple-400');
-    });
-    
+
     resetTouchState();
 };
 
 const resetTouchState = () => {
     if (touchItem.value) {
         touchItem.value.classList.remove('bg-purple-200', 'dark:bg-purple-800', 'shadow-lg', 'scale-[1.02]', 'z-10');
+        touchItem.value.style.transform = '';
     }
     
     touchStartY.value = 0;
+    touchStartX.value = 0;
+    touchCurrentY.value = 0;
+    touchCurrentX.value = 0;
     touchCurrentIndex.value = -1;
     touchItem.value = null;
+    touchDragging.value = false;
+    touchScrolling.value = false;
     isDragging.value = false;
+    dragOverIndex.value = -1;
 };
 
 // Column selector functions
@@ -1134,6 +1169,19 @@ const resetColumns = () => {
 
 .dragging-active * {
     user-select: none;
+}
+
+/* Improved touch handling */
+.drag-handle {
+    cursor: move;
+    cursor: -webkit-grab;
+    cursor: grab;
+    touch-action: none; /* Prevent scrolling when trying to drag on touch devices */
+}
+
+.drag-handle:active {
+    cursor: -webkit-grabbing;
+    cursor: grabbing;
 }
 </style>
 
