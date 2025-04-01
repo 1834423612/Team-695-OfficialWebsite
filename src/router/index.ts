@@ -67,6 +67,12 @@ const routes: Array<RouteRecordRaw> = [
         path: '',
         name: 'DashboardHome',
         component: () => import('@/views/dashboard/HomeView.vue'),
+      },
+      {
+        path: 'calendar',
+        name: 'calendar',
+        component: () => import('@/views/dashboard/CalendarView.vue'),
+        meta: { requiresAuth: true }
       }
     ]
   },
