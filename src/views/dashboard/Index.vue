@@ -387,7 +387,8 @@
                     <div class="flex items-center">
                         <img v-if="orgData && orgData.logo" :src="orgData.logo" alt="Team 695 Logo"
                             class="h-8 w-auto mr-2" />
-                        <span class="text-gray-500 text-sm">© {{ new Date().getFullYear() }} Team 695. All rights reserved.</span>
+                        <span class="text-gray-500 text-sm">© {{ new Date().getFullYear() }} Team 695. All rights
+                            reserved.</span>
                     </div>
                     <div class="mt-4 md:mt-0">
                         <div class="flex space-x-6">
@@ -427,19 +428,23 @@ export default defineComponent({
     setup() {
         const router = useRouter();
         const route = useRoute();
-        const loading = ref(true);
-        const error = ref('');
         const mobileMenuOpen = ref(false);
         const showUserMenu = ref(false);
         const showNotifications = ref(false);
-        
+
         // Use the Pinia store
         const userStore = useUserStore();
+
+        // Use storeToRefs to maintain reactivity
+        // Only destructure what we need to avoid TypeScript errors
         const { userInfo, orgData } = storeToRefs(userStore);
-        
-        // Computed property for user data - fixed to access the correct property
+
+        // Access other properties directly from the store
+        const storeIsLoading = computed(() => userStore.isLoading);
+        const storeError = computed(() => userStore.error);
+
+        // Computed property for user data
         const userData = computed(() => {
-            // The user data is directly in userInfo, not in a nested 'data' property
             return userInfo.value || {};
         });
 
@@ -498,55 +503,29 @@ export default defineComponent({
             router.push({ name: 'login' }).catch(err => console.error('Failed to navigate to login:', err));
         };
 
-        // Set up a refresh interval (e.g., every 15 minutes)
-        let refreshInterval: number | null = null;
-        
-        onMounted(async () => {
+        onMounted(() => {
             if (!casdoorService.isLoggedIn()) {
                 router.push({ name: 'login' });
                 return;
             }
 
-            loading.value = true;
-            try {
-                // Check if we already have data in the store before fetching
-                if (userInfo.value) {
-                    console.log('Using existing user data from store');
-                    loading.value = false;
-                } else {
-                    console.log('No user data in store, fetching from API');
-                    await userStore.fetchUserInfo();
-                    loading.value = false;
-                }
-            } catch (err) {
-                console.error('Error loading user info:', err);
-                error.value = err instanceof Error ? err.message : 'Failed to load user information';
-                loading.value = false;
-                router.push({ name: 'login' });
-            }
+            // Initialize the store only if not already initialized
+            // This prevents redundant API calls during navigation
+            userStore.initializeStore();
 
             // Add click outside listener
             document.addEventListener('click', handleClickOutside);
-            
-            // Set up periodic refresh
-            refreshInterval = window.setInterval(() => {
-                console.log('Performing periodic refresh of user data');
-                userStore.fetchUserInfo(true); // Force refresh
-            }, 15 * 60 * 1000); // 15 minutes
         });
-        
-        // Clean up the interval when component is unmounted
+
         onUnmounted(() => {
-            if (refreshInterval !== null) {
-                window.clearInterval(refreshInterval);
-            }
+            document.removeEventListener('click', handleClickOutside);
         });
 
         return {
             userData,
             orgData,
-            loading,
-            error,
+            isLoading: storeIsLoading,
+            error: storeError,
             mobileMenuOpen,
             showUserMenu,
             showNotifications,

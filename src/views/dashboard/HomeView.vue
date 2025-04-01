@@ -340,7 +340,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, computed } from 'vue';
+import { defineComponent, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { casdoorService } from '@/services/auth';
 import { Icon } from '@iconify/vue';
@@ -348,66 +348,56 @@ import { useUserStore } from '@/stores/userStore';
 import { storeToRefs } from 'pinia';
 
 export default defineComponent({
-  name: 'HomeView',
-  components: {
-    Icon
-  },
-  setup() {
-    const router = useRouter();
-    const loading = ref(true);
-    const error = ref('');
-    
-    // Use the Pinia store
-    const userStore = useUserStore();
-    const { userInfo, orgData } = storeToRefs(userStore);
+name: 'HomeView',
+components: {
+  Icon
+},
+setup() {
+  const router = useRouter();
+  
+  // Use the Pinia store
+  const userStore = useUserStore();
+  
+  // Use storeToRefs to maintain reactivity
+  // Only destructure what we need to avoid TypeScript errors
+  const { userInfo, orgData } = storeToRefs(userStore);
+  
+  // Access other properties directly from the store
+  const storeIsLoading = computed(() => userStore.isLoading);
+  const storeError = computed(() => userStore.error);
 
-    // Computed property for user data - fixed to access the correct property
-    const userData = computed(() => {
-      // The user data is directly in userInfo, not in a nested 'data' property
-      return userInfo.value || {};
+  // Computed property for user data
+  const userData = computed(() => {
+    return userInfo.value || {};
+  });
+
+  const logout = () => {
+    casdoorService.logout();
+    userStore.clearUserInfo(); // Clear user info in the store
+    router.push({ name: 'login' }).catch(err => {
+      console.error('Failed to navigate to login:', err);
     });
+  };
 
-    const logout = () => {
-      casdoorService.logout();
-      userStore.clearUserInfo(); // Clear user info in the store
-      router.push({ name: 'login' }).catch(err => {
-        console.error('Failed to navigate to login:', err);
-      });
-    };
+  onMounted(() => {
+    // Check if user is logged in
+    if (!casdoorService.isLoggedIn()) {
+      router.push({ name: 'login' });
+      return;
+    }
 
-    onMounted(async () => {
-      // Check if user is logged in
-      if (!casdoorService.isLoggedIn()) {
-        router.push({ name: 'login' });
-        return;
-      }
+    // Initialize the store only if not already initialized
+    // This prevents redundant API calls during navigation
+    userStore.initializeStore();
+  });
 
-      loading.value = true;
-      try {
-        // Check if we already have data in the store before fetching
-        if (userInfo.value) {
-          console.log('Using existing user data from store');
-          loading.value = false;
-        } else {
-          console.log('No user data in store, fetching from API');
-          await userStore.fetchUserInfo();
-          loading.value = false;
-        }
-      } catch (err) {
-        console.error('Error loading user info:', err);
-        error.value = err instanceof Error ? err.message : 'Failed to load user information';
-        loading.value = false;
-        router.push({ name: 'login' });
-      }
-    });
-
-    return {
-      userData,
-      orgData,
-      loading,
-      error,
-      logout
-    };
-  }
+  return {
+    userData,
+    orgData,
+    isLoading: storeIsLoading,
+    error: storeError,
+    logout
+  };
+}
 });
 </script>

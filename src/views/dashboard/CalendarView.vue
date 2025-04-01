@@ -418,6 +418,8 @@ import { defineComponent, ref, computed, onMounted, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import { casdoorService } from '@/services/auth';
 import { Icon } from '@iconify/vue';
+import { useUserStore } from '@/stores/userStore';
+import { storeToRefs } from 'pinia';
 
 interface CalendarDay {
     date: Date;
@@ -444,10 +446,15 @@ export default defineComponent({
     },
     setup() {
         const router = useRouter();
-        const loading = ref(true);
-        const error = ref('');
-        const userInfo = ref<any>({});
-        const casdoorUrl = 'https://sso.team695.com';
+        
+        // Use the Pinia store
+        const userStore = useUserStore();
+        const { userInfo, orgData } = storeToRefs(userStore);
+        
+        // Computed property for user data
+        const userData = computed(() => {
+            return userInfo.value || {};
+        });
 
         // Calendar state
         const currentDate = ref(new Date());
@@ -516,17 +523,6 @@ export default defineComponent({
             description: '',
             location: '',
             type: 'meeting' as 'meeting' | 'build' | 'competition' | 'deadline' | 'important'
-        });
-
-        // Computed properties for user data and organization data
-        const userData = computed(() => {
-            if (!userInfo.value || !userInfo.value.data) return {};
-            return userInfo.value.data;
-        });
-
-        const orgData = computed(() => {
-            if (!userInfo.value || !userInfo.value.data2) return null;
-            return userInfo.value.data2;
         });
 
         // Calendar computed properties
@@ -662,47 +658,9 @@ export default defineComponent({
                 }, {});
         });
 
-        // Methods
-        const fetchUserInfo = async () => {
-            loading.value = true;
-            error.value = '';
-
-            try {
-                // Get the token
-                const token = casdoorService.getToken();
-
-                if (!token) {
-                    throw new Error('No authentication token found');
-                }
-
-                // Fetch user info from the get-account endpoint
-                const response = await fetch(`${casdoorUrl}/api/get-account`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch user info: ${response.statusText}`);
-                }
-
-                // Parse the response
-                const data = await response.json();
-                userInfo.value = data;
-
-                loading.value = false;
-            } catch (err: any) {
-                console.error('Error loading user info:', err);
-                error.value = err.message || 'Failed to load user information';
-                loading.value = false;
-
-                // Redirect to login if there's an authentication error
-                router.push({ name: 'login' });
-            }
-        };
-
         const logout = () => {
             casdoorService.logout();
+            userStore.clearUserInfo(); // Clear user info in the store
             router.push({ name: 'login' }).catch(err => {
                 console.error('Failed to navigate to login:', err);
             });
@@ -909,22 +867,21 @@ export default defineComponent({
                 date1.getFullYear() === date2.getFullYear();
         };
 
-        onMounted(async () => {
+        onMounted(() => {
             // Check if user is logged in
             if (!casdoorService.isLoggedIn()) {
                 router.push({ name: 'login' });
                 return;
             }
 
-            await fetchUserInfo();
+            // Initialize the store only if not already initialized
+            // This prevents redundant API calls during navigation
+            userStore.initializeStore();
         });
 
         return {
-            userInfo,
             userData,
             orgData,
-            loading,
-            error,
             logout,
             currentDate,
             currentYear,
