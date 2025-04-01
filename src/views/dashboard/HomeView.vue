@@ -6,7 +6,7 @@
           <div class="px-6 py-8 md:p-10 md:flex md:items-center md:justify-between">
             <div>
               <h2 class="text-2xl font-bold text-white">
-                Welcome back, {{ userData.displayName || (userData.name ? userData.name.split('@')[0] : 'User') }}!
+                Welcome back, {{ userData.firstName || userData.displayName || (userData.name ? userData.name.split('@')[0] : 'User') }}!
               </h2>
               <p class="mt-2 text-blue-100">
                 {{ new Date().toLocaleDateString('en-US', {
