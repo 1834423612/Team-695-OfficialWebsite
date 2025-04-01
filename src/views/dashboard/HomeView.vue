@@ -384,9 +384,15 @@ export default defineComponent({
 
       loading.value = true;
       try {
-        // Fetch user info from the store
-        await userStore.fetchUserInfo();
-        loading.value = false;
+        // Check if we already have data in the store before fetching
+        if (userInfo.value) {
+          console.log('Using existing user data from store');
+          loading.value = false;
+        } else {
+          console.log('No user data in store, fetching from API');
+          await userStore.fetchUserInfo();
+          loading.value = false;
+        }
       } catch (err) {
         console.error('Error loading user info:', err);
         error.value = err instanceof Error ? err.message : 'Failed to load user information';

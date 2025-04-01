@@ -412,7 +412,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, onMounted, watch } from 'vue';
+import { defineComponent, ref, computed, onMounted, watch, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { casdoorService } from '@/services/auth';
 import { Icon } from '@iconify/vue';
@@ -498,6 +498,9 @@ export default defineComponent({
             router.push({ name: 'login' }).catch(err => console.error('Failed to navigate to login:', err));
         };
 
+        // Set up a refresh interval (e.g., every 15 minutes)
+        let refreshInterval: number | null = null;
+        
         onMounted(async () => {
             if (!casdoorService.isLoggedIn()) {
                 router.push({ name: 'login' });
@@ -506,9 +509,15 @@ export default defineComponent({
 
             loading.value = true;
             try {
-                // Fetch user info from the store
-                await userStore.fetchUserInfo();
-                loading.value = false;
+                // Check if we already have data in the store before fetching
+                if (userInfo.value) {
+                    console.log('Using existing user data from store');
+                    loading.value = false;
+                } else {
+                    console.log('No user data in store, fetching from API');
+                    await userStore.fetchUserInfo();
+                    loading.value = false;
+                }
             } catch (err) {
                 console.error('Error loading user info:', err);
                 error.value = err instanceof Error ? err.message : 'Failed to load user information';
@@ -518,6 +527,19 @@ export default defineComponent({
 
             // Add click outside listener
             document.addEventListener('click', handleClickOutside);
+            
+            // Set up periodic refresh
+            refreshInterval = window.setInterval(() => {
+                console.log('Performing periodic refresh of user data');
+                userStore.fetchUserInfo(true); // Force refresh
+            }, 15 * 60 * 1000); // 15 minutes
+        });
+        
+        // Clean up the interval when component is unmounted
+        onUnmounted(() => {
+            if (refreshInterval !== null) {
+                window.clearInterval(refreshInterval);
+            }
         });
 
         return {
