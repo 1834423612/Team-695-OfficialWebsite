@@ -85,7 +85,7 @@ export default defineComponent({
 
         const handleRegister = () => {
             // Redirect to the registration page
-            window.location.href = 'https://695cas.fastbirdcdn.online/signup/695_website';
+            window.location.href = 'https://sso.team695.com/signup/695_website';
         };
 
         return {

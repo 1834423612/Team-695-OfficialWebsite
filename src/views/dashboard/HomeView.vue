@@ -355,7 +355,7 @@ export default defineComponent({
     const loading = ref(true);
     const error = ref('');
     const userInfo = ref<any>({});
-    const casdoorUrl = 'https://695cas.fastbirdcdn.online';
+    const casdoorUrl = 'https://sso.team695.com';
 
     // Computed properties for user data and organization data
     const userData = computed(() => {

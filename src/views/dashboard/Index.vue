@@ -425,7 +425,7 @@ export default defineComponent({
         const mobileMenuOpen = ref(false);
         const showUserMenu = ref(false);
         const showNotifications = ref(false);
-        const casdoorUrl = 'https://695cas.fastbirdcdn.online';
+        const casdoorUrl = 'https://sso.team695.com';
 
         const userData = computed(() => userInfo.value?.data || {});
         const orgData = computed(() => userInfo.value?.data2 || null);
