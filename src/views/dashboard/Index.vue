@@ -12,7 +12,13 @@
                                 <span v-else class="text-xl font-bold text-blue-600">Team 695</span>
                             </router-link>
                             <!-- Mobile title -->
-                            <span class="ml-2 text-lg font-semibold text-blue-600 sm:hidden">695 Dashboard</span>
+                            <div v-if="orgData && orgData.logo">
+                                <span class="ml-2 text-lg font-semibold text-blue-600 sm:hidden">695 Dashboard</span>
+                            </div>
+                            <div v-else class="ml-2 text-md font-semibold sm:hidden">
+                                <span class="text-gray-300">|</span>
+                                <span class="ml-2 text-orange-500">Dashboard</span>
+                            </div>
                         </div>
                         <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
                             <router-link to="/dashboard" :class="[
