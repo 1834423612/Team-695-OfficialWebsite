@@ -142,6 +142,13 @@ export interface UserInfo {
     owner?: string;
 }
 
+export interface UserInfo {
+    data2?: {
+        logo?: string;
+        [key: string]: any;
+    };
+}
+
 // Token response interface
 interface TokenResponse {
     access_token: string;
@@ -459,136 +466,153 @@ class CasdoorService {
     }
 
     // 获取当前会话ID
-    private getSessionId(): string | null {
-        // 先尝试从 cookie 获取
-        const sessionId = Cookies.get(SESSION_ID_COOKIE);
-        if (sessionId) {
-            return sessionId;
-        }
+    // private getSessionId(): string | null {
+    //     // 先尝试从 cookie 获取
+    //     const sessionId = Cookies.get(SESSION_ID_COOKIE);
+    //     if (sessionId) {
+    //         return sessionId;
+    //     }
         
-        // 如果没有找到会话ID，尝试从令牌中提取用户信息
-        const token = this.getToken();
-        if (token) {
-            const tokenInfo = this.parseAccessToken(token);
-            if (tokenInfo && tokenInfo.payload) {
-                const payload = tokenInfo.payload;
-                // 构建会话ID格式：organization/application/user
-                return `${config.organizationName}/${config.appName}/${payload.sub || payload.name}`;
-            }
-        }
+    //     // 如果没有找到会话ID，尝试从令牌中提取用户信息
+    //     const token = this.getToken();
+    //     if (token) {
+    //         const tokenInfo = this.parseAccessToken(token);
+    //         if (tokenInfo && tokenInfo.payload) {
+    //             const payload = tokenInfo.payload;
+    //             // 构建会话ID格式：organization/application/user
+    //             return `${config.organizationName}/${config.appName}/${payload.sub || payload.name}`;
+    //         }
+    //     }
         
-        return null;
-    }
+    //     return null;
+    // }
 
     // 根据 Swagger 文档修改：删除 Casdoor 服务器上的会话
-    private async deleteSession(): Promise<boolean> {
-        const sessionId = this.getSessionId();
-        if (!sessionId) {
-            console.warn('No session ID found to delete');
-            return false;
-        }
+    // private async deleteSession(): Promise<boolean> {
+    //     const sessionId = this.getSessionId();
+    //     if (!sessionId) {
+    //         console.warn('No session ID found to delete');
+    //         return false;
+    //     }
 
-        try {
-            // 使用查询参数传递会话ID
-            const response = await fetch(`${config.serverUrl}/api/delete-session?id=${encodeURIComponent(sessionId)}`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${this.getToken()}`,
-                    'Content-Type': 'application/json'
-                }
-            });
+    //     try {
+    //         // 使用查询参数传递会话ID
+    //         const response = await fetch(`${config.serverUrl}/api/delete-session?id=${encodeURIComponent(sessionId)}`, {
+    //             method: 'POST',
+    //             headers: {
+    //                 'Authorization': `Bearer ${this.getToken()}`,
+    //                 'Content-Type': 'application/json'
+    //             }
+    //         });
 
-            if (!response.ok) {
-                console.error(`Failed to delete session: ${response.statusText}`);
-                return false;
-            }
+    //         if (!response.ok) {
+    //             console.error(`Failed to delete session: ${response.statusText}`);
+    //             return false;
+    //         }
 
-            return true;
-        } catch (error) {
-            console.error('Failed to delete session:', error);
-            return false;
-        }
-    }
+    //         return true;
+    //     } catch (error) {
+    //         console.error('Failed to delete session:', error);
+    //         return false;
+    //     }
+    // }
 
     // 根据 Swagger 文档修改：删除 Casdoor 服务器上的令牌
-    private async deleteToken(): Promise<boolean> {
-        const token = this.getToken();
-        if (!token) {
-            console.warn('No token found to delete');
-            return false;
-        }
+    // private async deleteToken(): Promise<boolean> {
+    //     const token = this.getToken();
+    //     if (!token) {
+    //         console.warn('No token found to delete');
+    //         return false;
+    //     }
 
-        try {
-            // 解析令牌以获取必要的信息
-            const tokenInfo = this.parseAccessToken(token);
-            if (!tokenInfo || !tokenInfo.payload) {
-                console.error('Failed to parse token for deletion');
-                return false;
-            }
+    //     try {
+    //         // 解析令牌以获取必要的信息
+    //         const tokenInfo = this.parseAccessToken(token);
+    //         if (!tokenInfo || !tokenInfo.payload) {
+    //             console.error('Failed to parse token for deletion');
+    //             return false;
+    //         }
 
-            // 构建符合 Swagger 文档的请求体
-            const payload = tokenInfo.payload;
-            const tokenData = {
-                accessToken: token,
-                accessTokenHash: "", // 可能需要从令牌中提取或留空
-                application: config.appName,
-                organization: config.organizationName,
-                name: payload.name || payload.sub || "",
-                createdTime: payload.iat ? new Date(payload.iat * 1000).toISOString() : "",
-                expiresIn: payload.exp ? (payload.exp - payload.iat) : 0,
-                scope: payload.scope || "",
-                tokenType: "Bearer",
-                user: payload.sub || payload.name || ""
-            };
+    //         // 构建符合 Swagger 文档的请求体
+    //         const payload = tokenInfo.payload;
+    //         const tokenData = {
+    //             accessToken: token,
+    //             accessTokenHash: "", // 可能需要从令牌中提取或留空
+    //             application: config.appName,
+    //             organization: config.organizationName,
+    //             name: payload.name || payload.sub || "",
+    //             createdTime: payload.iat ? new Date(payload.iat * 1000).toISOString() : "",
+    //             expiresIn: payload.exp ? (payload.exp - payload.iat) : 0,
+    //             scope: payload.scope || "",
+    //             tokenType: "Bearer",
+    //             user: payload.sub || payload.name || ""
+    //         };
 
-            const response = await fetch(`${config.serverUrl}/api/delete-token`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(tokenData)
-            });
+    //         const response = await fetch(`${config.serverUrl}/api/delete-token`, {
+    //             method: 'POST',
+    //             headers: {
+    //                 'Authorization': `Bearer ${token}`,
+    //                 'Content-Type': 'application/json'
+    //             },
+    //             body: JSON.stringify(tokenData)
+    //         });
 
-            if (!response.ok) {
-                console.error(`Failed to delete token: ${response.statusText}`);
-                return false;
-            }
+    //         if (!response.ok) {
+    //             console.error(`Failed to delete token: ${response.statusText}`);
+    //             return false;
+    //         }
 
-            return true;
-        } catch (error) {
-            console.error('Failed to delete token:', error);
-            return false;
-        }
-    }
+    //         return true;
+    //     } catch (error) {
+    //         console.error('Failed to delete token:', error);
+    //         return false;
+    //     }
+    // }
 
     // Logout the user - enhanced version
     async logout(): Promise<void> {
         try {
-            // First try to delete the session and token on the server
+            // 注释掉删除会话和令牌的逻辑
+            /*
             await Promise.allSettled([
                 this.deleteSession(),
                 this.deleteToken()
             ]);
+            */
+    
+            // 调用 Casdoor 的 /api/logout API
+            const token = this.getToken();
+            if (token) {
+                await fetch(`${config.serverUrl}/api/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+            }
         } catch (error) {
             console.error('Error during server logout:', error);
         } finally {
             // Always clear local state regardless of server response
             this.userInfoCache = null;
-            
+    
             // Remove cookies
             Cookies.remove(TOKEN_COOKIE, { path: '/' });
             Cookies.remove(REFRESH_TOKEN_COOKIE, { path: '/' });
             Cookies.remove(SESSION_ID_COOKIE, { path: '/' });
-            
+    
             // 如果使用备份存储，也清除 localStorage
             if (useLocalStorageBackup) {
                 localStorage.removeItem(TOKEN_COOKIE);
                 localStorage.removeItem(REFRESH_TOKEN_COOKIE);
             }
-            
+    
             // Clear PKCE state
             sessionStorage.clear();
+    
+            // 刷新页面以确保获取到实时状态
+            window.location.reload();
         }
     }
     
