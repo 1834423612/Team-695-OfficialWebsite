@@ -58,6 +58,19 @@ const routes: Array<RouteRecordRaw> = [
     meta: { guest: true }
   },
   {
+    path: '/dashboard',
+    name: 'dashboard',
+    component: () => import('@/views/dashboard/Index.vue'),
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: '',
+        name: 'DashboardHome',
+        component: () => import('@/views/dashboard/HomeView.vue'),
+      }
+    ]
+  },
+  {
     path: '/profile',
     name: 'profile',
     component: () => import('@/views/auth/SucceedView.vue'),
@@ -86,7 +99,7 @@ router.beforeEach((to, _from, next) => {
   // Routes for guests only (like login)
   if (to.matched.some(record => record.meta.guest)) {
     if (isLoggedIn && to.name !== 'callback') {
-      next({ name: 'profile' });
+      next({ name: 'DashboardHome' });
       return;
     }
   }
