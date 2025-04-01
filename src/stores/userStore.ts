@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { casdoorService } from '@/services/auth';
 
 // Define interface for the store state
-interface UserStoreState {
+export interface UserStoreState {
     userInfo: any | null;
     orgData: any | null;
     isLoading: boolean;
