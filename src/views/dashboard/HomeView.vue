@@ -344,6 +344,8 @@ import { defineComponent, ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { casdoorService } from '@/services/auth';
 import { Icon } from '@iconify/vue';
+import { useUserStore } from '@/stores/userStore';
+import { storeToRefs } from 'pinia';
 
 export default defineComponent({
   name: 'HomeView',
@@ -354,60 +356,20 @@ export default defineComponent({
     const router = useRouter();
     const loading = ref(true);
     const error = ref('');
-    const userInfo = ref<any>({});
-    const casdoorUrl = 'https://sso.team695.com';
+    
+    // Use the Pinia store
+    const userStore = useUserStore();
+    const { userInfo, orgData } = storeToRefs(userStore);
 
-    // Computed properties for user data and organization data
+    // Computed property for user data - fixed to access the correct property
     const userData = computed(() => {
-      if (!userInfo.value || !userInfo.value.data) return {};
-      return userInfo.value.data;
+      // The user data is directly in userInfo, not in a nested 'data' property
+      return userInfo.value || {};
     });
-
-    const orgData = computed(() => {
-      if (!userInfo.value || !userInfo.value.data2) return null;
-      return userInfo.value.data2;
-    });
-
-    const fetchUserInfo = async () => {
-      loading.value = true;
-      error.value = '';
-
-      try {
-        // Get the token
-        const token = casdoorService.getToken();
-
-        if (!token) {
-          throw new Error('No authentication token found');
-        }
-
-        // Fetch user info from the get-account endpoint
-        const response = await fetch(`${casdoorUrl}/api/get-account`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch user info: ${response.statusText}`);
-        }
-
-        // Parse the response
-        const data = await response.json();
-        userInfo.value = data;
-
-        loading.value = false;
-      } catch (err: any) {
-        console.error('Error loading user info:', err);
-        error.value = err.message || 'Failed to load user information';
-        loading.value = false;
-
-        // Redirect to login if there's an authentication error
-        router.push({ name: 'login' });
-      }
-    };
 
     const logout = () => {
       casdoorService.logout();
+      userStore.clearUserInfo(); // Clear user info in the store
       router.push({ name: 'login' }).catch(err => {
         console.error('Failed to navigate to login:', err);
       });
@@ -420,11 +382,20 @@ export default defineComponent({
         return;
       }
 
-      await fetchUserInfo();
+      loading.value = true;
+      try {
+        // Fetch user info from the store
+        await userStore.fetchUserInfo();
+        loading.value = false;
+      } catch (err) {
+        console.error('Error loading user info:', err);
+        error.value = err instanceof Error ? err.message : 'Failed to load user information';
+        loading.value = false;
+        router.push({ name: 'login' });
+      }
     });
 
     return {
-      userInfo,
       userData,
       orgData,
       loading,

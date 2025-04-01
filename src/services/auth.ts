@@ -163,6 +163,8 @@ interface TokenResponse {
 class CasdoorService {
     private userInfoCache: UserInfo | null = null;
     private tokenExpiryTimer: number | null = null;
+    config: any;
+    getBasicUserInfoFromToken: any;
 
     constructor() {
         // 检查是否有备用存储的令牌
