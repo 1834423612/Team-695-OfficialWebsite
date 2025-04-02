@@ -3,7 +3,7 @@ import Cookies from 'js-cookie';
 
 // Define the Casdoor configuration
 const config = {
-    serverUrl: 'https://695cas.fastbirdcdn.online',
+    serverUrl: 'https://sso.team695.com',
     clientId: '300932808273326bac0c',
     appName: '695_website',
     organizationName: 'Team695',
