@@ -73,14 +73,14 @@ const routes: Array<RouteRecordRaw> = [
         name: 'calendar',
         component: () => import('@/views/dashboard/CalendarView.vue'),
         meta: { requiresAuth: true }
+      },
+      {
+        path: 'profile',
+        name: 'profile',
+        component: () => import('@/views/dashboard/ProfileView.vue'),
+        meta: { requiresAuth: true }
       }
     ]
-  },
-  {
-    path: '/profile',
-    name: 'profile',
-    component: () => import('@/views/auth/SucceedView.vue'),
-    meta: { requiresAuth: true }
   },
 ];
 

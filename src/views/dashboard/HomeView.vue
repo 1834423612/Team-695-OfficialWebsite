@@ -16,7 +16,7 @@
             </p>
           </div>
           <div class="mt-4 md:mt-0 md:ml-6">
-            <router-link to="/profile"
+            <router-link to="/dashboard/profile"
               class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
               View Profile
             </router-link>
