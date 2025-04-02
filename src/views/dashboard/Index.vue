@@ -380,29 +380,34 @@
             </div>
         </div>
 
-        <!-- Footer -->
         <footer class="bg-white mt-auto">
             <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
                 <div class="flex flex-col md:flex-row justify-between items-center">
-                    <div class="flex items-center">
+                    <!-- Logo and Copyright -->
+                    <div class="flex flex-col items-center md:items-start md:flex-row">
+                        <!-- Logo (hidden on desktop) -->
                         <img v-if="orgData && orgData.logo" :src="orgData.logo" alt="Team 695 Logo"
-                            class="h-8 w-auto mr-2" />
-                        <span class="text-gray-500 text-sm">© {{ new Date().getFullYear() }} Team 695. All rights
-                            reserved.</span>
+                            class="h-8 w-auto mb-2 md:mb-0 md:hidden" />
+                        <!-- Copyright Text -->
+                        <span class="text-gray-500 text-sm text-center md:text-left">
+                            © {{ new Date().getFullYear() }} Team 695. All rights reserved.
+                        </span>
                     </div>
+
+                    <!-- Social Media Links -->
                     <div class="mt-4 md:mt-0">
                         <div class="flex space-x-6">
-                            <a href="#" class="text-gray-400 hover:text-gray-500">
+                            <!-- <a href="#" target="_blank" class="text-gray-400 hover:text-gray-500">
                                 <Icon icon="mdi:facebook" class="h-5 w-5" />
-                            </a>
-                            <a href="#" class="text-gray-400 hover:text-gray-500">
+                            </a> -->
+                            <a href="https://www.instagram.com/beachwood695/" target="_blank" class="text-gray-500 hover:text-gray-600">
                                 <Icon icon="mdi:instagram" class="h-5 w-5" />
                             </a>
-                            <a href="#" class="text-gray-400 hover:text-gray-500">
+                            <!-- <a href="#" target="_blank" class="text-gray-400 hover:text-gray-500">
                                 <Icon icon="mdi:twitter" class="h-5 w-5" />
-                            </a>
-                            <a href="#" class="text-gray-400 hover:text-gray-500">
-                                <Icon icon="mdi:youtube" class="h-5 w-5" />
+                            </a> -->
+                            <a href="https://github.com/FRCTeam695" target="_blank" class="text-gray-500 hover:text-gray-600">
+                                <Icon icon="mdi:github" class="h-5 w-5" />
                             </a>
                         </div>
                     </div>
