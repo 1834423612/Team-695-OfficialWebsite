@@ -1,8 +1,9 @@
 import Sdk from 'casdoor-js-sdk';
+import Cookies from 'js-cookie';
 
 // Define the Casdoor configuration
 const config = {
-    serverUrl: 'https://695cas.fastbirdcdn.online',
+    serverUrl: 'https://sso.team695.com',
     clientId: '300932808273326bac0c',
     appName: '695_website',
     organizationName: 'Team695',
@@ -10,6 +11,27 @@ const config = {
     // Use sessionStorage for PKCE state
     storage: sessionStorage
 };
+
+// 根据环境动态设置 Cookie 选项
+const isDevelopment = process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost';
+
+// Cookie configuration
+const COOKIE_OPTIONS = {
+    // 在开发环境中禁用 secure 标志，允许 HTTP
+    secure: !isDevelopment && window.location.protocol === 'https:',
+    // 在开发环境中使用 lax，生产环境使用 strict
+    sameSite: isDevelopment ? 'lax' as const : 'strict' as const,
+    expires: 7,  // 7 天过期
+    path: '/'    // 全站可用
+};
+
+// 备用存储方法 - 当 Cookie 不可用时使用 localStorage
+const useLocalStorageBackup = isDevelopment;
+
+// Token cookie/storage names
+const TOKEN_COOKIE = 'casdoor-token';
+const REFRESH_TOKEN_COOKIE = 'casdoor-refresh-token';
+const SESSION_ID_COOKIE = 'casdoor_session_id';
 
 // Initialize the SDK
 const sdk = new Sdk(config);
@@ -121,24 +143,50 @@ export interface UserInfo {
 }
 
 // Token response interface
-// interface TokenResponse {
-//     access_token: string;
-//     token_type: string;
-//     expires_in: number;
-//     refresh_token?: string;
-//     scope?: string;
-// }
+interface TokenResponse {
+    access_token: string;
+    id_token?: string;
+    refresh_token?: string;
+    token_type: string;
+    expires_in: number;
+    scope?: string;
+}
 
 // Create a service to handle authentication
 class CasdoorService {
-    private accessToken: string | null = null;
-    private refreshToken: string | null = null;
     private userInfoCache: UserInfo | null = null;
 
     constructor() {
-        // Initialize tokens from localStorage if available
-        this.accessToken = localStorage.getItem('casdoor-token');
-        this.refreshToken = localStorage.getItem('casdoor-refresh-token');
+        // 检查是否有备用存储的令牌
+        if (useLocalStorageBackup) {
+            this.checkLocalStorageBackup();
+        }
+    }
+
+    // 检查 localStorage 中是否有备用令牌
+    private checkLocalStorageBackup(): void {
+        try {
+            const accessToken = localStorage.getItem(TOKEN_COOKIE);
+            if (accessToken) {
+                console.log('Found backup token in localStorage, attempting to restore');
+                // 尝试将 localStorage 中的令牌恢复到 cookie
+                Cookies.set(TOKEN_COOKIE, accessToken, COOKIE_OPTIONS);
+                
+                const refreshToken = localStorage.getItem(REFRESH_TOKEN_COOKIE);
+                if (refreshToken) {
+                    Cookies.set(REFRESH_TOKEN_COOKIE, refreshToken, COOKIE_OPTIONS);
+                }
+                
+                // 检查是否成功设置了 cookie
+                if (!Cookies.get(TOKEN_COOKIE)) {
+                    console.warn('Failed to restore token to cookie, will continue using localStorage');
+                } else {
+                    console.log('Successfully restored token from localStorage to cookie');
+                }
+            }
+        } catch (error) {
+            console.error('Error checking localStorage backup:', error);
+        }
     }
 
     // Start the PKCE authorization flow
@@ -166,19 +214,14 @@ class CasdoorService {
         try {
             // Exchange the authorization code for an access token using PKCE
             const tokenResponse = await sdk.exchangeForAccessToken();
+            // console.log('Token response received:', !!tokenResponse);
 
             if (!tokenResponse || !tokenResponse.access_token) {
                 throw new Error('Failed to exchange code for token');
             }
 
-            // Store the tokens
-            this.accessToken = tokenResponse.access_token;
-            localStorage.setItem('casdoor-token', tokenResponse.access_token);
-
-            if (tokenResponse.refresh_token) {
-                this.refreshToken = tokenResponse.refresh_token;
-                localStorage.setItem('casdoor-refresh-token', tokenResponse.refresh_token);
-            }
+            // Manually store tokens in cookies
+            this.storeTokensInCookies(tokenResponse);
 
             return tokenResponse.access_token;
         } catch (error) {
@@ -187,27 +230,103 @@ class CasdoorService {
         }
     }
 
+    // Helper method to store tokens in cookies
+    private storeTokensInCookies(tokenResponse: TokenResponse): void {
+        console.log('Storing tokens...');
+        
+        try {
+            // 尝试存储在 cookie 中
+            Cookies.set(TOKEN_COOKIE, tokenResponse.access_token, COOKIE_OPTIONS);
+            
+            if (tokenResponse.refresh_token) {
+                Cookies.set(REFRESH_TOKEN_COOKIE, tokenResponse.refresh_token, COOKIE_OPTIONS);
+            }
+            
+            // 检查 cookie 是否设置成功
+            const cookieToken = Cookies.get(TOKEN_COOKIE);
+            console.log('Cookie token set success:', !!cookieToken);
+            
+            // 如果 cookie 设置失败且在开发环境，使用 localStorage 作为备份
+            if (!cookieToken && useLocalStorageBackup) {
+                console.warn('Failed to set cookie, using localStorage as backup');
+                localStorage.setItem(TOKEN_COOKIE, tokenResponse.access_token);
+                
+                if (tokenResponse.refresh_token) {
+                    localStorage.setItem(REFRESH_TOKEN_COOKIE, tokenResponse.refresh_token);
+                }
+            }
+        } catch (error) {
+            console.error('Error storing tokens:', error);
+            
+            // 出错时使用 localStorage 作为备份
+            if (useLocalStorageBackup) {
+                console.warn('Error setting cookies, using localStorage as backup');
+                localStorage.setItem(TOKEN_COOKIE, tokenResponse.access_token);
+                
+                if (tokenResponse.refresh_token) {
+                    localStorage.setItem(REFRESH_TOKEN_COOKIE, tokenResponse.refresh_token);
+                }
+            }
+        }
+    }
+
+    // Manually set tokens (useful for testing or when tokens are received from other sources)
+    setTokens(accessToken: string, refreshToken?: string): void {
+        try {
+            Cookies.set(TOKEN_COOKIE, accessToken, COOKIE_OPTIONS);
+            
+            if (refreshToken) {
+                Cookies.set(REFRESH_TOKEN_COOKIE, refreshToken, COOKIE_OPTIONS);
+            }
+            
+            // 检查 cookie 是否设置成功
+            const cookieToken = Cookies.get(TOKEN_COOKIE);
+            
+            // 如果 cookie 设置失败且在开发环境，使用 localStorage 作为备份
+            if (!cookieToken && useLocalStorageBackup) {
+                localStorage.setItem(TOKEN_COOKIE, accessToken);
+                
+                if (refreshToken) {
+                    localStorage.setItem(REFRESH_TOKEN_COOKIE, refreshToken);
+                }
+            }
+        } catch (error) {
+            console.error('Error setting tokens:', error);
+            
+            // 出错时使用 localStorage 作为备份
+            if (useLocalStorageBackup) {
+                localStorage.setItem(TOKEN_COOKIE, accessToken);
+                
+                if (refreshToken) {
+                    localStorage.setItem(REFRESH_TOKEN_COOKIE, refreshToken);
+                }
+            }
+        }
+    }
+
     // Refresh the access token
     async refreshAccessToken(): Promise<string> {
-        if (!this.refreshToken) {
+        // 先尝试从 cookie 获取刷新令牌
+        let refreshToken = Cookies.get(REFRESH_TOKEN_COOKIE);
+        
+        // 如果 cookie 中没有且使用备份存储，则从 localStorage 获取
+        if (!refreshToken && useLocalStorageBackup) {
+            refreshToken = localStorage.getItem(REFRESH_TOKEN_COOKIE) || undefined;
+        }
+        
+        if (!refreshToken) {
             throw new Error('No refresh token available');
         }
 
         try {
-            const tokenResponse = await sdk.refreshAccessToken(this.refreshToken);
+            const tokenResponse = await sdk.refreshAccessToken(refreshToken);
 
             if (!tokenResponse || !tokenResponse.access_token) {
                 throw new Error('Failed to refresh token');
             }
 
             // Update the tokens
-            this.accessToken = tokenResponse.access_token;
-            localStorage.setItem('casdoor-token', tokenResponse.access_token);
-
-            if (tokenResponse.refresh_token) {
-                this.refreshToken = tokenResponse.refresh_token;
-                localStorage.setItem('casdoor-refresh-token', tokenResponse.refresh_token);
-            }
+            this.storeTokensInCookies(tokenResponse);
 
             return tokenResponse.access_token;
         } catch (error) {
@@ -220,12 +339,35 @@ class CasdoorService {
 
     // Check if the user is logged in
     isLoggedIn(): boolean {
-        return !!this.accessToken;
+        // 先检查 cookie
+        const cookieToken = Cookies.get(TOKEN_COOKIE);
+        if (cookieToken) {
+            return true;
+        }
+        
+        // 如果 cookie 中没有且使用备份存储，则检查 localStorage
+        if (useLocalStorageBackup) {
+            const localToken = localStorage.getItem(TOKEN_COOKIE);
+            return !!localToken;
+        }
+        
+        return false;
     }
 
     // Get the token
     getToken(): string | null {
-        return this.accessToken;
+        // 先尝试从 cookie 获取
+        const cookieToken = Cookies.get(TOKEN_COOKIE);
+        if (cookieToken) {
+            return cookieToken;
+        }
+        
+        // 如果 cookie 中没有且使用备份存储，则从 localStorage 获取
+        if (useLocalStorageBackup) {
+            return localStorage.getItem(TOKEN_COOKIE);
+        }
+        
+        return null;
     }
 
     // Parse JWT token to get user info
@@ -238,11 +380,11 @@ class CasdoorService {
         }
     }
 
-    // Add this method to the CasdoorService class to ensure we're properly fetching user info
-
     // Get user information with retry mechanism
     async getUserInfo(forceRefresh = false): Promise<UserInfo> {
-        if (!this.accessToken) {
+        const token = this.getToken();
+        
+        if (!token) {
             throw new Error('Not authenticated');
         }
 
@@ -253,7 +395,7 @@ class CasdoorService {
 
         try {
             // Use the SDK to get user info
-            const response = await sdk.getUserInfo(this.accessToken);
+            const response = await sdk.getUserInfo(token);
 
             // Check if response is a Response object
             if (response instanceof Response) {
@@ -281,7 +423,7 @@ class CasdoorService {
                 const userInfoUrl = `${config.serverUrl}/api/get-account`;
                 const response = await fetch(userInfoUrl, {
                     headers: {
-                        'Authorization': `Bearer ${this.accessToken}`,
+                        'Authorization': `Bearer ${token}`,
                     },
                 });
 
@@ -296,8 +438,8 @@ class CasdoorService {
                 console.error('Second attempt to get user info failed:', secondError);
 
                 // If we can't get detailed info, try to get basic info from token
-                if (this.accessToken) {
-                    const tokenInfo = this.parseAccessToken(this.accessToken);
+                if (token) {
+                    const tokenInfo = this.parseAccessToken(token);
                     if (tokenInfo && tokenInfo.payload) {
                         const payload = tokenInfo.payload;
                         const basicUserInfo: UserInfo = {
@@ -316,23 +458,147 @@ class CasdoorService {
         }
     }
 
-    // Logout the user
-    logout(): void {
-        this.accessToken = null;
-        this.refreshToken = null;
-        this.userInfoCache = null;
-        localStorage.removeItem('casdoor-token');
-        localStorage.removeItem('casdoor-refresh-token');
-        sessionStorage.clear(); // Clear PKCE state
+    // 获取当前会话ID
+    private getSessionId(): string | null {
+        // 先尝试从 cookie 获取
+        const sessionId = Cookies.get(SESSION_ID_COOKIE);
+        if (sessionId) {
+            return sessionId;
+        }
+        
+        // 如果没有找到会话ID，尝试从令牌中提取用户信息
+        const token = this.getToken();
+        if (token) {
+            const tokenInfo = this.parseAccessToken(token);
+            if (tokenInfo && tokenInfo.payload) {
+                const payload = tokenInfo.payload;
+                // 构建会话ID格式：organization/application/user
+                return `${config.organizationName}/${config.appName}/${payload.sub || payload.name}`;
+            }
+        }
+        
+        return null;
     }
 
-    // Revoke the token and logout
-    async revokeToken(): Promise<void> {
-        // Just perform a local logout for now
-        this.logout();
+    // 根据 Swagger 文档修改：删除 Casdoor 服务器上的会话
+    private async deleteSession(): Promise<boolean> {
+        const sessionId = this.getSessionId();
+        if (!sessionId) {
+            console.warn('No session ID found to delete');
+            return false;
+        }
 
-        // Redirect to Casdoor logout page if needed
-        // window.location.href = `${config.serverUrl}/logout`;
+        try {
+            // 使用查询参数传递会话ID
+            const response = await fetch(`${config.serverUrl}/api/delete-session?id=${encodeURIComponent(sessionId)}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.getToken()}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                console.error(`Failed to delete session: ${response.statusText}`);
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Failed to delete session:', error);
+            return false;
+        }
+    }
+
+    // 根据 Swagger 文档修改：删除 Casdoor 服务器上的令牌
+    private async deleteToken(): Promise<boolean> {
+        const token = this.getToken();
+        if (!token) {
+            console.warn('No token found to delete');
+            return false;
+        }
+
+        try {
+            // 解析令牌以获取必要的信息
+            const tokenInfo = this.parseAccessToken(token);
+            if (!tokenInfo || !tokenInfo.payload) {
+                console.error('Failed to parse token for deletion');
+                return false;
+            }
+
+            // 构建符合 Swagger 文档的请求体
+            const payload = tokenInfo.payload;
+            const tokenData = {
+                accessToken: token,
+                accessTokenHash: "", // 可能需要从令牌中提取或留空
+                application: config.appName,
+                organization: config.organizationName,
+                name: payload.name || payload.sub || "",
+                createdTime: payload.iat ? new Date(payload.iat * 1000).toISOString() : "",
+                expiresIn: payload.exp ? (payload.exp - payload.iat) : 0,
+                scope: payload.scope || "",
+                tokenType: "Bearer",
+                user: payload.sub || payload.name || ""
+            };
+
+            const response = await fetch(`${config.serverUrl}/api/delete-token`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(tokenData)
+            });
+
+            if (!response.ok) {
+                console.error(`Failed to delete token: ${response.statusText}`);
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Failed to delete token:', error);
+            return false;
+        }
+    }
+
+    // Logout the user - enhanced version
+    async logout(): Promise<void> {
+        try {
+            // First try to delete the session and token on the server
+            await Promise.allSettled([
+                this.deleteSession(),
+                this.deleteToken()
+            ]);
+        } catch (error) {
+            console.error('Error during server logout:', error);
+        } finally {
+            // Always clear local state regardless of server response
+            this.userInfoCache = null;
+            
+            // Remove cookies
+            Cookies.remove(TOKEN_COOKIE, { path: '/' });
+            Cookies.remove(REFRESH_TOKEN_COOKIE, { path: '/' });
+            Cookies.remove(SESSION_ID_COOKIE, { path: '/' });
+            
+            // 如果使用备份存储，也清除 localStorage
+            if (useLocalStorageBackup) {
+                localStorage.removeItem(TOKEN_COOKIE);
+                localStorage.removeItem(REFRESH_TOKEN_COOKIE);
+            }
+            
+            // Clear PKCE state
+            sessionStorage.clear();
+        }
+    }
+    
+    // Handle token response directly (for cases where we get tokens from another source)
+    handleTokenResponse(tokenResponse: TokenResponse): void {
+        if (!tokenResponse || !tokenResponse.access_token) {
+            throw new Error('Invalid token response');
+        }
+        
+        this.storeTokensInCookies(tokenResponse);
     }
 }
 
