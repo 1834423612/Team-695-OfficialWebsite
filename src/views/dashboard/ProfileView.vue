@@ -1,97 +1,87 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
     <div class="max-w-4xl mx-auto">
-      <div class="text-center mb-6">
-        <div class="flex justify-center mb-4">
-          <div class="h-20 w-20 rounded-full bg-green-100 flex items-center justify-center">
-            <Icon icon="mdi:check-circle" class="h-12 w-12 text-green-600" />
-          </div>
-        </div>
-        <h2 class="text-3xl font-extrabold text-gray-900">Login Successful</h2>
-        <p class="mt-2 text-lg text-gray-600">
-          You have successfully authenticated with Casdoor.
+      <!-- Page Header -->
+      <div class="mb-8">
+        <h1 class="text-2xl font-bold text-gray-900">My Profile</h1>
+        <p class="mt-1 text-sm text-gray-500">
+          View and manage your account information
         </p>
       </div>
 
       <!-- Help Card -->
-      <div class="bg-blue-50 shadow-md rounded-xl overflow-hidden mb-6 p-6">
-          <div class="flex items-start">
-            <div class="flex-shrink-0">
-              <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                <Icon icon="mdi:help-circle" class="h-6 w-6 text-blue-600" />
-              </div>
-            </div>
-            <div class="ml-4">
-              <h3 class="text-md font-semibold text-blue-800">Need help with your account?</h3>
-              <p class="mt-1 text-sm text-blue-600">
-                If you need to update your profile information or have questions about your account,
-                please contact administrator or visit the Casdoor portal.
-              </p>
-              <div class="mt-3">
-                <a :href="casdoorUrl" target="_blank" class="inline-flex items-center text-sm font-bold underline decoration-pink-500/40 decoration-2 underline-offset-2 hover:decoration-dashed hover:decoration-pink-500 hover:decoration-3 text-blue-700 hover:text-blue-800">
-                  <Icon icon="mdi:open-in-new" class="mr-1 h-4 w-4" />
-                  Visit Casdoor Portal
-                </a>
-              </div>
-            </div>
+      <div class="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg shadow-lg overflow-hidden mb-6">
+        <div class="px-6 py-6 md:p-8 md:flex md:items-center md:justify-between">
+          <div>
+            <h3 class="text-lg font-semibold text-white">Need help with your account?</h3>
+            <p class="mt-2 text-blue-100">
+              If you need to update your profile information or have questions about your account,
+              please contact an administrator or visit the Casdoor portal.
+            </p>
+          </div>
+          <div class="mt-4 md:mt-0 md:ml-6">
+            <a :href="`${casdoorUrl}/login/Team695`" target="_blank"
+              class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 whitespace-nowrap">
+              <Icon icon="mdi:open-in-new" class="h-4 w-4 mr-1 flex-shrink-0" />
+              <span class="truncate">Visit Casdoor Portal</span>
+            </a>
           </div>
         </div>
+      </div>
 
-      <div v-if="loading" class="text-center py-10">
+      <div v-if="isLoading" class="text-center py-10">
         <Icon icon="mdi:loading" class="h-10 w-10 mx-auto animate-spin text-indigo-600" />
         <p class="mt-4 text-gray-600">Loading user information...</p>
       </div>
 
-      <div v-else-if="error" class="text-center py-10 text-red-500">
-        <Icon icon="mdi:alert-circle" class="h-10 w-10 mx-auto text-red-500" />
-        <p class="mt-4">{{ error }}</p>
-        <button 
-          @click="retryFetchUserInfo" 
-          class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-        >
-          Retry
-        </button>
-        <button 
-          @click="logout" 
-          class="mt-4 ml-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
-        >
-          Logout
-        </button>
+      <div v-else-if="error" class="bg-white shadow-lg rounded-lg p-6 mb-6">
+        <div class="text-center py-6">
+          <div class="h-16 w-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Icon icon="mdi:alert-circle" class="h-10 w-10 text-red-500" />
+          </div>
+          <h3 class="text-lg font-medium text-gray-900 mb-2">Error Loading Profile</h3>
+          <p class="text-gray-600 mb-6">{{ error }}</p>
+          <div class="flex justify-center space-x-4">
+            <button @click="retryFetchUserInfo"
+              class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+              <Icon icon="mdi:refresh" class="h-4 w-4 mr-1" />
+              Retry
+            </button>
+            <button @click="logout"
+              class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+              <Icon icon="mdi:logout" class="h-4 w-4 mr-1" />
+              Logout
+            </button>
+          </div>
+        </div>
       </div>
 
       <div v-else>
         <!-- User Profile Card -->
-        <div class="bg-white shadow-lg rounded-xl overflow-hidden mb-6 transition-all duration-300 hover:shadow-xl">
+        <div class="bg-white shadow rounded-lg overflow-hidden mb-6">
           <div class="px-6 py-5 sm:px-8 flex flex-wrap justify-between items-center border-b border-gray-200">
             <div class="flex items-center">
-              <div class="h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-indigo-100 flex items-center justify-center overflow-hidden mr-4 border-2 border-indigo-200">
-                <img 
-                  v-if="userData.avatar" 
-                  :src="userData.avatar" 
-                  alt="User Avatar" 
-                  class="h-full w-full object-cover"
-                />
-                <Icon v-else icon="mdi:account" class="h-8 w-8 sm:h-10 sm:w-10 text-indigo-500" />
+              <div class="h-16 w-16 rounded-full bg-indigo-100 flex items-center justify-center overflow-hidden mr-4 border-2 border-indigo-200">
+                <img v-if="userData.avatar" :src="userData.avatar" alt="User Avatar" class="h-full w-full object-cover" />
+                <Icon v-else icon="mdi:account" class="h-10 w-10 text-indigo-500" />
               </div>
               <div>
-                <h3 class="text-lg sm:text-xl leading-6 font-bold text-gray-900">{{ userData.displayName || userData.name }}</h3>
-                <p class="mt-1 text-xs sm:text-sm text-gray-500 flex items-center">
+                <h3 class="text-xl leading-6 font-bold text-gray-900">{{ userData.displayName || userData.name }}</h3>
+                <p class="mt-1 text-sm text-gray-500 flex items-center">
                   <Icon icon="mdi:email-outline" class="h-4 w-4 mr-1" />
                   {{ userData.email || 'No email provided' }}
                 </p>
               </div>
             </div>
-            <div class="relative mt-4 sm:mt-0">
-              <button 
-                @click="logout" 
-                class="inline-flex items-center px-3 py-1 sm:px-2 sm:py-2 border border-transparent text-xs sm:text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 transition-colors duration-200 shadow-md w-full sm:w-auto"
-              >
+            <div class="mt-4 sm:mt-0">
+              <button @click="logout"
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 transition-colors duration-200 shadow-md">
                 <Icon icon="mdi:logout" class="mr-2 h-4 w-4" />
                 Logout
               </button>
             </div>
           </div>
-              
+
           <div class="border-t border-gray-200">
             <dl>
               <div class="bg-gray-50 px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-8 rounded-md m-2">
@@ -160,10 +150,10 @@
             </dl>
           </div>
         </div>
-        
+
         <!-- Google Authentication Card -->
-        <div v-if="userData.google || (userData.properties && Object.keys(userData.properties).some(key => key.startsWith('oauth_Google')))" 
-            class="bg-white shadow-lg rounded-xl overflow-hidden mb-6 transition-all duration-300 hover:shadow-xl">
+        <div v-if="userData.google || (userData.properties && Object.keys(userData.properties).some(key => key.startsWith('oauth_Google')))"
+          class="bg-white shadow rounded-lg overflow-hidden mb-6">
           <div class="px-6 py-5 sm:px-8 border-b border-gray-200">
             <div class="flex items-center">
               <div class="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center mr-3">
@@ -175,7 +165,7 @@
               </div>
             </div>
           </div>
-          
+
           <div class="border-t border-gray-200">
             <dl>
               <div class="bg-gray-50 px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-8 rounded-md m-2">
@@ -185,9 +175,9 @@
                 </dt>
                 <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-medium">{{ userData.google || 'Not available' }}</dd>
               </div>
-              
-              <div v-if="userData.properties && Object.keys(userData.properties).some(key => key.startsWith('oauth_Google'))" 
-                  class="bg-white px-6 py-4 sm:px-8 m-2">
+
+              <div v-if="userData.properties && Object.keys(userData.properties).some(key => key.startsWith('oauth_Google'))"
+                class="bg-white px-6 py-4 sm:px-8 m-2">
                 <details class="w-full">
                   <summary class="cursor-pointer text-sm font-medium text-indigo-600 hover:text-indigo-500 focus:outline-none flex items-center">
                     <Icon icon="mdi:information-outline" class="h-5 w-5 mr-2" />
@@ -196,9 +186,9 @@
                   </summary>
                   <div class="mt-4 border border-gray-200 rounded-md overflow-hidden">
                     <dl>
-                      <div v-for="(value, key, index) in googleProperties" :key="key" 
-                          :class="{'bg-gray-50': index % 2 === 0, 'bg-white': index % 2 === 1}"
-                          class="px-4 py-3 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                      <div v-for="(value, key, index) in googleProperties" :key="key"
+                        :class="{'bg-gray-50': index % 2 === 0, 'bg-white': index % 2 === 1}"
+                        class="px-4 py-3 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                         <dt class="text-sm font-medium text-gray-500">{{ formatPropertyKey(key) }}</dt>
                         <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                           <div v-if="key.includes('avatarUrl') || key.includes('picture')">
@@ -214,9 +204,9 @@
             </dl>
           </div>
         </div>
-        
+
         <!-- Organization Info Card -->
-        <div v-if="orgData" class="bg-white shadow-lg rounded-xl overflow-hidden mb-6 transition-all duration-300 hover:shadow-xl">
+        <div v-if="orgData" class="bg-white shadow rounded-lg overflow-hidden mb-6">
           <div class="px-6 py-5 sm:px-8 border-b border-gray-200">
             <div class="flex items-center">
               <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
@@ -228,7 +218,7 @@
               </div>
             </div>
           </div>
-          
+
           <div class="border-t border-gray-200">
             <dl>
               <div class="bg-gray-50 px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-8 rounded-md m-2">
@@ -268,10 +258,10 @@
             </dl>
           </div>
         </div>
-        
+
         <!-- Properties Card -->
-        <div v-if="userData.properties && Object.keys(otherProperties).length > 0" 
-            class="bg-white shadow-lg rounded-xl overflow-hidden mb-6 transition-all duration-300 hover:shadow-xl">
+        <div v-if="userData.properties && Object.keys(otherProperties).length > 0"
+          class="bg-white shadow rounded-lg overflow-hidden mb-6">
           <div class="px-6 py-5 sm:px-8 border-b border-gray-200">
             <div class="flex items-center">
               <div class="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center mr-3">
@@ -283,7 +273,7 @@
               </div>
             </div>
           </div>
-          
+
           <div class="border-t border-gray-200">
             <details class="w-full">
               <summary class="cursor-pointer text-sm font-medium text-indigo-600 hover:text-indigo-500 focus:outline-none px-6 py-4 sm:px-8 flex items-center">
@@ -293,9 +283,9 @@
               </summary>
               <div class="border-t border-gray-200">
                 <dl>
-                  <div v-for="(value, key, index) in otherProperties" :key="key" 
-                      :class="{'bg-gray-50': index % 2 === 0, 'bg-white': index % 2 === 1}"
-                      class="px-6 py-3 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-8">
+                  <div v-for="(value, key, index) in otherProperties" :key="key"
+                    :class="{'bg-gray-50': index % 2 === 0, 'bg-white': index % 2 === 1}"
+                    class="px-6 py-3 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-8">
                     <dt class="text-sm font-medium text-gray-500">{{ key }}</dt>
                     <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ value }}</dd>
                   </div>
@@ -305,8 +295,8 @@
           </div>
         </div>
 
-        <div v-if="!loading && !error && isDev" 
-            class="bg-white shadow-lg rounded-xl overflow-hidden mb-6 transition-all duration-300 hover:shadow-xl">
+        <div v-if="!isLoading && !error && isDev"
+          class="bg-white shadow rounded-lg overflow-hidden mb-6">
           <div class="px-6 py-5 sm:px-8 border-b border-gray-200">
             <div class="flex items-center">
               <div class="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center mr-3">
@@ -318,7 +308,7 @@
               </div>
             </div>
           </div>
-        
+
           <div class="border-t border-gray-200">
             <details class="w-full">
               <summary class="cursor-pointer text-sm font-medium text-indigo-600 hover:text-indigo-500 focus:outline-none px-6 py-4 sm:px-8 flex items-center">
@@ -338,35 +328,38 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, computed } from 'vue';
+import { defineComponent, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { casdoorService } from '@/services/auth';
 import { Icon } from '@iconify/vue';
+import { useUserStore } from '@/stores/userStore';
+import { storeToRefs } from 'pinia';
 
 export default defineComponent({
-  name: 'SucceedView',
+  name: 'ProfileView',
   components: {
     Icon
   },
   setup() {
     const router = useRouter();
-    const loading = ref(true);
-    const error = ref('');
-    const userInfo = ref<any>({});
     const casdoorUrl = 'https://sso.team695.com';
 
     // Check if in development mode
     const isDev = import.meta.env.DEV;
 
-    // Computed properties for user data and organization data
-    const userData = computed(() => {
-      if (!userInfo.value || !userInfo.value.data) return {};
-      return userInfo.value.data;
-    });
+    // Use the Pinia store
+    const userStore = useUserStore();
+    
+    // Use storeToRefs to maintain reactivity
+    const { userInfo, orgData } = storeToRefs(userStore);
+    
+    // Access other properties directly from the store
+    const isLoading = computed(() => userStore.isLoading);
+    const error = computed(() => userStore.error);
 
-    const orgData = computed(() => {
-      if (!userInfo.value || !userInfo.value.data2) return null;
-      return userInfo.value.data2;
+    // Computed property for user data
+    const userData = computed(() => {
+      return userInfo.value || {};
     });
 
     // Computed property to get Google-related properties
@@ -421,67 +414,34 @@ export default defineComponent({
       }
     };
 
-    const fetchUserInfo = async () => {
-      loading.value = true;
-      error.value = '';
-      
-      try {
-        // Get the token
-        const token = casdoorService.getToken();
-        
-        if (!token) {
-          throw new Error('No authentication token found');
-        }
-        
-        // Fetch user info from the get-account endpoint
-        const response = await fetch(`${casdoorUrl}/api/get-account`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch user info: ${response.statusText}`);
-        }
-        
-        // Parse the response
-        const data = await response.json();
-        userInfo.value = data;
-        
-        loading.value = false;
-      } catch (err: any) {
-        console.error('Error loading user info:', err);
-        error.value = err.message || 'Failed to load user information';
-        loading.value = false;
-      }
-    };
-
     const retryFetchUserInfo = () => {
-      fetchUserInfo();
+      userStore.refreshUserInfo();
     };
 
     const logout = () => {
       casdoorService.logout();
+      userStore.clearUserInfo(); // Clear user info in the store
       router.push({ name: 'login' }).catch(err => {
         console.error('Failed to navigate to login:', err);
       });
     };
 
-    onMounted(async () => {
+    onMounted(() => {
       // Check if user is logged in
       if (!casdoorService.isLoggedIn()) {
         router.push({ name: 'login' });
         return;
       }
       
-      await fetchUserInfo();
+      // Initialize the store - this will use cached data and refresh in background
+      userStore.initializeStore();
     });
 
     return {
       userInfo,
       userData,
       orgData,
-      loading,
+      isLoading,
       error,
       isDev,
       casdoorUrl,
