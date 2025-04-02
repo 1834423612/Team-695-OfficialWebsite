@@ -29,7 +29,15 @@
                             ]">
                                 Dashboard
                             </router-link>
-                            <router-link to="/dashboard/calendar" :class="[
+                            <router-link to="/" :class="[
+                                isExactActive('/')
+                                    ? 'border-blue-500 text-gray-900'
+                                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
+                                'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium'
+                            ]">
+                                Home
+                            </router-link>
+                            <!-- <router-link to="/dashboard/calendar" :class="[
                                 isExactActive('/dashboard/calendar')
                                     ? 'border-blue-500 text-gray-900'
                                     : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
@@ -52,7 +60,7 @@
                                 'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium'
                             ]">
                                 Projects
-                            </router-link>
+                            </router-link> -->
                         </div>
                     </div>
 
@@ -61,15 +69,15 @@
                         <div class="flex items-center space-x-4">
                             <!-- Notifications -->
                             <div class="relative notifications-container">
-                                <button @click="toggleNotifications"
+                                <!-- <button @click="toggleNotifications"
                                     class="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                     <Icon icon="mdi:bell-outline" class="h-6 w-6" />
                                     <span
                                         class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">3</span>
-                                </button>
+                                </button> -->
 
                                 <!-- Notifications Dropdown -->
-                                <div v-if="showNotifications"
+                                <!-- <div v-if="showNotifications"
                                     class="origin-top-right absolute right-0 mt-2 w-80 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
                                     <div class="py-1">
                                         <div class="px-4 py-2 border-b border-gray-100">
@@ -121,7 +129,7 @@
                                                 notifications</a>
                                         </div>
                                     </div>
-                                </div>
+                                </div> -->
                             </div>
 
                             <!-- User Profile Section -->
@@ -159,7 +167,7 @@
                                                 <Icon icon="mdi:account-circle" class="h-4 w-4 mr-2 text-gray-500" />
                                                 Your Profile
                                             </router-link>
-                                            <router-link to="/dashboard/settings" :class="[
+                                            <!-- <router-link to="/dashboard/settings" :class="[
                                                 isExactActive('/dashboard/settings')
                                                     ? 'bg-blue-50 text-blue-700'
                                                     : 'text-gray-700 hover:bg-gray-100',
@@ -167,9 +175,9 @@
                                             ]">
                                                 <Icon icon="mdi:cog" class="h-4 w-4 mr-2 text-gray-500" />
                                                 Settings
-                                            </router-link>
+                                            </router-link> -->
                                             <div v-if="userData.isAdmin" class="border-t-2 border-gray-200">
-                                                <router-link to="/dashboard/admin" :class="[
+                                                <!-- <router-link to="/dashboard/admin" :class="[
                                                     isExactActive('/dashboard/admin')
                                                         ? 'bg-blue-50 text-blue-700'
                                                         : 'text-gray-700 hover:bg-gray-100',
@@ -178,7 +186,7 @@
                                                     <Icon icon="mdi:shield-account"
                                                         class="h-4 w-4 mr-2 text-gray-500" />
                                                     Admin Panel
-                                                </router-link>
+                                                </router-link> -->
                                             </div>
                                             <div class="border-t-2 border-gray-200">
                                                 <button @click="logout"
@@ -205,16 +213,16 @@
                     <div class="flex items-center sm:hidden">
                         <div class="flex items-center space-x-3">
                             <!-- Mobile Notifications -->
-                            <div class="relative notifications-container">
+                            <!-- <div class="relative notifications-container">
                                 <button @click="toggleNotifications"
                                     class="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                     <Icon icon="mdi:bell-outline" class="h-6 w-6" />
                                     <span
                                         class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">3</span>
-                                </button>
+                                </button> -->
 
                                 <!-- Mobile Notifications Dropdown -->
-                                <div v-if="showNotifications"
+                                <!-- <div v-if="showNotifications"
                                     class="origin-top-right absolute right-0 mt-2 w-80 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
                                     <div class="py-1">
                                         <div
@@ -291,7 +299,7 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </div> -->
 
                             <!-- Mobile Menu Toggle -->
                             <button @click="mobileMenuOpen = !mobileMenuOpen" type="button"
@@ -346,7 +354,16 @@
                         <Icon icon="mdi:view-dashboard" class="h-5 w-5 mr-2" />
                         Dashboard
                     </router-link>
-                    <router-link to="/dashboard/calendar"
+                    <router-link to="/"
+                        class="pl-3 pr-4 py-2 border-l-4 text-base font-medium flex items-center" :class="[
+                            isExactActive('/')
+                                ? 'border-blue-500 text-blue-700 bg-blue-50'
+                                : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800'
+                        ]">
+                        <Icon icon="mdi:home" class="h-5 w-5 mr-2" />
+                        Home
+                    </router-link>
+                    <!-- <router-link to="/dashboard/calendar"
                         class="pl-3 pr-4 py-2 border-l-4 text-base font-medium flex items-center" :class="[
                             isExactActive('/dashboard/calendar')
                                 ? 'border-blue-500 text-blue-700 bg-blue-50'
@@ -372,7 +389,7 @@
                         ]">
                         <Icon icon="mdi:folder" class="h-5 w-5 mr-2" />
                         Projects
-                    </router-link>
+                    </router-link> -->
                 </div>
 
                 <!-- Mobile User Actions -->
@@ -388,7 +405,7 @@
                             <Icon icon="mdi:account-circle" class="h-5 w-5 mr-2" />
                             Your Profile
                         </router-link>
-                        <router-link to="/dashboard/settings"
+                        <!-- <router-link to="/dashboard/settings"
                             class="pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium flex items-center"
                             :class="[
                                 isExactActive('/dashboard/settings')
@@ -397,13 +414,13 @@
                             ]">
                             <Icon icon="mdi:cog" class="h-5 w-5 mr-2" />
                             Settings
-                        </router-link>
+                        </router-link> -->
                     </div>
                 </div>
 
                 <!-- Mobile Admin Panel (if user is admin) -->
                 <div v-if="userData.isAdmin" class="pb-1 border-t border-gray-200 bg-white">
-                    <router-link to="/dashboard/admin"
+                    <!-- <router-link to="/dashboard/admin"
                         class="pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium flex items-center"
                         :class="[
                             isExactActive('/dashboard/admin')
@@ -412,7 +429,7 @@
                         ]">
                         <Icon icon="mdi:shield-account" class="h-5 w-5 mr-2" />
                         Admin Panel
-                    </router-link>
+                    </router-link> -->
                 </div>
             </div>
         </nav>
@@ -470,6 +487,7 @@ import { casdoorService } from '@/services/auth';
 import { Icon } from '@iconify/vue';
 import { useUserStore } from '@/stores/userStore';
 import { storeToRefs } from 'pinia';
+import router from '@/router';
 
 export default defineComponent({
     name: 'DashboardIndexView',
