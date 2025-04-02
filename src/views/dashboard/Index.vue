@@ -150,38 +150,41 @@
                                     <div v-if="showUserMenu"
                                         class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
                                         <div class="py-1">
-                                            <router-link to="/dashboard/profile"
-                                                class="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex">
-                                                <div class="flex items-center">
-                                                    <Icon icon="mdi:account-circle"
+                                            <router-link to="/dashboard/profile" :class="[
+                                                isExactActive('/dashboard/profile')
+                                                    ? 'bg-blue-50 text-blue-700'
+                                                    : 'text-gray-700 hover:bg-gray-100',
+                                                'px-4 py-2 text-sm flex items-center'
+                                            ]">
+                                                <Icon icon="mdi:account-circle" class="h-4 w-4 mr-2 text-gray-500" />
+                                                Your Profile
+                                            </router-link>
+                                            <router-link to="/dashboard/settings" :class="[
+                                                isExactActive('/dashboard/settings')
+                                                    ? 'bg-blue-50 text-blue-700'
+                                                    : 'text-gray-700 hover:bg-gray-100',
+                                                'px-4 py-2 text-sm flex items-center'
+                                            ]">
+                                                <Icon icon="mdi:cog" class="h-4 w-4 mr-2 text-gray-500" />
+                                                Settings
+                                            </router-link>
+                                            <div v-if="userData.isAdmin" class="border-t-2 border-gray-200">
+                                                <router-link to="/dashboard/admin" :class="[
+                                                    isExactActive('/dashboard/admin')
+                                                        ? 'bg-blue-50 text-blue-700'
+                                                        : 'text-gray-700 hover:bg-gray-100',
+                                                    'px-4 py-2 text-sm flex items-center'
+                                                ]">
+                                                    <Icon icon="mdi:shield-account"
                                                         class="h-4 w-4 mr-2 text-gray-500" />
-                                                    Your Profile
-                                                </div>
-                                            </router-link>
-                                            <router-link to="/dashboard/settings"
-                                                class="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex">
-                                                <div class="flex items-center">
-                                                    <Icon icon="mdi:cog" class="h-4 w-4 mr-2 text-gray-500" />
-                                                    Settings
-                                                </div>
-                                            </router-link>
-                                            <div v-if="userData.isAdmin" class="border-t border-gray-100">
-                                                <router-link to="/dashboard/admin"
-                                                    class="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex">
-                                                    <div class="flex items-center">
-                                                        <Icon icon="mdi:shield-account"
-                                                            class="h-4 w-4 mr-2 text-gray-500" />
-                                                        Admin Panel
-                                                    </div>
+                                                    Admin Panel
                                                 </router-link>
                                             </div>
-                                            <div class="border-t border-gray-100">
+                                            <div class="border-t-2 border-gray-200">
                                                 <button @click="logout"
-                                                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex">
-                                                    <div class="flex items-center">
-                                                        <Icon icon="mdi:logout" class="h-4 w-4 mr-2 text-gray-500" />
-                                                        Sign out
-                                                    </div>
+                                                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
+                                                    <Icon icon="mdi:logout" class="h-4 w-4 mr-2 text-gray-500" />
+                                                    Sign out
                                                 </button>
                                             </div>
                                         </div>
@@ -216,7 +219,8 @@
                                     <div class="py-1">
                                         <div
                                             class="px-4 py-2 border-b border-gray-100 flex justify-between items-center">
-                                            <h3 class="text-sm font-medium text-gray-900">Notifications</h3>
+                                            <h3 class="text-sm font-medium text-gray-900">Notifications
+                                            </h3>
                                             <button @click="showNotifications = false"
                                                 class="text-gray-400 hover:text-gray-500">
                                                 <Icon icon="mdi:close" class="h-5 w-5" />
@@ -230,11 +234,16 @@
                                                         <Icon icon="mdi:calendar-clock" class="h-5 w-5 text-blue-600" />
                                                     </div>
                                                     <div class="ml-3">
-                                                        <p class="text-sm font-medium text-gray-900">Team meeting
+                                                        <p class="text-sm font-medium text-gray-900">
+                                                            Team
+                                                            meeting
                                                             tomorrow</p>
-                                                        <p class="text-xs text-gray-500 mt-1">Strategy session at 4:00
+                                                        <p class="text-xs text-gray-500 mt-1">Strategy
+                                                            session
+                                                            at 4:00
                                                             PM</p>
-                                                        <p class="text-xs text-gray-400 mt-1">10 minutes ago</p>
+                                                        <p class="text-xs text-gray-400 mt-1">10 minutes
+                                                            ago</p>
                                                     </div>
                                                 </div>
                                             </a>
@@ -245,10 +254,15 @@
                                                         <Icon icon="mdi:robot" class="h-5 w-5 text-green-600" />
                                                     </div>
                                                     <div class="ml-3">
-                                                        <p class="text-sm font-medium text-gray-900">Robot maintenance
+                                                        <p class="text-sm font-medium text-gray-900">
+                                                            Robot
+                                                            maintenance
                                                             completed</p>
-                                                        <p class="text-xs text-gray-500 mt-1">Drivetrain updated</p>
-                                                        <p class="text-xs text-gray-400 mt-1">1 hour ago</p>
+                                                        <p class="text-xs text-gray-500 mt-1">Drivetrain
+                                                            updated
+                                                        </p>
+                                                        <p class="text-xs text-gray-400 mt-1">1 hour ago
+                                                        </p>
                                                     </div>
                                                 </div>
                                             </a>
@@ -258,17 +272,21 @@
                                                         <Icon icon="mdi:trophy" class="h-5 w-5 text-purple-600" />
                                                     </div>
                                                     <div class="ml-3">
-                                                        <p class="text-sm font-medium text-gray-900">Competition
+                                                        <p class="text-sm font-medium text-gray-900">
+                                                            Competition
                                                             registration open</p>
-                                                        <p class="text-xs text-gray-500 mt-1">Regional competition</p>
-                                                        <p class="text-xs text-gray-400 mt-1">Yesterday</p>
+                                                        <p class="text-xs text-gray-500 mt-1">Regional
+                                                            competition</p>
+                                                        <p class="text-xs text-gray-400 mt-1">Yesterday
+                                                        </p>
                                                     </div>
                                                 </div>
                                             </a>
                                         </div>
                                         <div class="border-t border-gray-100 px-4 py-2">
                                             <a href="#"
-                                                class="text-xs text-blue-600 hover:text-blue-800 font-medium">View all
+                                                class="text-xs text-blue-600 hover:text-blue-800 font-medium">View
+                                                all
                                                 notifications</a>
                                         </div>
                                     </div>
@@ -301,10 +319,12 @@
                             </div>
                         </div>
                         <div class="ml-3 flex-1">
-                            <div class="text-base font-medium text-gray-800">{{ userData.displayName || userData.name }}
+                            <div class="text-base font-medium text-gray-800">{{ userData.displayName ||
+                                userData.name }}
                             </div>
                             <div class="text-sm font-medium text-gray-500">{{ userData.email }}</div>
-                            <div class="text-xs text-gray-500">{{ userData.isAdmin ? 'Administrator' : 'Team Member' }}
+                            <div class="text-xs text-gray-500">{{ userData.isAdmin ? 'Administrator' :
+                                'Team Member' }}
                             </div>
                         </div>
                         <button @click="logout"
@@ -356,19 +376,43 @@
                 </div>
 
                 <!-- Mobile User Actions -->
-                <div class="pt-4 pb-3 border-t border-gray-200 bg-white">
+                <div class="pb-1 border-t border-gray-200 bg-white">
                     <div class="space-y-1">
                         <router-link to="/dashboard/profile"
-                            class="pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 flex items-center">
+                            class="pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium flex items-center"
+                            :class="[
+                                isExactActive('/dashboard/profile')
+                                    ? 'border-blue-500 text-blue-700 bg-blue-50'
+                                    : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800'
+                            ]">
                             <Icon icon="mdi:account-circle" class="h-5 w-5 mr-2" />
                             Your Profile
                         </router-link>
                         <router-link to="/dashboard/settings"
-                            class="pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 flex items-center">
+                            class="pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium flex items-center"
+                            :class="[
+                                isExactActive('/dashboard/settings')
+                                    ? 'border-blue-500 text-blue-700 bg-blue-50'
+                                    : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800'
+                            ]">
                             <Icon icon="mdi:cog" class="h-5 w-5 mr-2" />
                             Settings
                         </router-link>
                     </div>
+                </div>
+
+                <!-- Mobile Admin Panel (if user is admin) -->
+                <div v-if="userData.isAdmin" class="pb-1 border-t border-gray-200 bg-white">
+                    <router-link to="/dashboard/admin"
+                        class="pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium flex items-center"
+                        :class="[
+                            isExactActive('/dashboard/admin')
+                                ? 'border-blue-500 text-blue-700 bg-blue-50'
+                                : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800'
+                        ]">
+                        <Icon icon="mdi:shield-account" class="h-5 w-5 mr-2" />
+                        Admin Panel
+                    </router-link>
                 </div>
             </div>
         </nav>
@@ -400,13 +444,15 @@
                             <!-- <a href="#" target="_blank" class="text-gray-400 hover:text-gray-500">
                                 <Icon icon="mdi:facebook" class="h-5 w-5" />
                             </a> -->
-                            <a href="https://www.instagram.com/beachwood695/" target="_blank" class="text-gray-500 hover:text-gray-600">
+                            <a href="https://www.instagram.com/beachwood695/" target="_blank"
+                                class="text-gray-500 hover:text-gray-600">
                                 <Icon icon="mdi:instagram" class="h-5 w-5" />
                             </a>
                             <!-- <a href="#" target="_blank" class="text-gray-400 hover:text-gray-500">
                                 <Icon icon="mdi:twitter" class="h-5 w-5" />
                             </a> -->
-                            <a href="https://github.com/FRCTeam695" target="_blank" class="text-gray-500 hover:text-gray-600">
+                            <a href="https://github.com/FRCTeam695" target="_blank"
+                                class="text-gray-500 hover:text-gray-600">
                                 <Icon icon="mdi:github" class="h-5 w-5" />
                             </a>
                         </div>
