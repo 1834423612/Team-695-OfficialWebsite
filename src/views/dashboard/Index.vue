@@ -487,7 +487,7 @@ import { casdoorService } from '@/services/auth';
 import { Icon } from '@iconify/vue';
 import { useUserStore } from '@/stores/userStore';
 import { storeToRefs } from 'pinia';
-import router from '@/router';
+// import router from '@/router';
 
 export default defineComponent({
     name: 'DashboardIndexView',
