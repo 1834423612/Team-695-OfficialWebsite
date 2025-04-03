@@ -249,11 +249,36 @@
                                                     <div class="text-xs font-medium text-gray-700 mb-1">{{ eventId }}:
                                                     </div>
                                                     <div class="flex flex-wrap gap-1">
-                                                        <span v-for="submission in submissions" :key="submission.id"
-                                                            class="px-2 py-1 text-xs leading-4 font-medium rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100"
-                                                            :title="`Submitted on ${formatDate(submission.timestamp)}`">
-                                                            {{ submission.teamNumber }}
-                                                        </span>
+                                                        <template v-if="submissions.length <= 4">
+                                                            <span v-for="submission in submissions" :key="submission.id"
+                                                                class="px-2 py-1 text-xs leading-4 font-medium rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100"
+                                                                :title="`Submitted on ${formatDate(submission.timestamp)}`">
+                                                                {{ submission.teamNumber }}
+                                                            </span>
+                                                        </template>
+                                                        <template v-else>
+                                                            <span v-for="(submission) in submissions.slice(0, 3)"
+                                                                :key="submission.id"
+                                                                class="px-2 py-1 text-xs leading-4 font-medium rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100"
+                                                                :title="`Submitted on ${formatDate(submission.timestamp)}`">
+                                                                {{ submission.teamNumber }}
+                                                            </span>
+                                                            <button @click="toggleTeamExpand(user.userId, eventId)"
+                                                                class="px-2 py-1 text-xs leading-4 font-medium rounded-full bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200 transition-colors duration-200">
+                                                                <span
+                                                                    v-if="isTeamExpanded(user.userId, eventId)">Collapse</span>
+                                                                <span v-else>+{{ submissions.length - 3 }} more</span>
+                                                            </button>
+                                                            <div v-if="isTeamExpanded(user.userId, eventId)"
+                                                                class="w-full mt-1 flex flex-wrap gap-1">
+                                                                <span v-for="submission in submissions.slice(3)"
+                                                                    :key="submission.id"
+                                                                    class="px-2 py-1 text-xs leading-4 font-medium rounded-full bg-green-50 text-green-700 border border-green-200"
+                                                                    :title="`Submitted on ${formatDate(submission.timestamp)}`">
+                                                                    {{ submission.teamNumber }}
+                                                                </span>
+                                                            </div>
+                                                        </template>
                                                     </div>
                                                 </div>
                                             </div>
@@ -275,6 +300,9 @@
                         <h2 class="text-2xl font-semibold mb-6 text-gray-800 flex items-center">
                             <Icon icon="mdi:calendar-check" class="mr-2 text-indigo-500" />
                             Event: {{ eventId }}
+                            <span class="ml-2 px-2 py-0.5 text-sm bg-indigo-100 text-indigo-700 rounded-full">
+                                {{ eventData.length }} forms
+                            </span>
                         </h2>
 
                         <!-- Column Selector -->
@@ -439,7 +467,7 @@
                                                 <div class="ml-3">
                                                     <div class="text-sm font-medium text-gray-900">
                                                         {{ survey.user_data?.displayName || survey.userData?.displayName
-                                                            || survey.user_data?.username || survey.userData?.username ||
+                                                        || survey.user_data?.username || survey.userData?.username ||
                                                         "Unknown" }}
                                                     </div>
                                                     <div class="text-xs text-gray-500">
@@ -477,6 +505,203 @@
                                     </tr>
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Team Comparison Feature -->
+                <section class="mb-8 bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="p-6">
+                        <h2 class="text-2xl font-semibold mb-6 text-gray-800 flex items-center">
+                            <Icon icon="carbon:compare" class="mr-2 text-indigo-500" />
+                            Team Comparison
+                        </h2>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Event Selection -->
+                            <div class="space-y-2">
+                                <label class="block text-sm font-medium text-gray-700">Select Event to Compare</label>
+                                <select v-model="comparisonEventId"
+                                    class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                    <option value="">Select an event</option>
+                                    <option v-for="eventId in uniqueEventIds" :key="eventId" :value="eventId">{{ eventId
+                                        }}</option>
+                                </select>
+                            </div>
+
+                            <!-- Team Input -->
+                            <div class="space-y-2">
+                                <label class="block text-sm font-medium text-gray-700">
+                                    Enter Team Numbers (one per line or comma-separated)
+                                </label>
+                                <textarea v-model="teamNumbersInput" rows="4"
+                                    class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                    placeholder="Enter team numbers here..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Compare Button -->
+                        <div class="mt-4 flex justify-end">
+                            <button @click="compareTeams"
+                                class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200 flex items-center"
+                                :disabled="!comparisonEventId || !teamNumbersInput.trim()">
+                                <Icon icon="mdi:compare-horizontal" class="mr-2" />
+                                Compare Teams
+                            </button>
+                        </div>
+
+                        <!-- Comparison Results -->
+                        <div v-if="comparisonResults.show" class="mt-6 space-y-4">
+                            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-3">Comparison Results</h3>
+
+                                <!-- Missing Teams (in input but not in submission) -->
+                                <div class="mb-4">
+                                    <h4 class="text-sm font-medium text-amber-700 flex items-center">
+                                        <Icon icon="mdi:alert-circle-outline" class="mr-1" />
+                                        Missing Teams (not found in submission data)
+                                    </h4>
+                                    <div class="mt-2">
+                                        <div v-if="comparisonResults.missing.length === 0"
+                                            class="text-sm text-gray-500">
+                                            No missing teams found
+                                        </div>
+                                        <div v-else class="flex flex-wrap gap-2 mt-1">
+                                            <span v-for="team in comparisonResults.missing" :key="team"
+                                                class="px-2 py-1 text-xs font-medium rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                                                {{ team }}
+                                            </span>
+                                        </div>
+                                        <!-- Copy Buttons -->
+                                        <div v-if="comparisonResults.extra.length > 0" class="mt-2 flex gap-2">
+                                            <button @click="copyTeams(comparisonResults.extra, 'line')"
+                                                class="px-3 py-1 text-xs font-medium rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors duration-200">
+                                                Copy (One per Line)
+                                            </button>
+                                            <button @click="copyTeams(comparisonResults.extra, 'comma')"
+                                                class="px-3 py-1 text-xs font-medium rounded bg-green-500 text-white hover:bg-green-600 transition-colors duration-200">
+                                                Copy (Comma Separated)
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Duplicate Teams (in both input and submission) -->
+                                <div class="mb-4">
+                                    <h4 class="text-sm font-medium text-green-700 flex items-center">
+                                        <Icon icon="mdi:check-circle-outline" class="mr-1" />
+                                        Matched Teams (found in submission data)
+                                    </h4>
+                                    <div class="mt-2">
+                                        <div v-if="comparisonResults.matched.length === 0"
+                                            class="text-sm text-gray-500">
+                                            No matched teams found
+                                        </div>
+                                        <div v-else class="flex flex-wrap gap-2 mt-1">
+                                            <span v-for="team in comparisonResults.matched" :key="team"
+                                                class="px-2 py-1 text-xs font-medium rounded-full bg-green-50 text-green-700 border border-green-200">
+                                                {{ team }}
+                                            </span>
+                                        </div>
+                                        <!-- Copy Buttons -->
+                                        <div v-if="comparisonResults.extra.length > 0" class="mt-2 flex gap-2">
+                                            <button @click="copyTeams(comparisonResults.extra, 'line')"
+                                                class="px-3 py-1 text-xs font-medium rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors duration-200">
+                                                Copy (One per Line)
+                                            </button>
+                                            <button @click="copyTeams(comparisonResults.extra, 'comma')"
+                                                class="px-3 py-1 text-xs font-medium rounded bg-green-500 text-white hover:bg-green-600 transition-colors duration-200">
+                                                Copy (Comma Separated)
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Extra Teams (in submission but not in input) -->
+                                <div>
+                                    <h4 class="text-sm font-medium text-blue-700 flex items-center">
+                                        <Icon icon="mdi:information-outline" class="mr-1" />
+                                        Additional Teams (in submission but not in your input list)
+                                    </h4>
+                                    <div class="mt-2">
+                                        <div v-if="comparisonResults.extra.length === 0" class="text-sm text-gray-500">
+                                            No additional teams found
+                                        </div>
+                                        <div v-else class="flex flex-wrap gap-2 mt-1">
+                                            <span v-for="team in comparisonResults.extra" :key="team"
+                                                class="px-2 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                                                {{ team }}
+                                            </span>
+                                        </div>
+                                        <!-- Copy Buttons -->
+                                        <div v-if="comparisonResults.extra.length > 0" class="mt-2 flex gap-2">
+                                            <button @click="copyTeams(comparisonResults.extra, 'line')"
+                                                class="px-3 py-1 text-xs font-medium rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors duration-200">
+                                                Copy (One per Line)
+                                            </button>
+                                            <button @click="copyTeams(comparisonResults.extra, 'comma')"
+                                                class="px-3 py-1 text-xs font-medium rounded bg-green-500 text-white hover:bg-green-600 transition-colors duration-200">
+                                                Copy (Comma Separated)
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Copy Confirmation Modal -->
+                                <Transition name="fade">
+                                    <div v-if="showCopyModal"
+                                        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                                        <div
+                                            class="bg-white rounded-lg p-6 max-w-md w-full shadow-lg border-t-4 border-indigo-500">
+                                            <h3 class="text-xl font-bold mb-4 text-indigo-600 flex items-center">
+                                                <Icon icon="mdi:check-circle" class="mr-2 text-indigo-600" />
+                                                Copied Teams
+                                            </h3>
+
+                                            <p class="mb-4 text-gray-600">
+                                                The following teams have been copied to your clipboard:
+                                            </p>
+
+                                            <div
+                                                class="bg-gray-100 p-4 rounded-md text-sm text-gray-800 overflow-auto max-h-40 border border-gray-300">
+                                                <pre>{{ copiedText }}</pre>
+                                            </div>
+
+                                            <div class="flex justify-end mt-4">
+                                                <button @click="closeCopyModal"
+                                                    class="px-4 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600 shadow-md">
+                                                    Close
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Transition>
+
+                                <!-- Error Modal -->
+                                <Transition name="fade">
+                                    <div v-if="showErrorModal"
+                                        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                                        <div
+                                            class="bg-white rounded-lg p-6 max-w-md w-full shadow-lg border-t-4 border-red-500">
+                                            <h3 class="text-xl font-bold mb-4 text-red-600 flex items-center">
+                                                <Icon icon="mdi:alert-circle" class="mr-2 text-red-600" />
+                                                Error
+                                            </h3>
+
+                                            <p class="mb-4 text-gray-600">
+                                                {{ errorMessage }}
+                                            </p>
+
+                                            <div class="flex justify-end">
+                                                <button @click="closeErrorModal"
+                                                    class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 shadow-md">
+                                                    Close
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Transition>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -853,6 +1078,28 @@ const filteredChartFields = computed(() => {
     const measurementRegex = /height|width|weight|length/i;
     return availableChartFields.value.filter(field => !measurementRegex.test(field));
 });
+
+
+// For team number expansion in Submission Users
+const expandedTeams = ref<Record<string, string[]>>({});
+
+const toggleTeamExpand = (userId: string, eventId: string) => {
+    const key = `${userId}-${eventId}`;
+    if (!expandedTeams.value[key]) {
+        expandedTeams.value[key] = [];
+    }
+
+    if (expandedTeams.value[key].includes(eventId)) {
+        expandedTeams.value[key] = expandedTeams.value[key].filter(id => id !== eventId);
+    } else {
+        expandedTeams.value[key].push(eventId);
+    }
+};
+
+const isTeamExpanded = (userId: string, eventId: string): boolean => {
+    const key = `${userId}-${eventId}`;
+    return expandedTeams.value[key]?.includes(eventId) || false;
+};
 
 
 // ------ Data Table Functions ------ //
@@ -1480,6 +1727,94 @@ const resetColumns = () => {
         "Additional Comments"
     ];
     savePreferences();
+};
+
+// ----- Team Comparison Functions ------ //
+const comparisonEventId = ref('');
+const teamNumbersInput = ref('');
+const comparisonResults = ref({
+    show: false,
+    matched: [] as string[],
+    missing: [] as string[],
+    extra: [] as string[]
+});
+
+const compareTeams = () => {
+    if (!comparisonEventId.value || !teamNumbersInput.value.trim()) {
+        return;
+    }
+
+    // Parse input team numbers (support both comma-separated and newline-separated)
+    const inputTeams = teamNumbersInput.value
+        .split(/[\n,]+/)
+        .map(team => team.trim())
+        .filter(team => team !== '')
+        .sort((a, b) => {
+            // Sort numerically if possible
+            const numA = parseInt(a);
+            const numB = parseInt(b);
+            if (!isNaN(numA) && !isNaN(numB)) {
+                return numA - numB;
+            }
+            return a.localeCompare(b);
+        });
+
+    // Get all team numbers from the selected event
+    const eventTeams = surveyData.value
+        .filter(survey => survey.event_id === comparisonEventId.value)
+        .map(survey => getFieldValue(survey.data, "Team number"))
+        .filter(team => team !== undefined && team !== null)
+        .sort((a, b) => {
+            // Sort numerically if possible
+            const numA = parseInt(a);
+            const numB = parseInt(b);
+            if (!isNaN(numA) && !isNaN(numB)) {
+                return numA - numB;
+            }
+            return a.localeCompare(b);
+        });
+
+    // Find matches, missing, and extra teams
+    const matched = inputTeams.filter(team => eventTeams.includes(team));
+    const missing = inputTeams.filter(team => !eventTeams.includes(team));
+    const extra = eventTeams.filter(team => !inputTeams.includes(team));
+
+    // Update results
+    comparisonResults.value = {
+        show: true,
+        matched,
+        missing,
+        extra
+    };
+};
+
+const showErrorModal = ref(false); // 控制错误模态窗口的显示
+const errorMessage = ref(''); // 存储错误信息
+const showCopyModal = ref(false); // 控制复制模态窗口的显示
+const copiedText = ref(''); // 存储复制的文本
+
+const showError = (message: string) => {
+    errorMessage.value = message;
+    showErrorModal.value = true;
+};
+
+const closeCopyModal = () => {
+    showCopyModal.value = false;
+};
+
+const closeErrorModal = () => {
+    showErrorModal.value = false;
+};
+
+const copyTeams = (teams: string[], format: 'line' | 'comma') => {
+    const text = format === 'line' ? teams.join('\n') : teams.join(', ');
+    navigator.clipboard.writeText(text).then(() => {
+        copiedText.value = text;
+        showCopyModal.value = true;
+    }).catch((err) => {
+        console.error('Failed to copy text:', err);
+        showError('Failed to copy teams to clipboard.');
+    });
 };
 </script>
 
