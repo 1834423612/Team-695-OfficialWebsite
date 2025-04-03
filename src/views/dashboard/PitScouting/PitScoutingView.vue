@@ -389,7 +389,7 @@ const eventId = ref("");
 const currentFormId = computed(() => tabs.value[currentTab.value].formId);
 
 // Form versioning control
-const FORM_VERSION = "2025.4.3"; // Update this when you want to force a form reset
+const FORM_VERSION = "2025.4.3_PROD_ED2"; // Update this when you want to force a form reset
 const FORM_VERSION_KEY = "pit-scouting-form-version";
 
 // For reset modal
@@ -535,12 +535,23 @@ const formFields = ref<FormField[]>([
     originalIndex: 5
   },
   {
+    question: "Robot leaves their zone during autonomous?",
+    type: "radio",
+    options: ["Yes", "No"],
+    optionValues: ["Yes", "No"],
+    value: null,
+    required: true,
+    showOtherInput: false,
+    otherValue: "",
+    originalIndex: 6
+  },
+  {
     question: "Robot Weight",
     description: "Enter the weight of the robot in pounds.",
     type: "number",
     required: true,
     value: null,
-    originalIndex: 6
+    originalIndex: 7
   },
   {
     question: "Robot Length",
@@ -548,7 +559,7 @@ const formFields = ref<FormField[]>([
     type: "number",
     required: true,
     value: null,
-    originalIndex: 7
+    originalIndex: 8
   },
   {
     question: "Robot Width",
@@ -556,7 +567,7 @@ const formFields = ref<FormField[]>([
     type: "number",
     required: true,
     value: null,
-    originalIndex: 8
+    originalIndex: 9
   },
   {
     question: "Robot Height",
@@ -564,7 +575,7 @@ const formFields = ref<FormField[]>([
     type: "number",
     required: true,
     value: null,
-    originalIndex: 9
+    originalIndex: 10
   },
   {
     question: "Height when fully extended",
@@ -572,7 +583,7 @@ const formFields = ref<FormField[]>([
     type: "number",
     required: true,
     value: null,
-    originalIndex: 10
+    originalIndex: 11
   },
   {
     question: "Drive Team Members",
@@ -589,21 +600,21 @@ const formFields = ref<FormField[]>([
     required: true,
     showOtherInput: false,
     otherValue: "",
-    originalIndex: 11
+    originalIndex: 12
   },
   {
     question: "Hours/Weeks of Practice",
     type: "text",
     required: true,
     value: null,
-    originalIndex: 12
+    originalIndex: 13
   },
   {
     question: "Additional Comments",
     type: "textarea",
     required: false,
     value: null,
-    originalIndex: 13
+    originalIndex: 14
   },
 ]);
 
