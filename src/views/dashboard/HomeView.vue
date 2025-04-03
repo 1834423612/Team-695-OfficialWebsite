@@ -88,6 +88,22 @@
           </div>
         </router-link>
 
+        <a href="https://sso.team695.com"
+          class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300">
+          <div class="p-5 flex items-center justify-between">
+            <div class="flex items-center">
+              <div class="flex-shrink-0 bg-pink-100 rounded-md p-3">
+                <Icon icon="mdi:security-lock" class="h-6 w-6 text-pink-500" />
+              </div>
+              <div class="ml-5">
+                <h3 class="text-lg font-medium text-gray-900">695 SSO Auth</h3>
+                <p class="text-sm text-gray-500">Unified user authentication platform</p>
+              </div>
+            </div>
+            <Icon icon="mdi:arrow-top-right" class="h-5 w-5 text-gray-400" />
+          </div>
+        </a>
+
         <!-- <a href="#" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300">
             <div class="p-5">
               <div class="flex items-center">
