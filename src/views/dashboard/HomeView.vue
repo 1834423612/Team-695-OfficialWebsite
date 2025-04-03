@@ -40,7 +40,7 @@
               <h3 class="text-sm font-medium text-gray-900 sm:text-lg">
                 <span class="block text-md sm:text-lg font-semibold">Current Version:</span>
                 <span class="ml-0 mt-1 px-2 py-1 bg-blue-100 text-blue-600 text-xs rounded-md inline-block">
-                  Beta_PR_feat-DB_0.3.15
+                  Beta_feat-DB_PR_0.4.35
                 </span>
               </h3>
             </div>
