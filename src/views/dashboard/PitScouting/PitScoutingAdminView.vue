@@ -467,8 +467,8 @@
                                                 <div class="ml-3">
                                                     <div class="text-sm font-medium text-gray-900">
                                                         {{ survey.user_data?.displayName || survey.userData?.displayName
-                                                        || survey.user_data?.username || survey.userData?.username ||
-                                                        "Unknown" }}
+                                                            || survey.user_data?.username || survey.userData?.username ||
+                                                            "Unknown" }}
                                                     </div>
                                                     <div class="text-xs text-gray-500">
                                                         {{ formatDate(survey.timestamp) }}
@@ -525,9 +525,48 @@
                                     class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                                     <option value="">Select an event</option>
                                     <option v-for="eventId in uniqueEventIds" :key="eventId" :value="eventId">{{ eventId
-                                        }}</option>
+                                    }}</option>
                                 </select>
+                                <!-- Information Icon -->
+                                <div class="mt-2 text-sm text-gray-500 flex items-center">
+                                    <Icon icon="mdi:information-outline" class="mr-1 text-blue-500" />
+                                    <span>Need help? </span>
+                                    <button @click="openSQLModal"
+                                        class="ml-1 text-blue-600 hover:text-blue-800 underline focus:outline-none">
+                                        Click here to view SQL query
+                                    </button>
+                                </div>
                             </div>
+
+                            <!-- SQL Modal -->
+                            <Transition name="fade">
+                                <div v-if="showSQLModal"
+                                    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                                    <div class="bg-white rounded-lg p-6 max-w-lg w-full shadow-lg">
+                                        <h3 class="text-lg font-bold mb-4 text-gray-800 flex items-center">
+                                            <Icon icon="mdi:database" class="mr-2 text-indigo-500" />
+                                            SQL Query for Event Teams
+                                        </h3>
+                                        <p class="text-sm text-gray-600 mb-4">
+                                            Use the following SQL query to retrieve all teams for the selected event:
+                                        </p>
+                                        <div
+                                            class="bg-gray-100 p-4 rounded-md text-sm text-gray-800 overflow-auto border border-gray-300">
+                                            <pre>{{ sqlQuery }}</pre>
+                                        </div>
+                                        <div class="flex justify-end mt-4">
+                                            <button @click="copySQLQuery"
+                                                class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 shadow-md mr-2">
+                                                Copy SQL
+                                            </button>
+                                            <button @click="closeSQLModal"
+                                                class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 shadow-md">
+                                                Close
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </Transition>
 
                             <!-- Team Input -->
                             <div class="space-y-2">
@@ -573,12 +612,12 @@
                                             </span>
                                         </div>
                                         <!-- Copy Buttons -->
-                                        <div v-if="comparisonResults.extra.length > 0" class="mt-2 flex gap-2">
-                                            <button @click="copyTeams(comparisonResults.extra, 'line')"
+                                        <div v-if="comparisonResults.missing.length > 0" class="mt-2 flex gap-2">
+                                            <button @click="copyTeams(comparisonResults.missing, 'line')"
                                                 class="px-3 py-1 text-xs font-medium rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors duration-200">
                                                 Copy (One per Line)
                                             </button>
-                                            <button @click="copyTeams(comparisonResults.extra, 'comma')"
+                                            <button @click="copyTeams(comparisonResults.missing, 'comma')"
                                                 class="px-3 py-1 text-xs font-medium rounded bg-green-500 text-white hover:bg-green-600 transition-colors duration-200">
                                                 Copy (Comma Separated)
                                             </button>
@@ -604,12 +643,12 @@
                                             </span>
                                         </div>
                                         <!-- Copy Buttons -->
-                                        <div v-if="comparisonResults.extra.length > 0" class="mt-2 flex gap-2">
-                                            <button @click="copyTeams(comparisonResults.extra, 'line')"
+                                        <div v-if="comparisonResults.matched.length > 0" class="mt-2 flex gap-2">
+                                            <button @click="copyTeams(comparisonResults.matched, 'line')"
                                                 class="px-3 py-1 text-xs font-medium rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors duration-200">
                                                 Copy (One per Line)
                                             </button>
-                                            <button @click="copyTeams(comparisonResults.extra, 'comma')"
+                                            <button @click="copyTeams(comparisonResults.matched, 'comma')"
                                                 class="px-3 py-1 text-xs font-medium rounded bg-green-500 text-white hover:bg-green-600 transition-colors duration-200">
                                                 Copy (Comma Separated)
                                             </button>
@@ -707,37 +746,37 @@
                 </section>
             </div>
         </main>
+    </div>
 
-        <!-- Image Modal -->
-        <Transition name="fade">
-            <div v-if="showImageModal"
-                class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
-                @click="closeImageModal">
-                <div class="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" @click.stop>
-                    <div class="flex justify-between items-center p-4 border-b border-gray-200">
-                        <h3 class="text-xl font-semibold text-gray-800">Robot Images</h3>
-                        <button @click="closeImageModal"
-                            class="text-gray-500 hover:text-gray-700 transition-colors duration-150 rounded-full p-1 hover:bg-gray-100">
-                            <Icon icon="mdi:close" class="text-2xl" />
-                        </button>
-                    </div>
-                    <div class="p-6">
-                        <div v-if="modalImages.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div v-for="(image, index) in modalImages" :key="index"
-                                class="flex flex-col items-center bg-gray-50 p-4 rounded-lg">
-                                <h4 class="font-semibold mb-2 text-indigo-700">{{ image.category }}</h4>
-                                <img :src="image.url" :alt="image.name"
-                                    class="max-w-full max-h-[40vh] object-contain rounded-lg shadow-md" />
-                                <p class="mt-2 text-center text-gray-700">{{ image.name }}</p>
-                                <p class="text-sm text-gray-500">{{ formatFileSize(image.size) }}</p>
-                            </div>
+    <!-- Image Modal -->
+    <Transition name="fade">
+        <div v-if="showImageModal"
+            class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+            @click="closeImageModal">
+            <div class="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" @click.stop>
+                <div class="flex justify-between items-center p-4 border-b border-gray-200">
+                    <h3 class="text-xl font-semibold text-gray-800">Robot Images</h3>
+                    <button @click="closeImageModal"
+                        class="text-gray-500 hover:text-gray-700 transition-colors duration-150 rounded-full p-1 hover:bg-gray-100">
+                        <Icon icon="mdi:close" class="text-2xl" />
+                    </button>
+                </div>
+                <div class="p-6">
+                    <div v-if="modalImages.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div v-for="(image, index) in modalImages" :key="index"
+                            class="flex flex-col items-center bg-gray-50 p-4 rounded-lg">
+                            <h4 class="font-semibold mb-2 text-indigo-700">{{ image.category }}</h4>
+                            <img :src="image.url" :alt="image.name"
+                                class="max-w-full max-h-[40vh] object-contain rounded-lg shadow-md" />
+                            <p class="mt-2 text-center text-gray-700">{{ image.name }}</p>
+                            <p class="text-sm text-gray-500">{{ formatFileSize(image.size) }}</p>
                         </div>
-                        <p v-else class="text-center text-gray-500 my-4">No images available</p>
                     </div>
+                    <p v-else class="text-center text-gray-500 my-4">No images available</p>
                 </div>
             </div>
-        </Transition>
-    </div>
+        </div>
+    </Transition>
 </template>
 
 <script setup lang="ts">
@@ -1788,10 +1827,42 @@ const compareTeams = () => {
     };
 };
 
-const showErrorModal = ref(false); // 控制错误模态窗口的显示
-const errorMessage = ref(''); // 存储错误信息
-const showCopyModal = ref(false); // 控制复制模态窗口的显示
-const copiedText = ref(''); // 存储复制的文本
+const showSQLModal = ref(false);
+const sqlQuery = computed(() => {
+    // Get the year and event code from the comparisonEventId
+    // Default to 'your_event_code' if not provided
+    const [year, eventCodeRaw] = (comparisonEventId.value || 'your_event_code').split('_');
+    const currentYear = parseInt(year) || new Date().getFullYear(); // If year is not valid, use current year
+    const eventCode = eventCodeRaw?.toLowerCase() || 'your_event_code'; // Transform to lowercase
+
+    return `SELECT DISTINCT team_master_tm_number FROM game_matchup WHERE frc_season_master_sm_year = ${currentYear} AND competition_master_cm_event_code = '${eventCode}'`;
+});
+
+const openSQLModal = () => {
+    if (!comparisonEventId.value) {
+        showError('Please select an event first.');
+        return;
+    }
+    showSQLModal.value = true;
+};
+
+const closeSQLModal = () => {
+    showSQLModal.value = false;
+};
+
+const copySQLQuery = () => {
+    navigator.clipboard.writeText(sqlQuery.value).then(() => {
+        showCopyModal.value = true;
+        copiedText.value = sqlQuery.value;
+    }).catch(() => {
+        showError('Failed to copy SQL query.');
+    });
+};
+
+const showErrorModal = ref(false);
+const errorMessage = ref('');
+const showCopyModal = ref(false);
+const copiedText = ref('');
 
 const showError = (message: string) => {
     errorMessage.value = message;
