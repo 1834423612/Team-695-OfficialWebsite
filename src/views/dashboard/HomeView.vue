@@ -40,7 +40,7 @@
               <h3 class="text-sm font-medium text-gray-900 sm:text-lg">
                 <span class="block text-md sm:text-lg font-semibold">Current Version:</span>
                 <span class="ml-0 mt-1 px-2 py-1 bg-blue-100 text-blue-600 text-xs rounded-md inline-block">
-                  Beta_PR_feat-DB_0.3.15
+                  Beta_feat-DB_PR_0.4.35
                 </span>
               </h3>
             </div>
@@ -55,7 +55,7 @@
     <!-- Team Tools Section -->
     <div class="px-4 sm:px-0 mb-8">
       <h2 class="text-xl font-semibold text-gray-800 mb-4">Team Tools</h2>
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <!-- Regular User Tools -->
         <a href="https://scoutify.team695.com"
           class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300">
@@ -73,7 +73,7 @@
           </div>
         </a>
 
-        <router-link to="/Pit-Scouting"
+        <router-link to="/dashboard/Pit-Scouting"
           class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300">
           <div class="p-5">
             <div class="flex items-center">
@@ -122,9 +122,9 @@
     <template v-if="userData.isAdmin">
       <div class="px-4 sm:px-0 mb-8">
         <h2 class="text-xl font-semibold text-gray-800 mb-4">Admin Tools</h2>
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <!-- Pit Scouting Dashboard -->
-          <router-link to="/Pit-Scouting/Dashboard"
+          <router-link to="/dashboard/Pit-Scouting/Admin"
             class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300">
             <div class="p-5">
               <div class="flex items-center">
@@ -206,7 +206,7 @@
     <!-- External Tools Section -->
     <div class="px-4 sm:px-0 mb-8">
       <h2 class="text-xl font-semibold text-gray-800 mb-4">Team Collaboration</h2>
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <a href="https://drive.google.com/drive/folders/1Ehs5S7caHxQLihE2vXQyYMsLqS4g5mDp" target="_blank"
           class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300">
           <div class="p-5 flex items-center justify-between">

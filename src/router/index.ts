@@ -39,8 +39,6 @@ const routes: Array<RouteRecordRaw> = [
   { path: '/gallery', component: () => import('@/views/Gallery.vue') },
   { path: '/resources', component: () => import('@/views/Resources.vue') },
   { path: '/contact', component: () => import('@/views/Contact.vue') },
-  { path: '/pit-scouting', component: () => import('@/views/Pit-scouting.vue'), meta: { requiresAuth: true } },
-  { path: '/pit-scouting/dashboard', component: () => import('@/views/Pit-scoutingDashboard.vue'), meta: { requiresAuth: true } },
   { path: '/2025strategy', component: () => import('@/views/strategy/2025chart.vue') },
   { path: '/2025strategy/html', component: () => import('@/views/strategy/2025chart-html.vue') },
   { path: '/legal/PrivacyPolicy', component: () => import('@/views/legal/PrivacyPolicy.vue') },
@@ -58,7 +56,7 @@ const routes: Array<RouteRecordRaw> = [
     meta: { guest: true }
   },
   {
-    path: '/dashboard',
+    path: '/Dashboard',
     name: 'dashboard',
     component: () => import('@/views/dashboard/Index.vue'),
     meta: { requiresAuth: true },
@@ -69,18 +67,41 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/dashboard/HomeView.vue'),
       },
       {
-        path: 'calendar',
-        name: 'calendar',
+        path: 'Calendar',
+        name: 'Calendar',
         component: () => import('@/views/dashboard/CalendarView.vue'),
         meta: { requiresAuth: true }
       },
       {
-        path: 'profile',
-        name: 'profile',
+        path: 'Profile',
+        name: 'Profile',
         component: () => import('@/views/dashboard/ProfileView.vue'),
         meta: { requiresAuth: true }
+      },
+      {
+        path: 'Pit-Scouting',
+        name: 'Pit-Scouting',
+        component: () => import('@/views/dashboard/PitScouting/PitScoutingView.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'Pit-Scouting/Admin',
+        name: 'Pit-ScoutingAdmin',
+        component: () => import('@/views/dashboard/PitScouting/PitScoutingAdminView.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true }
       }
     ]
+  },
+  // Keep the old routes for backward compatibility, but redirect to dashboard
+  { 
+    path: '/pit-scouting', 
+    redirect: '/dashboard/Pit-Scouting',
+    meta: { requiresAuth: true } 
+  },
+  { 
+    path: '/pit-scouting/dashboard', 
+    redirect: '/dashboard/Pit-Scouting/Admin',
+    meta: { requiresAuth: true } 
   },
 ];
 
@@ -99,6 +120,16 @@ router.beforeEach((to, _from, next) => {
     if (!isLoggedIn) {
       next({ name: 'login' });
       return;
+    }
+    
+    // Check for admin routes
+    if (to.matched.some(record => record.meta.requiresAdmin)) {
+      // You'll need to implement this function in your casdoorService
+      const isAdmin = casdoorService.isUserAdmin();
+      if (!isAdmin) {
+        next({ name: 'DashboardHome' });
+        return;
+      }
     }
   }
   

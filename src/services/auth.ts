@@ -508,6 +508,57 @@ class CasdoorService {
         }
     }
 
+    // Check if the current user is an admin
+    isUserAdmin(): boolean {
+        try {
+            const token = this.getToken();
+            if (!token) return false;
+            
+            // Decode the JWT token to get user claims
+            const tokenInfo = this.parseAccessToken(token);
+            if (!tokenInfo || !tokenInfo.payload) return false;
+            
+            const payload = tokenInfo.payload;
+            
+            // Check for admin role in the token
+            if (payload.role === 'admin' || payload.isAdmin === true) {
+                return true;
+            }
+            
+            // Check if user is in admin group or has admin permissions
+            if (payload.groups && Array.isArray(payload.groups)) {
+                return payload.groups.includes('admin');
+            }
+            
+            // Check if user has admin permissions
+            if (payload.permissions && Array.isArray(payload.permissions)) {
+                return payload.permissions.some((p: string | string[]) => 
+                    p.includes('admin') || p.includes('Admin') || p === '*'
+                );
+            }
+            
+            // If we have cached user info, check that too
+            if (this.userInfoCache) {
+                if (this.userInfoCache.isAdmin) return true;
+                
+                if (this.userInfoCache.roles && Array.isArray(this.userInfoCache.roles)) {
+                    return this.userInfoCache.roles.some(r => 
+                        r.includes('admin') || r.includes('Admin')
+                    );
+                }
+                
+                if (this.userInfoCache.groups && Array.isArray(this.userInfoCache.groups)) {
+                    return this.userInfoCache.groups.includes('admin');
+                }
+            }
+            
+            return false;
+        } catch (error) {
+            console.error('Error checking admin status:', error);
+            return false;
+        }
+    }
+
     // Logout the user - enhanced version
     async logout(): Promise<void> {
         try {

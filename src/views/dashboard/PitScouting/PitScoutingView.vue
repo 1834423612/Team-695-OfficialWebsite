@@ -1,9 +1,9 @@
 <template>
-  <div class="min-h-screen bg-gray-100">
-    <div class="bg-indigo-600 pb-32 rounded-b-md md:rounded-b-xl w-full">
+  <div class="min-h-screen bg-gray-50">
+    <div class="bg-gradient-to-r from-blue-500 to-indigo-600 pb-32 rounded-b-md md:rounded-b-xl w-full">
       <header class="py-10">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h1 class="text-center text-3xl font-bold tracking-tight text-white">Pit-Scouting Form</h1>
+          <h1 class="text-center text-3xl font-bold tracking-tight text-white">Pit Scouting Form</h1>
         </div>
       </header>
     </div>
@@ -35,8 +35,75 @@
                 <Icon icon="mdi:refresh" class="mr-2 inline-block" />
                 Clear Current Tab
               </button>
-              <DebugTools />
             </div>
+          </div>
+
+          <!-- Debug Tools & Version Control -->
+          <div class="mb-6 bg-gray-50 p-4 rounded-md border border-gray-200">
+            <!-- <div class="flex items-center justify-between">
+              <h2 class="text-lg font-semibold text-gray-900">Debug Tools</h2>
+              <button @click="showResetModal = true; resetReason = 'manual';"
+                class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors duration-200 flex items-center">
+                <Icon icon="mdi:refresh" class="mr-2" />
+                Reset Form
+              </button>
+            </div>
+            <p class="mt-2 text-sm text-gray-600">Use the debug tools to inspect and modify form data.</p> -->
+            <div class="flex justify-between items-center space-x-2">
+              <!-- Reset Form Button (left side) -->
+              <button @click="showResetModal = true; resetReason = 'manual';"
+                class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors duration-200 flex items-center">
+                <Icon icon="mdi:refresh" class="mr-2" />
+                Reset Form
+              </button>
+
+              <!-- Form Version Display (center) -->
+              <div class="text-center">
+                <span class="px-3 py-1 bg-gray-100 rounded-full text-sm font-medium text-gray-700">
+                  Form Version: {{ FORM_VERSION }}
+                </span>
+              </div>
+
+              <!-- Debug Tools (right side) -->
+              <div class="flex space-x-2">
+                <DebugTools />
+              </div>
+            </div>
+
+            <!-- Reset Confirmation Modal -->
+            <Transition name="fade">
+              <div v-if="showResetModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div class="bg-white rounded-lg p-6 max-w-md w-full">
+                  <h3 class="text-xl font-bold mb-4 text-gray-800">
+                    {{ resetReason === 'version-change' ? 'Form Version Updated' : 'Reset Form' }}
+                  </h3>
+                  
+                  <p class="mb-6 text-gray-600">
+                    {{ resetReason === 'version-change' 
+                      ? 'The pit scouting form has been updated to a new version. Your saved form data needs to be cleared to ensure compatibility.' 
+                      : 'This will clear all your saved form data. Any unsaved information will be lost. Are you sure you want to continue?' 
+                    }}
+                  </p>
+                  
+                  <div class="flex justify-end space-x-3">
+                    <button 
+                      v-if="resetReason === 'manual'" 
+                      @click="cancelReset" 
+                      class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    
+                    <button 
+                      @click="confirmReset" 
+                      class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                    >
+                      {{ resetReason === 'version-change' ? 'Clear and Continue' : 'Reset Form' }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </Transition>
           </div>
 
           <!-- Event ID and Form ID -->
@@ -50,6 +117,31 @@
               <span class="text-sm font-medium text-gray-500">Form ID:</span>
               <span class="ml-2 px-2 py-1 bg-green-100 text-green-800 rounded-md text-sm">{{ currentFormId }}</span>
             </div>
+          </div>
+
+          <!-- User Info Display -->
+          <div class="mb-6 bg-indigo-50 p-4 rounded-md border border-indigo-200">
+            <div class="flex items-center">
+              <div class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center mr-3">
+                <template v-if="userData.avatar">
+                  <img :src="userData.avatar" alt="User Avatar" class="h-10 w-10 rounded-full object-cover" />
+                </template>
+                <Icon v-else icon="mdi:account" class="h-6 w-6 text-indigo-600" />
+              </div>
+              <div>
+                <h3 class="text-sm font-medium text-gray-700">Submitting as:</h3>
+                <p class="text-indigo-700 font-medium">{{ userData.displayName || userData.name }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Additional Info Display -->
+          <div class="mb-6 bg-gray-50 p-4 rounded-md border border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Additional Information</h3>
+            <p class="text-sm text-gray-600">Pit scouting area map is available at 
+              <a :href="`https://frc.nexus/en/event/${formatEventId(eventId)}/team/695/map`" target="_blank" class="text-indigo-600 hover:underline">FRC Nexus</a>
+              <Icon icon="mdi:link" class="ml-1 inline-block text-indigo-600" />
+            </p>
           </div>
 
           <!-- Form Fields -->
@@ -115,7 +207,8 @@
                     <div v-for="(option, optionIndex) in field.options" :key="optionIndex" class="flex items-center">
                       <input :id="'field-' + index + '-' + optionIndex" :name="'field-' + index" type="radio"
                         :value="getOptionValue(option)" v-model="field.value" :required="field.required"
-                        class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600" @blur="debouncedSaveFormData" />
+                        class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                        @blur="debouncedSaveFormData" />
                       <label :for="'field-' + index + '-' + optionIndex"
                         class="ml-3 block text-sm font-medium leading-6 text-gray-900">
                         {{ option }}
@@ -137,8 +230,8 @@
                     <div v-for="(option, optionIndex) in field.options" :key="optionIndex"
                       class="relative flex items-start">
                       <div class="flex h-6 items-center">
-                        <input :id="'field-' + index + '-' + optionIndex" type="checkbox" :value="getOptionValue(option)"
-                          v-model="field.value"
+                        <input :id="'field-' + index + '-' + optionIndex" type="checkbox"
+                          :value="getOptionValue(option)" v-model="field.value"
                           class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
                           @change="debouncedSaveFormData" />
                       </div>
@@ -162,30 +255,37 @@
 
             <!-- Image upload sections -->
             <div class="space-y-6">
-              <div v-for="(imageType, typeIndex) in ['fullRobot', 'driveTrain']" :key="typeIndex" class="bg-gray-50 p-6 rounded-lg shadow-sm">
+              <div v-for="(imageType, typeIndex) in ['fullRobot', 'driveTrain']" :key="typeIndex"
+                class="bg-gray-50 p-6 rounded-lg shadow-sm">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">
                   {{ imageType === 'fullRobot' ? 'Full Robots Images' : 'Drive Train Images' }}
                 </h2>
                 <div @dragover.prevent @drop.prevent="handleDrop(imageType as 'fullRobot' | 'driveTrain', $event)"
                   class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-indigo-500 transition-colors duration-300"
                   @click="imageRefs[imageType + 'Input']?.click()">
-                  <input type="file" accept="image/*" @change="handleFileSelect(imageType as 'fullRobot' | 'driveTrain', $event)" class="hidden"
+                  <input type="file" accept="image/*"
+                    @change="handleFileSelect(imageType as 'fullRobot' | 'driveTrain', $event)" class="hidden"
                     :ref="el => { if (el) imageRefs[imageType + 'Input'] = el as HTMLInputElement }" multiple />
                   <Icon icon="fa6-solid:image" class="mx-auto h-12 w-12 text-gray-400" aria-hidden="true" />
                   <div class="mt-4 flex flex-col text-sm leading-6 text-gray-600 justify-center">
-                    <span class="relative cursor-pointer rounded-md font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500">
+                    <span
+                      class="relative cursor-pointer rounded-md font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500">
                       Upload a file
                     </span>
                     <p class="pl-1">or drag and drop</p>
                   </div>
-                  <p class="text-xs leading-5 text-gray-400 md:text-gray-600">PNG, JPG, JPEG, HEIC, GIF up to 50MB each</p>
+                  <p class="text-xs leading-5 text-gray-400 md:text-gray-600">PNG, JPG, JPEG, HEIC, GIF up to 50MB each
+                  </p>
                 </div>
-                <div v-if="(imageType === 'fullRobot' ? fullRobotImages : driveTrainImages).length > 0" class="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  <div v-for="(image, index) in (imageType === 'fullRobot' ? fullRobotImages : driveTrainImages)" :key="index" class="relative bg-white p-2 rounded-lg shadow">
+                <div v-if="(imageType === 'fullRobot' ? fullRobotImages : driveTrainImages).length > 0"
+                  class="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  <div v-for="(image, index) in (imageType === 'fullRobot' ? fullRobotImages : driveTrainImages)"
+                    :key="index" class="relative bg-white p-2 rounded-lg shadow">
                     <img :src="image.url" :alt="image.name" class="w-full h-32 object-cover rounded-lg" />
                     <div class="mt-2 text-xs text-gray-600 truncate">{{ image.name }}</div>
                     <div class="text-xs text-gray-500">{{ formatFileSize(image.size) }}</div>
-                    <button @click="confirmRemoveImage(imageType as 'fullRobot' | 'driveTrain', index)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 focus:outline-none">
+                    <button @click="confirmRemoveImage(imageType as 'fullRobot' | 'driveTrain', index)"
+                      class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 focus:outline-none">
                       <Icon icon="mdi:close" />
                     </button>
                   </div>
@@ -214,6 +314,10 @@ import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
 import Swal from "sweetalert2";
 import DebugTools from "@/components/DebugTools/index.vue"
+import { useUserStore } from '@/stores/userStore';
+// Import casdoorService
+import { casdoorService } from '@/services/auth';
+import { storeToRefs } from 'pinia';
 // Import the required functions from the PageSpy library
 import PageSpy from '@huolala-tech/page-spy-browser';
 import DataHarborPlugin from '@huolala-tech/page-spy-plugin-data-harbor';
@@ -264,12 +368,83 @@ interface Team {
   team_name: string;
 }
 
+// Use the Pinia store for user data
+const userStore = useUserStore();
+const { userInfo } = storeToRefs(userStore);
+
+// Computed property for user data
+const userData = computed(() => {
+  return userInfo.value || {};
+});
+
+// Format event ID for URL
+const formatEventId = (id: string): string => {
+  return id.replace('_', '').toLowerCase();
+};
+
 const tabs = ref<Tab[]>([{ name: "Tab 1", formData: [], formId: uuidv4() }]);
 const currentTab = ref(0);
 const eventId = ref("");
 
 const currentFormId = computed(() => tabs.value[currentTab.value].formId);
 
+// Form versioning control
+const FORM_VERSION = "2025.4.3"; // Update this when you want to force a form reset
+const FORM_VERSION_KEY = "pit-scouting-form-version";
+
+// For reset modal
+const showResetModal = ref(false);
+const resetReason = ref("manual"); // "manual" or "version-change"
+
+// onMounted lifecycle hook to check for form version changes
+onMounted(async () => {
+  // Check if form version has changed
+  const storedVersion = localStorage.getItem(FORM_VERSION_KEY);
+  if (storedVersion !== FORM_VERSION) {
+    resetReason.value = "version-change";
+    showResetModal.value = true;
+  }
+});
+
+// Function to reset the form
+const resetForm = () => {
+  // Get all localStorage keys
+  const keys = Object.keys(localStorage);
+  
+  // Filter keys related to the form
+  const formKeys = keys.filter(key => 
+    key.startsWith('driveTrainImages_') || 
+    key.startsWith('formData_') || 
+    key.startsWith('fullRobotImages_') || 
+    key === 'surveyTabs'
+  );
+  
+  // Remove all form-related items
+  formKeys.forEach(key => localStorage.removeItem(key));
+  
+  // Update the stored version
+  localStorage.setItem(FORM_VERSION_KEY, FORM_VERSION);
+  
+  // Refresh the page
+  window.location.reload();
+};
+
+// Handle user confirmation
+const confirmReset = () => {
+  resetForm();
+  showResetModal.value = false;
+};
+
+// Cancel reset
+const cancelReset = () => {
+  if (resetReason.value === "version-change") {
+    // If it was a version change, we still need to update the version
+    localStorage.setItem(FORM_VERSION_KEY, FORM_VERSION);
+  }
+  showResetModal.value = false;
+};
+
+// Form Questions and Fields info
 const formFields = ref<FormField[]>([
   {
     question: "Team number",
@@ -439,6 +614,9 @@ const teamSuggestions = ref<any[]>([]);
 const showTeamSuggestions = ref(false);
 
 onMounted(async () => {
+  // Initialize the store to get user data
+  userStore.initializeStore();
+  
   await loadTeams('');
   await loadEventId();
   const isNewUser = !localStorage.getItem("surveyTabs");
@@ -786,8 +964,39 @@ const formatFileSize = (bytes: number): string => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 };
 
+// Escape special characters in input values to prevent JSON parsing issues
 const escapeInput = (input: string): string => {
-  return input.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\//g, "\\/").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+  return input
+    .replace(/\\/g, "\\\\") // Escape backslash
+    .replace(/"/g, '\\"')   // Escape double quotes
+    .replace(/'/g, "\\'")   // Escape single quotes
+    .replace(/`/g, "\\`")   // Escape backticks
+    .replace(/\//g, "\\/")  // Escape forward slash
+    .replace(/\$/g, "\\$")  // Escape dollar sign
+    .replace(/%/g, "\\%")   // Escape percent sign
+    .replace(/\{/g, "\\{")  // Escape left curly brace
+    .replace(/\}/g, "\\}")  // Escape right curly brace
+    .replace(/\[/g, "\\[")  // Escape left square bracket
+    .replace(/\]/g, "\\]")  // Escape right square bracket
+    .replace(/</g, "&lt;")  // Escape less-than sign (HTML entity)
+    .replace(/>/g, "&gt;")  // Escape greater-than sign (HTML entity)
+    .replace(/&/g, "&amp;") // Escape ampersand (HTML entity)
+    .replace(/\(/g, "\\(")  // Escape left parenthesis
+    .replace(/\)/g, "\\)")  // Escape right parenthesis
+    .replace(/\*/g, "\\*")  // Escape asterisk
+    .replace(/\+/g, "\\+")  // Escape plus sign
+    .replace(/-/g, "\\-")   // Escape minus sign
+    .replace(/#/g, "\\#")   // Escape hash symbol
+    .replace(/@/g, "\\@")   // Escape at symbol
+    .replace(/\^/g, "\\^")  // Escape caret
+    .replace(/~/g, "\\~")   // Escape tilde
+    .replace(/\|/g, "\\|")  // Escape vertical bar
+    .replace(/:/g, "\\:")   // Escape colon
+    .replace(/;/g, "\\;")   // Escape semicolon
+    .replace(/,/g, "\\,")   // Escape comma
+    .replace(/\./g, "\\.")  // Escape period
+    .replace(/\?/g, "\\?")  // Escape question mark
+    .replace(/!/g, "\\!");  // Escape exclamation mark
 };
 
 const saveFormData = () => {
@@ -935,8 +1144,27 @@ const deviceInfo = ref({
   language: navigator.language,
 });
 
+// Function to submit the form
+const isSubmitting = ref(false);
+
 const submitForm = async () => {
   try {
+    isSubmitting.value = true;
+    
+    // Get user info including avatar
+    let userAvatar = userData.value.avatar || "";
+    
+    // If avatar is not in userData, try to get it directly from casdoorService
+    if (!userAvatar) {
+      try {
+        const userInfo = await casdoorService.getUserInfo(true); // Force refresh to get latest data
+        userAvatar = userInfo.avatar || "";
+        console.log("Retrieved avatar from casdoorService:", userAvatar);
+      } catch (avatarError) {
+        console.error("Error fetching user avatar:", avatarError);
+      }
+    }
+    
     // 按照originalIndex排序表单字段
     const sortedFields = [...formFields.value].sort((a, b) => 
       (a.originalIndex || 0) - (b.originalIndex || 0)
@@ -977,8 +1205,18 @@ const submitForm = async () => {
         fullRobotImages: fullRobotImages.value,
         driveTrainImages: driveTrainImages.value
       },
-      deviceInfo: deviceInfo.value
+      deviceInfo: deviceInfo.value,
+      // Add user information to the submission
+      userData: {
+        username: userData.value.name,
+        displayName: userData.value.displayName,
+        userId: userData.value.id,
+        avatar: userAvatar,
+        email: userData.value.email || "",
+      }
     };
+
+    console.log("Submitting with avatar:", userAvatar);
 
     // 上传日志并获取URL
     const url = await window.$harbor.upload();
@@ -1032,6 +1270,8 @@ const submitForm = async () => {
       "There was an error submitting the form. Please try again.",
       "error"
     );
+  } finally {
+    isSubmitting.value = false;
   }
 };
 
