@@ -362,6 +362,15 @@
                         <Icon icon="mdi:view-dashboard" class="h-5 w-5 mr-2" />
                         Dashboard
                     </router-link>
+                    <router-link to="/dashboard/Pit-Scouting" exact
+                        class="pl-3 pr-4 py-2 border-l-4 text-base font-medium flex items-center" :class="[
+                            isExactActive('/dashboard/Pit-Scouting')
+                                ? 'border-blue-500 text-blue-700 bg-blue-50'
+                                : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800'
+                        ]">
+                        <Icon icon="mdi:clipboard-text" class="h-5 w-5 mr-2" />
+                        Pit-Scouting Form
+                    </router-link>
                     <router-link to="/"
                         class="pl-3 pr-4 py-2 border-l-4 text-base font-medium flex items-center" :class="[
                             isExactActive('/')
