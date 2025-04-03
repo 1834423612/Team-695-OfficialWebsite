@@ -201,16 +201,28 @@
                                     <tr v-for="user in submissionUsers" :key="user.userId" class="hover:bg-gray-50">
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="flex items-center">
+                                                <!-- User Avatar -->
                                                 <div
-                                                    class="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                                                    <Icon icon="mdi:account" class="h-5 w-5 text-indigo-600" />
+                                                    class="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center overflow-hidden">
+                                                    <img v-if="user.avatar" :src="user.avatar" alt="User Avatar"
+                                                        class="h-10 w-10 object-cover" />
+                                                    <Icon v-else icon="mdi:account" class="h-5 w-5 text-indigo-600" />
                                                 </div>
                                                 <div class="ml-4">
                                                     <div class="text-sm font-medium text-gray-900">{{ user.displayName
                                                         }}</div>
                                                     <div class="text-xs text-gray-500">@{{ user.username }}</div>
-                                                    <div class="text-xs text-gray-500">ID: {{ user.userId.substring(0,
-                                                        8) }}...</div>
+                                                    <!-- User ID with copy button -->
+                                                    <div class="text-xs text-gray-500 flex items-center">
+                                                        ID: {{ user.userId.substring(0, 8) }}...
+                                                        <button @click="copyToClipboard(user.userId)"
+                                                            class="ml-1 p-1 text-gray-400 hover:text-indigo-600 transition-colors duration-200"
+                                                            :class="{ 'text-green-500': copiedId === user.userId }">
+                                                            <Icon
+                                                                :icon="copiedId === user.userId ? 'mdi:check' : 'mdi:content-copy'"
+                                                                class="h-3.5 w-3.5" />
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </td>
@@ -417,12 +429,17 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <div class="flex items-center">
                                                 <div
-                                                    class="flex-shrink-0 h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                                                    <Icon icon="mdi:account" class="h-4 w-4 text-indigo-600" />
+                                                    class="flex-shrink-0 h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center overflow-hidden">
+                                                    <!-- Show avatar if available -->
+                                                    <img v-if="survey.user_data?.avatar || survey.userData?.avatar"
+                                                        :src="survey.user_data?.avatar || survey.userData?.avatar"
+                                                        alt="User Avatar" class="h-8 w-8 object-cover" />
+                                                    <Icon v-else icon="mdi:account" class="h-4 w-4 text-indigo-600" />
                                                 </div>
                                                 <div class="ml-3">
                                                     <div class="text-sm font-medium text-gray-900">
-                                                        {{ survey.userData?.displayName || survey.userData?.username ||
+                                                        {{ survey.user_data?.displayName || survey.userData?.displayName
+                                                            || survey.user_data?.username || survey.userData?.username ||
                                                         "Unknown" }}
                                                     </div>
                                                     <div class="text-xs text-gray-500">
@@ -433,7 +450,20 @@
                                         </td>
                                         <td v-for="field in selectedFields" :key="field"
                                             class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ formatFieldValue(survey.data, field) }}
+                                            <template v-if="isUrl(getFieldValue(survey.data, field))">
+                                                <div class="flex items-center">
+                                                    <span class="truncate max-w-[200px]">{{
+                                                        formatUrl(getFieldValue(survey.data, field)) }}</span>
+                                                    <a :href="getFieldValue(survey.data, field)" target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        class="ml-1 text-indigo-500 hover:text-indigo-700">
+                                                        <Icon icon="mdi:open-in-new" class="h-4 w-4" />
+                                                    </a>
+                                                </div>
+                                            </template>
+                                            <template v-else>
+                                                {{ formatFieldValue(survey.data, field) }}
+                                            </template>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <div v-if="hasImages(survey)" class="flex justify-center">
@@ -521,6 +551,8 @@ interface SurveyData {
         username: string;
         displayName: string;
         userId: string;
+        avatar: string;
+        email: string;
     };
     user_agent?: string;
     ip?: string;
@@ -583,6 +615,7 @@ interface SubmissionUser {
     username: string;
     displayName: string;
     userId: string;
+    avatar?: string;
     count: number;
     lastSubmission: string;
     userAgent: string;
@@ -821,6 +854,58 @@ const filteredChartFields = computed(() => {
     return availableChartFields.value.filter(field => !measurementRegex.test(field));
 });
 
+
+// ------ Data Table Functions ------ //
+// For copying user ID
+const copiedId = ref('');
+
+// Copy text to clipboard and show checkmark
+const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+        copiedId.value = text;
+        setTimeout(() => {
+            copiedId.value = '';
+        }, 2000); // Reset after 2 seconds
+    }).catch(err => {
+        console.error('Failed to copy text: ', err);
+    });
+};
+
+// Check if a string is a URL
+const isUrl = (value: any): boolean => {
+    if (typeof value !== 'string') return false;
+    try {
+        // Simple check for http:// or https:// prefix
+        return value.startsWith('http://') || value.startsWith('https://');
+    } catch (e) {
+        return false;
+    }
+};
+
+// Format URL for display (truncate)
+const formatUrl = (url: string): string => {
+    if (!url) return '';
+
+    try {
+        // Parse the URL
+        const parsedUrl = new URL(url);
+        // Get the hostname and pathname
+        const hostname = parsedUrl.hostname;
+        const pathname = parsedUrl.pathname;
+
+        // Truncate the pathname if it's too long
+        const maxPathLength = 15;
+        const truncatedPath = pathname.length > maxPathLength
+            ? pathname.substring(0, maxPathLength) + '...'
+            : pathname;
+
+        return `${hostname}${truncatedPath}`;
+    } catch (e) {
+        // If URL parsing fails, just truncate the string
+        return url.length > 30 ? url.substring(0, 30) + '...' : url;
+    }
+};
+
 // Compute submission users
 const submissionUsers = computed(() => {
     const users: Record<string, SubmissionUser> = {};
@@ -835,6 +920,7 @@ const submissionUsers = computed(() => {
                     userId,
                     username: survey.user_data.username || 'Unknown',
                     displayName: survey.user_data.displayName || survey.user_data.username || 'Unknown',
+                    avatar: survey.user_data.avatar || '',
                     count: 0,
                     lastSubmission: survey.timestamp,
                     // Add device info

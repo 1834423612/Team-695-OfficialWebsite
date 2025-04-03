@@ -1138,7 +1138,18 @@ const submitForm = async () => {
     isSubmitting.value = true;
     
     // Get user info including avatar
-    const userInfo = await casdoorService.getUserInfo();
+    let userAvatar = userData.value.avatar || "";
+    
+    // If avatar is not in userData, try to get it directly from casdoorService
+    if (!userAvatar) {
+      try {
+        const userInfo = await casdoorService.getUserInfo(true); // Force refresh to get latest data
+        userAvatar = userInfo.avatar || "";
+        console.log("Retrieved avatar from casdoorService:", userAvatar);
+      } catch (avatarError) {
+        console.error("Error fetching user avatar:", avatarError);
+      }
+    }
     
     // 按照originalIndex排序表单字段
     const sortedFields = [...formFields.value].sort((a, b) => 
@@ -1186,10 +1197,12 @@ const submitForm = async () => {
         username: userData.value.name,
         displayName: userData.value.displayName,
         userId: userData.value.id,
-        avatar: userInfo.avatar || "",
-        // email: userData.value.email || "",
+        avatar: userAvatar,
+        email: userData.value.email || "",
       }
     };
+
+    console.log("Submitting with avatar:", userAvatar);
 
     // 上传日志并获取URL
     const url = await window.$harbor.upload();
