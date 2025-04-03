@@ -388,9 +388,11 @@ const eventId = ref("");
 
 const currentFormId = computed(() => tabs.value[currentTab.value].formId);
 
+
 // Form versioning control
-const FORM_VERSION = "2025.4.3_PROD_ED2"; // Update this when you want to force a form reset
+const FORM_VERSION = "2025.4.3_PROD_ED3"; // Update this when you want to force a form reset
 const FORM_VERSION_KEY = "pit-scouting-form-version";
+
 
 // For reset modal
 const showResetModal = ref(false);
@@ -535,7 +537,7 @@ const formFields = ref<FormField[]>([
     originalIndex: 5
   },
   {
-    question: "Robot leaves their zone during autonomous?",
+    question: "Robot leaves their Starting Zone during autonomous?",
     type: "radio",
     options: ["Yes", "No"],
     optionValues: ["Yes", "No"],
