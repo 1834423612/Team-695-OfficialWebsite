@@ -40,7 +40,7 @@
               <h3 class="text-sm font-medium text-gray-900 sm:text-lg">
                 <span class="block text-md sm:text-lg font-semibold">Current Version:</span>
                 <span class="ml-0 mt-1 px-2 py-1 bg-blue-100 text-blue-600 text-xs rounded-md inline-block">
-                  Beta_feat-DB_PR_0.4.35
+                  Beta_feat-DB_PR_0.4.37
                 </span>
               </h3>
             </div>
@@ -87,6 +87,22 @@
             </div>
           </div>
         </router-link>
+
+        <a href="https://sso.team695.com"
+          class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300">
+          <div class="p-5 flex items-center justify-between">
+            <div class="flex items-center">
+              <div class="flex-shrink-0 bg-pink-100 rounded-md p-3">
+                <Icon icon="mdi:security-lock" class="h-6 w-6 text-pink-500" />
+              </div>
+              <div class="ml-5">
+                <h3 class="text-lg font-medium text-gray-900">695 SSO Auth</h3>
+                <p class="text-sm text-gray-500">Unified user authentication platform</p>
+              </div>
+            </div>
+            <Icon icon="mdi:arrow-top-right" class="h-5 w-5 text-gray-400" />
+          </div>
+        </a>
 
         <!-- <a href="#" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300">
             <div class="p-5">
@@ -139,6 +155,69 @@
             </div>
           </router-link>
 
+          <!-- Umami Website Analytics -->
+          <a href="https://tj.fastbirdcdn.online/teams/54dfd432-60e1-4c64-99f9-d46094f5998e/dashboard" target="_blank"
+            class="relative bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300">
+            <!-- Ribbon Tag -->
+            <div class="absolute top-0 right-0 bg-yellow-500 text-white text-xs font-semibold px-2 py-1 rounded-bl-md z-10">
+              Third-Party
+            </div>
+            <div class="p-5 pt-6 flex items-center justify-between">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 bg-yellow-100 rounded-md p-3">
+                  <Icon icon="mdi:chart-bar" class="h-6 w-6 text-amber-500" />
+                </div>
+                <div class="ml-5">
+                  <h3 class="text-lg font-medium text-gray-900">Umami Website Analytics</h3>
+                  <p class="text-sm text-gray-500">View website traffic and usage stats</p>
+                </div>
+              </div>
+              <Icon icon="mdi:arrow-top-right" class="h-5 w-5 text-gray-400" />
+            </div>
+          </a>
+          
+          <!-- KJCH Server Status -->
+          <a href="https://status.fastbirdcdn.online" target="_blank"
+            class="relative bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300">
+            <!-- Ribbon Tag -->
+            <div class="absolute top-0 right-0 bg-gray-800 text-white text-xs font-semibold px-2 py-1 rounded-bl-md z-10">
+              Third-Party
+            </div>
+            <div class="p-5 pt-6 flex items-center justify-between">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 bg-gray-100 rounded-md p-3">
+                  <Icon icon="mdi:server" class="h-6 w-6 text-gray-800" />
+                </div>
+                <div class="ml-5">
+                  <h3 class="text-lg font-medium text-gray-900">KJCH Server Status</h3>
+                  <p class="text-sm text-gray-500">Check server uptime and performance</p>
+                </div>
+              </div>
+              <Icon icon="mdi:arrow-top-right" class="h-5 w-5 text-gray-400" />
+            </div>
+          </a>
+          
+          <!-- KJCH Website PageSpy -->
+          <a href="https://report.fastbirdcdn.online" target="_blank"
+            class="relative bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300">
+            <!-- Ribbon Tag -->
+            <div class="absolute top-0 right-0 bg-rose-500 text-white text-xs font-semibold px-2 py-1 rounded-bl-md z-10">
+              Third-Party
+            </div>
+            <div class="p-5 pt-6 flex items-center justify-between">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 bg-rose-100 rounded-md p-3">
+                  <Icon icon="mdi:bug-check" class="h-6 w-6 text-rose-600" />
+                </div>
+                <div class="ml-5">
+                  <h3 class="text-lg font-medium text-gray-900">KJCH PageSpy Debug</h3>
+                  <p class="text-sm text-gray-500">Track user interactions logs</p>
+                </div>
+              </div>
+              <Icon icon="mdi:arrow-top-right" class="h-5 w-5 text-gray-400" />
+            </div>
+          </a>
+
           <!-- Disabled Admin Tools -->
           <a href="#" class="relative bg-gray-100 overflow-hidden shadow rounded-lg transition-shadow duration-300 cursor-not-allowed pointer-events-none">
             <div class="p-5 flex items-center justify-between">
@@ -148,26 +227,6 @@
                 </div>
                 <div class="ml-5">
                   <h3 class="text-lg font-medium text-gray-400">User Management</h3>
-                  <p class="text-sm text-gray-400">This feature is currently disabled</p>
-                </div>
-              </div>
-              <Icon icon="ic:round-lock" class="h-5 w-5 text-gray-400" />
-            </div>
-            <!-- Overlay for tooltip -->
-            <div
-              class="absolute inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center text-center text-white text-sm font-medium opacity-0 hover:opacity-100 focus:opacity-100 transition-opacity duration-300">
-              This feature is disabled
-            </div>
-          </a>
-          
-          <a href="#" class="relative bg-gray-100 overflow-hidden shadow rounded-lg transition-shadow duration-300 cursor-not-allowed pointer-events-none">
-            <div class="p-5 flex items-center justify-between">
-              <div class="flex items-center">
-                <div class="flex-shrink-0 bg-amber-50 rounded-md p-3">
-                  <Icon icon="mdi:chart-box" class="h-6 w-6 text-amber-300" />
-                </div>
-                <div class="ml-5">
-                  <h3 class="text-lg font-medium text-gray-400">Analytics Dashboard</h3>
                   <p class="text-sm text-gray-400">This feature is currently disabled</p>
                 </div>
               </div>

@@ -182,7 +182,7 @@
               <!-- Input fields -->
               <div v-if="field.type === 'text' || field.type === 'number'" class="relative rounded-md shadow-sm">
                 <input :id="'field-' + index" :type="field.type" v-model="field.value" :required="field.required"
-                  :class="[
+                  :step="field.type === 'number' ? 'any' : undefined" :class="[
                     'block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6',
                     'px-3',
                     field.error ? 'ring-red-300 placeholder:text-red-300 focus:ring-red-500' : 'ring-gray-300 placeholder:text-gray-400 focus:ring-indigo-600'
