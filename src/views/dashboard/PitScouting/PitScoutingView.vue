@@ -1,9 +1,9 @@
 <template>
-  <div class="min-h-screen bg-gray-100">
-    <div class="bg-indigo-600 pb-32 rounded-b-md md:rounded-b-xl w-full">
+  <div class="min-h-screen bg-gray-50">
+    <div class="bg-gradient-to-r from-blue-500 to-indigo-600 pb-32 rounded-b-md md:rounded-b-xl w-full">
       <header class="py-10">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h1 class="text-center text-3xl font-bold tracking-tight text-white">Pit-Scouting Form</h1>
+          <h1 class="text-center text-3xl font-bold tracking-tight text-white">Pit Scouting Form</h1>
         </div>
       </header>
     </div>
@@ -49,6 +49,19 @@
             <div>
               <span class="text-sm font-medium text-gray-500">Form ID:</span>
               <span class="ml-2 px-2 py-1 bg-green-100 text-green-800 rounded-md text-sm">{{ currentFormId }}</span>
+            </div>
+          </div>
+
+          <!-- User Info Display -->
+          <div class="mb-6 bg-indigo-50 p-4 rounded-md border border-indigo-200">
+            <div class="flex items-center">
+              <div class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center mr-3">
+                <Icon icon="mdi:account" class="h-6 w-6 text-indigo-600" />
+              </div>
+              <div>
+                <h3 class="text-sm font-medium text-gray-700">Submitting as:</h3>
+                <p class="text-indigo-700 font-medium">{{ userData.displayName || userData.name }}</p>
+              </div>
             </div>
           </div>
 
@@ -214,6 +227,8 @@ import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
 import Swal from "sweetalert2";
 import DebugTools from "@/components/DebugTools/index.vue"
+import { useUserStore } from '@/stores/userStore';
+import { storeToRefs } from 'pinia';
 // Import the required functions from the PageSpy library
 import PageSpy from '@huolala-tech/page-spy-browser';
 import DataHarborPlugin from '@huolala-tech/page-spy-plugin-data-harbor';
@@ -263,6 +278,15 @@ interface Team {
   team_number: string;
   team_name: string;
 }
+
+// Use the Pinia store for user data
+const userStore = useUserStore();
+const { userInfo } = storeToRefs(userStore);
+
+// Computed property for user data
+const userData = computed(() => {
+  return userInfo.value || {};
+});
 
 const tabs = ref<Tab[]>([{ name: "Tab 1", formData: [], formId: uuidv4() }]);
 const currentTab = ref(0);
@@ -439,6 +463,9 @@ const teamSuggestions = ref<any[]>([]);
 const showTeamSuggestions = ref(false);
 
 onMounted(async () => {
+  // Initialize the store to get user data
+  userStore.initializeStore();
+  
   await loadTeams('');
   await loadEventId();
   const isNewUser = !localStorage.getItem("surveyTabs");
@@ -786,8 +813,39 @@ const formatFileSize = (bytes: number): string => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 };
 
+// Escape special characters in input values to prevent JSON parsing issues
 const escapeInput = (input: string): string => {
-  return input.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\//g, "\\/").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+  return input
+    .replace(/\\/g, "\\\\") // Escape backslash
+    .replace(/"/g, '\\"')   // Escape double quotes
+    .replace(/'/g, "\\'")   // Escape single quotes
+    .replace(/`/g, "\\`")   // Escape backticks
+    .replace(/\//g, "\\/")  // Escape forward slash
+    .replace(/\$/g, "\\$")  // Escape dollar sign
+    .replace(/%/g, "\\%")   // Escape percent sign
+    .replace(/\{/g, "\\{")  // Escape left curly brace
+    .replace(/\}/g, "\\}")  // Escape right curly brace
+    .replace(/\[/g, "\\[")  // Escape left square bracket
+    .replace(/\]/g, "\\]")  // Escape right square bracket
+    .replace(/</g, "&lt;")  // Escape less-than sign (HTML entity)
+    .replace(/>/g, "&gt;")  // Escape greater-than sign (HTML entity)
+    .replace(/&/g, "&amp;") // Escape ampersand (HTML entity)
+    .replace(/\(/g, "\\(")  // Escape left parenthesis
+    .replace(/\)/g, "\\)")  // Escape right parenthesis
+    .replace(/\*/g, "\\*")  // Escape asterisk
+    .replace(/\+/g, "\\+")  // Escape plus sign
+    .replace(/-/g, "\\-")   // Escape minus sign
+    .replace(/#/g, "\\#")   // Escape hash symbol
+    .replace(/@/g, "\\@")   // Escape at symbol
+    .replace(/\^/g, "\\^")  // Escape caret
+    .replace(/~/g, "\\~")   // Escape tilde
+    .replace(/\|/g, "\\|")  // Escape vertical bar
+    .replace(/:/g, "\\:")   // Escape colon
+    .replace(/;/g, "\\;")   // Escape semicolon
+    .replace(/,/g, "\\,")   // Escape comma
+    .replace(/\./g, "\\.")  // Escape period
+    .replace(/\?/g, "\\?")  // Escape question mark
+    .replace(/!/g, "\\!");  // Escape exclamation mark
 };
 
 const saveFormData = () => {
@@ -977,7 +1035,13 @@ const submitForm = async () => {
         fullRobotImages: fullRobotImages.value,
         driveTrainImages: driveTrainImages.value
       },
-      deviceInfo: deviceInfo.value
+      deviceInfo: deviceInfo.value,
+      // Add user information to the submission
+      userData: {
+        username: userData.value.name,
+        displayName: userData.value.displayName,
+        userId: userData.value.id
+      }
     };
 
     // 上传日志并获取URL

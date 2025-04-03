@@ -1,17 +1,19 @@
 <template>
-    <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div class="min-h-screen bg-gray-50">
         <!-- Header with gradient background -->
-        <header class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-6 shadow-lg">
-            <div class="container mx-auto px-4">
-                <h1 class="text-center text-3xl font-bold tracking-tight">Pit Scouting Dashboard</h1>
-            </div>
-        </header>
+        <div class="bg-gradient-to-r from-blue-500 to-indigo-600 pb-32 rounded-b-md md:rounded-b-xl w-full">
+            <header class="py-10">
+                <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <h1 class="text-center text-3xl font-bold tracking-tight text-white">Pit Scouting Dashboard</h1>
+                </div>
+            </header>
+        </div>
 
-        <main class="container mx-auto p-4 mt-6">
+        <main class="-mt-32 container mx-auto p-4">
             <!-- Search Panel -->
-            <div class="mb-8 bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg">
+            <div class="mb-8 bg-white rounded-lg shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg">
                 <div class="p-6">
-                    <h2 class="text-2xl font-semibold mb-6 text-gray-800 dark:text-gray-200 flex items-center">
+                    <h2 class="text-2xl font-semibold mb-6 text-gray-800 flex items-center">
                         <Icon icon="mdi:magnify" class="mr-2 text-indigo-500" />
                         Search Filters
                     </h2>
@@ -20,13 +22,13 @@
                             <!-- Event ID Filter - This one triggers search immediately -->
                             <div class="relative">
                                 <select v-model="queryParams.eventId" id="eventId" @change="handleEventChange"
-                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white dark:bg-gray-700 dark:text-gray-200">
+                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white">
                                     <option value="">All Events</option>
                                     <option v-for="eventId in uniqueEventIds" :key="eventId" :value="eventId">{{ eventId
                                         }}</option>
                                 </select>
                                 <label for="eventId"
-                                    class="absolute -top-2.5 left-2 bg-white dark:bg-gray-800 px-1 text-xs font-medium text-indigo-600 dark:text-indigo-400">
+                                    class="absolute -top-2.5 left-2 bg-white px-1 text-xs font-medium text-indigo-600">
                                     Event ID
                                 </label>
                             </div>
@@ -34,10 +36,10 @@
                             <!-- Form ID Filter - Only searches when button is clicked -->
                             <div class="relative">
                                 <input v-model="queryParams.formId" type="text" id="formId"
-                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white dark:bg-gray-700 dark:text-gray-200"
+                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white"
                                     placeholder="Enter Form ID" />
                                 <label for="formId"
-                                    class="absolute -top-2.5 left-2 bg-white dark:bg-gray-800 px-1 text-xs font-medium text-indigo-600 dark:text-indigo-400">
+                                    class="absolute -top-2.5 left-2 bg-white px-1 text-xs font-medium text-indigo-600">
                                     Form ID
                                 </label>
                             </div>
@@ -45,10 +47,10 @@
                             <!-- Team Number Filter - Only searches when button is clicked -->
                             <div class="relative">
                                 <input v-model="queryParams.teamNumber" type="text" id="teamNumber"
-                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white dark:bg-gray-700 dark:text-gray-200"
+                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white"
                                     placeholder="Enter Team Number" />
                                 <label for="teamNumber"
-                                    class="absolute -top-2.5 left-2 bg-white dark:bg-gray-800 px-1 text-xs font-medium text-indigo-600 dark:text-indigo-400">
+                                    class="absolute -top-2.5 left-2 bg-white px-1 text-xs font-medium text-indigo-600">
                                     Team Number
                                 </label>
                             </div>
@@ -57,7 +59,7 @@
                         <!-- Modified Search Button with Loading State -->
                         <div class="flex justify-end">
                             <button type="submit" :disabled="isSearching"
-                                class="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-300 transform hover:-translate-y-1 flex items-center shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
+                                class="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-300 transform hover:-translate-y-1 flex items-center shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
                                 <Icon :icon="isSearching ? 'mdi:loading' : 'mdi:magnify'"
                                     :class="{ 'animate-spin': isSearching }" class="mr-2" />
                                 {{ isSearching ? 'Searching...' : 'Search' }}
@@ -72,12 +74,12 @@
                 <div
                     class="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-r-4 border-indigo-600 border-b-4 border-l-4 border-transparent">
                 </div>
-                <p class="mt-4 text-lg text-gray-600 dark:text-gray-400">Loading data...</p>
+                <p class="mt-4 text-lg text-gray-600">Loading data...</p>
             </div>
 
             <!-- Error State -->
             <div v-else-if="error"
-                class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 text-red-700 dark:text-red-400 p-6 rounded-lg shadow-md mb-8" role="alert">
+                class="bg-red-50 border-l-4 border-red-500 text-red-700 p-6 rounded-lg shadow-md mb-8" role="alert">
                 <div class="flex items-center">
                     <Icon icon="mdi:alert-circle" class="text-2xl mr-2" />
                     <p class="font-bold">Error</p>
@@ -87,9 +89,9 @@
 
             <!-- Empty State -->
             <div v-else-if="filteredSurveyData.length === 0"
-                class="flex flex-col items-center text-center py-12 bg-white dark:bg-gray-800 rounded-xl shadow-md">
+                class="flex flex-col items-center text-center py-12 bg-white rounded-lg shadow-md">
                 <Icon icon="mdi:robot-confused" class="text-6xl text-gray-400 mb-4" />
-                <p class="text-xl text-gray-600 dark:text-gray-400">
+                <p class="text-xl text-gray-600">
                     No data available. Try adjusting your search criteria.
                 </p>
             </div>
@@ -98,21 +100,21 @@
             <div v-else>
                 <!-- Data Visualization Section -->
                 <section v-if="filteredSurveyData.length > 0"
-                    class="mb-8 bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
+                    class="mb-8 bg-white rounded-lg shadow-md overflow-hidden">
                     <div class="p-6">
-                        <h2 class="text-2xl font-semibold mb-6 text-gray-800 dark:text-gray-200 flex items-center">
+                        <h2 class="text-2xl font-semibold mb-6 text-gray-800 flex items-center">
                             <Icon icon="mdi:chart-bar" class="mr-2 text-indigo-500" />
                             Data Visualization
                         </h2>
 
                         <!-- Chart Type Selector -->
                         <div class="mb-6 relative">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
                                 Select Charts to Display
                             </label>
                             <div class="relative chart-selector" @click.stop>
                                 <button @click.stop="isChartSelectorOpen = !isChartSelectorOpen"
-                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-left flex justify-between items-center hover:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-gray-200">
+                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-left flex justify-between items-center hover:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                     <span class="truncate">
                                         {{ selectedChartTypes.length ? `${selectedChartTypes.length} charts selected` :
                                         'Select charts' }}
@@ -122,14 +124,14 @@
 
                                 <!-- Chart Multi-select Dropdown -->
                                 <div v-if="isChartSelectorOpen"
-                                    class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 max-h-60 overflow-y-auto">
+                                    class="absolute z-10 w-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 max-h-60 overflow-y-auto">
                                     <div class="p-2">
                                         <div v-for="field in filteredChartFields" :key="field"
-                                            class="flex items-center px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md cursor-pointer"
+                                            class="flex items-center px-3 py-2 hover:bg-gray-50 rounded-md cursor-pointer"
                                             @click.stop="toggleChartType(field)">
                                             <input type="checkbox" :checked="selectedChartTypes.includes(field)"
-                                                class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded dark:border-gray-600 dark:bg-gray-700" />
-                                            <span class="ml-2 truncate dark:text-gray-200" :title="formatFieldName(field)">
+                                                class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
+                                            <span class="ml-2 truncate" :title="formatFieldName(field)">
                                                 {{ formatFieldName(field) }}
                                             </span>
                                         </div>
@@ -143,8 +145,8 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div v-for="(field, index) in selectedChartTypes" :key="field"
                                     :class="{ 'md:col-span-2': selectedChartTypes.length % 2 !== 0 && index === selectedChartTypes.length - 1 }"
-                                    class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg shadow-md border-2 border-dashed border-blue-300 dark:border-blue-700 hover:border-blue-500 dark:hover:border-blue-500 transition-colors duration-200">
-                                    <h3 class="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200 flex items-center">
+                                    class="bg-gray-50 p-4 rounded-lg shadow-md border-2 border-dashed border-blue-300 hover:border-blue-500 transition-colors duration-200">
+                                    <h3 class="text-lg font-semibold mb-4 text-gray-800 flex items-center">
                                         <span
                                             class="w-6 h-6 flex items-center justify-center bg-blue-500 text-white rounded-full text-xs mr-2">
                                             {{ index + 1 }}
@@ -158,18 +160,67 @@
                                 </div>
                             </div>
                         </div>
-                        <div v-else class="flex flex-col items-center text-center py-8 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                            <Icon icon="mdi:chart-line" class="text-4xl text-gray-400 dark:text-gray-500 mb-2" />
-                            <p class="text-gray-600 dark:text-gray-400">Select charts to display visualization</p>
+                        <div v-else class="flex flex-col items-center text-center py-8 bg-gray-50 rounded-lg">
+                            <Icon icon="mdi:chart-line" class="text-4xl text-gray-400 mb-2" />
+                            <p class="text-gray-600">Select charts to display visualization</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Submission User Information -->
+                <section class="mb-8 bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="p-6">
+                        <h2 class="text-2xl font-semibold mb-6 text-gray-800 flex items-center">
+                            <Icon icon="mdi:account-group" class="mr-2 text-indigo-500" />
+                            Submission Users
+                        </h2>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Username
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Display Name
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Submissions
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Last Submission
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr v-for="user in submissionUsers" :key="user.userId" class="hover:bg-gray-50">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                            {{ user.username }}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {{ user.displayName }}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                {{ user.count }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {{ formatDate(user.lastSubmission) }}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </section>
 
                 <!-- Data Tables Section -->
                 <section v-for="(eventData, eventId) in groupedSurveyData" :key="eventId"
-                    class="mb-8 bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
+                    class="mb-8 bg-white rounded-lg shadow-md overflow-hidden">
                     <div class="p-6">
-                        <h2 class="text-2xl font-semibold mb-6 text-gray-800 dark:text-gray-200 flex items-center">
+                        <h2 class="text-2xl font-semibold mb-6 text-gray-800 flex items-center">
                             <Icon icon="mdi:calendar-check" class="mr-2 text-indigo-500" />
                             Event: {{ eventId }}
                         </h2>
@@ -177,10 +228,10 @@
                         <!-- Column Selector -->
                         <div class="relative mb-4">
                             <button @click="showColumnSelector = !showColumnSelector"
-                                class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                <Icon icon="mdi:table-column" class="-ml-1 mr-2 h-5 w-5 text-gray-500 dark:text-gray-400" />
+                                class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                <Icon icon="mdi:table-column" class="-ml-1 mr-2 h-5 w-5 text-gray-500" />
                                 Customize Columns
-                                <span class="ml-2 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full text-xs">
+                                <span class="ml-2 bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-xs">
                                     {{ selectedFields.length }}
                                 </span>
                             </button>
@@ -188,10 +239,10 @@
                             <div v-if="showColumnSelector"
                                 class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-start justify-center pt-16 z-50 transition-all duration-300"
                                 @click="showColumnSelector = false">
-                                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl mx-4 transform transition-all duration-300 scale-100 opacity-100"
+                                <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 transform transition-all duration-300 scale-100 opacity-100"
                                     @click.stop>
                                     <div
-                                        class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-t-xl flex justify-between items-center">
+                                        class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-xl flex justify-between items-center">
                                         <h3 class="text-lg font-bold flex items-center">
                                             <Icon icon="mdi:view-column-outline" class="mr-2 w-5 h-5" />
                                             Customize Columns
@@ -206,47 +257,47 @@
                                             <!-- Available Fields -->
                                             <div class="mb-6">
                                                 <h4
-                                                    class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                                                    class="text-sm font-medium text-gray-700 mb-3 flex items-center">
                                                     <Icon icon="mdi:playlist-plus" class="mr-2 w-5 h-5 text-blue-500" />
                                                     Available Fields
                                                 </h4>
                                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                     <div v-for="field in availableFieldsNotSelected" :key="field"
-                                                        class="flex items-center p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-800/40 transition-all duration-200 group">
-                                                        <span class="truncate flex-1 text-gray-800 dark:text-gray-200"
+                                                        class="flex items-center p-3 bg-blue-50 rounded-lg border border-blue-200 hover:bg-blue-100 transition-all duration-200 group">
+                                                        <span class="truncate flex-1 text-gray-800"
                                                             :title="formatFieldName(field)">
                                                             {{ formatFieldName(field) }}
                                                         </span>
                                                         <button @click="addField(field)"
-                                                            class="ml-2 p-1.5 rounded-full bg-white dark:bg-gray-700 text-blue-500 hover:text-white hover:bg-blue-500 dark:hover:bg-blue-600 transition-all duration-200 shadow-sm hover:shadow transform hover:scale-105">
+                                                            class="ml-2 p-1.5 rounded-full bg-white text-blue-500 hover:text-white hover:bg-blue-500 transition-all duration-200 shadow-sm hover:shadow transform hover:scale-105">
                                                             <Icon icon="mdi:plus" class="w-4 h-4" />
                                                         </button>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="border-t border-gray-200 dark:border-gray-700 my-4 opacity-60">
+                                            <div class="border-t border-gray-200 my-4 opacity-60">
                                             </div>
 
                                             <!-- Selected Fields with Enhanced Mobile Drag and Drop -->
                                             <div>
                                                 <h4
-                                                    class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
-                                                    <Icon icon="mdi:sort" class="mr-2 w-5 h-5 text-purple-500" />
+                                                    class="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                                                    <Icon icon="mdi:sort" class="mr-2 w-5 h-5 text-indigo-500" />
                                                     Selected Fields (Drag to reorder)
                                                 </h4>
                                                 <div class="space-y-2 relative" ref="draggableContainer">
                                                     <!-- Placeholder for drag target -->
                                                     <div v-if="isDragging"
-                                                        class="absolute border-2 border-dashed border-purple-500 bg-purple-100 dark:bg-purple-900/30 bg-opacity-70 rounded-lg p-3 pointer-events-none transition-all duration-200"
+                                                        class="absolute border-2 border-dashed border-indigo-500 bg-indigo-100 bg-opacity-70 rounded-lg p-3 pointer-events-none transition-all duration-200"
                                                         :style="placeholderStyle">
                                                     </div>
 
                                                     <div v-for="(field, index) in selectedFields" :key="field"
                                                         class="flex items-center p-3 rounded-lg transition-all duration-200 select-none"
                                                         :class="[
-                                                            draggedItem === index ? 'bg-purple-200 dark:bg-purple-800 shadow-lg scale-[1.02] z-10' : 'bg-gray-50 dark:bg-gray-700/50',
-                                                            dragOverIndex === index ? 'border-2 border-purple-500 dark:border-purple-400' : 'border border-gray-200 dark:border-gray-700',
-                                                            'hover:bg-gray-100 dark:hover:bg-gray-700/70'
+                                                            draggedItem === index ? 'bg-indigo-200 shadow-lg scale-[1.02] z-10' : 'bg-gray-50',
+                                                            dragOverIndex === index ? 'border-2 border-indigo-500' : 'border border-gray-200',
+                                                            'hover:bg-gray-100'
                                                         ]" 
                                                         ref="draggableItems"
                                                         @touchstart.passive="touchStart($event, index)"
@@ -262,18 +313,18 @@
                                                         @dragend="dragEnd"
                                                         @mousedown="preventMultiSelection">
                                                         <div
-                                                            class="p-1.5 mr-2 rounded-md bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400 drag-handle">
+                                                            class="p-1.5 mr-2 rounded-md bg-gray-200 text-gray-500 drag-handle">
                                                             <Icon icon="mdi:drag" class="w-4 h-4" />
                                                         </div>
-                                                        <span class="truncate flex-1 text-gray-800 dark:text-gray-200" :title="formatFieldName(field)">
+                                                        <span class="truncate flex-1 text-gray-800" :title="formatFieldName(field)">
                                                             {{ formatFieldName(field) }}
                                                         </span>
                                                         <span
-                                                            class="mx-2 px-2 py-0.5 bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 rounded-full text-xs font-medium">
+                                                            class="mx-2 px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full text-xs font-medium">
                                                             {{ index + 1 }}
                                                         </span>
                                                         <button @click="removeField(field)"
-                                                            class="p-1.5 rounded-full bg-white dark:bg-gray-700 text-red-400 hover:text-white hover:bg-red-500 dark:hover:bg-red-600 transition-all duration-200 shadow-sm hover:shadow transform hover:scale-105">
+                                                            class="p-1.5 rounded-full bg-white text-red-400 hover:text-white hover:bg-red-500 transition-all duration-200 shadow-sm hover:shadow transform hover:scale-105">
                                                             <Icon icon="mdi:close" class="w-4 h-4" />
                                                         </button>
                                                     </div>
@@ -282,14 +333,14 @@
                                         </div>
                                     </div>
                                     <div
-                                        class="px-6 py-4 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 rounded-b-xl flex justify-between">
+                                        class="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-xl flex justify-between">
                                         <button @click="resetColumns"
-                                            class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 flex items-center">
+                                            class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-all duration-200 flex items-center">
                                             <Icon icon="mdi:refresh" class="mr-2 w-4 h-4" />
                                             Reset to Default
                                         </button>
                                         <button @click="showColumnSelector = false"
-                                            class="px-5 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:translate-y-[-1px] flex items-center">
+                                            class="px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:translate-y-[-1px] flex items-center">
                                             <Icon icon="mdi:check" class="mr-2 w-4 h-4" />
                                             Done
                                         </button>
@@ -299,43 +350,62 @@
                         </div>
 
                         <!-- Data Table -->
-                        <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                <thead class="bg-gray-50 dark:bg-gray-800">
+                        <div class="overflow-x-auto rounded-lg border border-gray-200">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
                                     <tr>
                                         <th scope="col"
-                                            class="sticky left-0 z-10 bg-indigo-50 dark:bg-indigo-900/30 px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                                            class="sticky left-0 z-10 bg-indigo-50 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Team Number
                                         </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Submitted By
+                                        </th>
                                         <th v-for="field in selectedFields" :key="field" scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             {{ formatFieldName(field) }}
                                         </th>
                                         <th scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Images
                                         </th>
                                     </tr>
                                 </thead>
-                                <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
+                                <tbody class="bg-white divide-y divide-gray-200">
                                     <tr v-for="survey in eventData" :key="survey.id"
-                                        class="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150">
+                                        class="hover:bg-gray-50 transition-colors duration-150">
                                         <td
-                                            class="sticky left-0 z-10 px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100 bg-indigo-50 dark:bg-indigo-900/30">
+                                            class="sticky left-0 z-10 px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-indigo-50">
                                             {{ getFieldValue(survey.data, "Team number") || "N/A" }}
                                         </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <div class="flex items-center">
+                                                <div class="flex-shrink-0 h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                                                    <Icon icon="mdi:account" class="h-4 w-4 text-indigo-600" />
+                                                </div>
+                                                <div class="ml-3">
+                                                    <div class="text-sm font-medium text-gray-900">
+                                                        {{ survey.userData?.displayName || survey.userData?.username || "Unknown" }}
+                                                    </div>
+                                                    <div class="text-xs text-gray-500">
+                                                        {{ formatDate(survey.timestamp) }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
                                         <td v-for="field in selectedFields" :key="field"
-                                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {{ formatFieldValue(survey.data, field) }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <div v-if="hasImages(survey)" class="flex justify-center">
                                                 <button @click="openImageModal(survey)"
-                                                    class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 transition-colors duration-150">
+                                                    class="text-indigo-600 hover:text-indigo-900 transition-colors duration-150">
                                                     <Icon icon="mdi:image" class="text-xl" />
                                                 </button>
                                             </div>
-                                            <span v-else class="text-gray-400 dark:text-gray-600">No images</span>
+                                            <span v-else class="text-gray-400">No images</span>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -351,26 +421,26 @@
             <div v-if="showImageModal"
                 class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
                 @click="closeImageModal">
-                <div class="bg-white dark:bg-gray-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" @click.stop>
-                    <div class="flex justify-between items-center p-4 border-b dark:border-gray-700">
-                        <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Robot Images</h3>
+                <div class="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" @click.stop>
+                    <div class="flex justify-between items-center p-4 border-b border-gray-200">
+                        <h3 class="text-xl font-semibold text-gray-800">Robot Images</h3>
                         <button @click="closeImageModal"
-                            class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-150 rounded-full p-1 hover:bg-gray-100 dark:hover:bg-gray-700">
+                            class="text-gray-500 hover:text-gray-700 transition-colors duration-150 rounded-full p-1 hover:bg-gray-100">
                             <Icon icon="mdi:close" class="text-2xl" />
                         </button>
                     </div>
                     <div class="p-6">
                         <div v-if="modalImages.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div v-for="(image, index) in modalImages" :key="index"
-                                class="flex flex-col items-center bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                                <h4 class="font-semibold mb-2 text-indigo-700 dark:text-indigo-400">{{ image.category }}</h4>
+                                class="flex flex-col items-center bg-gray-50 p-4 rounded-lg">
+                                <h4 class="font-semibold mb-2 text-indigo-700">{{ image.category }}</h4>
                                 <img :src="image.url" :alt="image.name"
                                     class="max-w-full max-h-[40vh] object-contain rounded-lg shadow-md" />
-                                <p class="mt-2 text-center text-gray-700 dark:text-gray-300">{{ image.name }}</p>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">{{ formatFileSize(image.size) }}</p>
+                                <p class="mt-2 text-center text-gray-700">{{ image.name }}</p>
+                                <p class="text-sm text-gray-500">{{ formatFileSize(image.size) }}</p>
                             </div>
                         </div>
-                        <p v-else class="text-center text-gray-500 dark:text-gray-400 my-4">No images available</p>
+                        <p v-else class="text-center text-gray-500 my-4">No images available</p>
                     </div>
                 </div>
             </div>
@@ -407,6 +477,11 @@ interface SurveyData {
         driveTrainImages: { url: string; name: string; size: number }[];
     };
     timestamp: string;
+    userData?: {
+        username: string;
+        displayName: string;
+        userId: string;
+    };
 }
 
 interface ModalImage {
@@ -445,7 +520,7 @@ interface ChartOptions {
     };
     scales: {
         x: {
-            display?: boolean; // Add display property
+            display?: boolean;
             ticks: {
                 callback: (value: number, index: number, values: any[]) => string;
                 maxRotation: number;
@@ -459,6 +534,14 @@ interface ChartOptions {
             };
         };
     };
+}
+
+interface SubmissionUser {
+    username: string;
+    displayName: string;
+    userId: string;
+    count: number;
+    lastSubmission: string;
 }
 
 // Reactive state
@@ -681,6 +764,36 @@ const filteredChartFields = computed(() => {
     return availableChartFields.value.filter(field => !measurementRegex.test(field));
 });
 
+// Compute submission users
+const submissionUsers = computed(() => {
+    const users: Record<string, SubmissionUser> = {};
+    
+    filteredSurveyData.value.forEach(survey => {
+        if (survey.userData && survey.userData.userId) {
+            const userId = survey.userData.userId;
+            
+            if (!users[userId]) {
+                users[userId] = {
+                    userId,
+                    username: survey.userData.username || 'Unknown',
+                    displayName: survey.userData.displayName || survey.userData.username || 'Unknown',
+                    count: 0,
+                    lastSubmission: survey.timestamp
+                };
+            }
+            
+            users[userId].count++;
+            
+            // Update last submission if this one is newer
+            if (new Date(survey.timestamp) > new Date(users[userId].lastSubmission)) {
+                users[userId].lastSubmission = survey.timestamp;
+            }
+        }
+    });
+    
+    return Object.values(users).sort((a, b) => b.count - a.count);
+});
+
 // Helper function to safely get field values
 const getFieldValue = (data: Record<string, any>, field: string): any => {
     return data[field];
@@ -710,6 +823,24 @@ const formatFieldName = (field: string): string => {
     // Remove trailing colon if present
     const cleanField = field.endsWith(':') ? field.slice(0, -1) : field;
     return cleanField;
+};
+
+// Format date for display
+const formatDate = (dateString?: string): string => {
+    if (!dateString) return 'N/A';
+    
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } catch (e) {
+        return dateString;
+    }
 };
 
 // Generate chart data for a given field
@@ -920,7 +1051,7 @@ const dragEnter = (event: DragEvent, index: number) => {
 
     // Highlight the drop target
     const element = event.currentTarget as HTMLElement;
-    element.classList.add('bg-indigo-100', 'dark:bg-indigo-900/30', 'border-2', 'border-indigo-500');
+    element.classList.add('bg-indigo-100', 'border-2', 'border-indigo-500');
 };
 
 const dragLeave = (event: DragEvent, index: number) => {
@@ -930,7 +1061,7 @@ const dragLeave = (event: DragEvent, index: number) => {
 
     // Remove highlight from the drop target
     const element = event.currentTarget as HTMLElement;
-    element.classList.remove('bg-indigo-100', 'dark:bg-indigo-900/30', 'border-2', 'border-indigo-500');
+    element.classList.remove('bg-indigo-100', 'border-2', 'border-indigo-500');
 };
 
 const drop = (event: DragEvent, index: number) => {
@@ -938,7 +1069,7 @@ const drop = (event: DragEvent, index: number) => {
 
     // Remove highlight from the drop target
     const element = event.currentTarget as HTMLElement;
-    element.classList.remove('bg-indigo-100', 'dark:bg-indigo-900/30', 'border-2', 'border-indigo-500');
+    element.classList.remove('bg-indigo-100', 'border-2', 'border-indigo-500');
 
     if (draggedItem.value !== -1 && draggedItem.value !== index) {
         // Get the dragged item
@@ -965,7 +1096,7 @@ const dragEnd = () => {
 
     // Remove any lingering highlight classes
     document.querySelectorAll('.bg-indigo-100, .border-indigo-500').forEach(el => {
-        el.classList.remove('bg-indigo-100', 'dark:bg-indigo-900/30', 'border-2', 'border-indigo-500');
+        el.classList.remove('bg-indigo-100', 'border-2', 'border-indigo-500');
     });
 };
 
@@ -988,7 +1119,7 @@ const touchStart = (event: TouchEvent, index: number) => {
     setTimeout(() => {
         if (!touchScrolling.value && !touchDragging.value) {
             touchDragging.value = true;
-            touchItem.value?.classList.add('bg-purple-200', 'dark:bg-purple-800', 'shadow-lg', 'scale-[1.02]', 'z-10');
+            touchItem.value?.classList.add('bg-indigo-200', 'shadow-lg', 'scale-[1.02]', 'z-10');
             isDragging.value = true;
         }
     }, 200); // Adjust the delay as needed
@@ -1038,11 +1169,11 @@ const touchMove = (event: TouchEvent, _index: number) => {
     if (targetIndex !== -1 && targetIndex !== touchCurrentIndex.value) {
         // Remove highlight from all items
         elements.forEach(el => {
-            el.classList.remove('border-2', 'border-purple-500', 'dark:border-purple-400');
+            el.classList.remove('border-2', 'border-indigo-500');
         });
 
         // Highlight the target
-        elements[targetIndex].classList.add('border-2', 'border-purple-500', 'dark:border-purple-400');
+        elements[targetIndex].classList.add('border-2', 'border-indigo-500');
 
         // Update placeholder position for visual feedback
         placeholderStyle.value = {
@@ -1089,7 +1220,7 @@ const touchEnd = (_event: TouchEvent) => {
 
             // Reset all visual states
             Array.from(container.children).forEach(el => {
-                (el as HTMLElement).classList.remove('border-2', 'border-purple-500', 'dark:border-purple-400');
+                (el as HTMLElement).classList.remove('border-2', 'border-indigo-500');
             });
         }
     }
@@ -1099,7 +1230,7 @@ const touchEnd = (_event: TouchEvent) => {
 
 const resetTouchState = () => {
     if (touchItem.value) {
-        touchItem.value.classList.remove('bg-purple-200', 'dark:bg-purple-800', 'shadow-lg', 'scale-[1.02]', 'z-10');
+        touchItem.value.classList.remove('bg-indigo-200', 'shadow-lg', 'scale-[1.02]', 'z-10');
         touchItem.value.style.transform = '';
     }
     
@@ -1196,13 +1327,5 @@ const resetColumns = () => {
 .chart-selector-leave-to {
     opacity: 0;
     transform: translateY(-10px);
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-    body {
-        background-color: #1a1a1a;
-        color: #f3f4f6;
-    }
 }
 </style>
