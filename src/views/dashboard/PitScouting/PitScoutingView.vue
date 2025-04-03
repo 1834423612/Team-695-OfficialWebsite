@@ -49,7 +49,7 @@
               </button>
             </div>
             <p class="mt-2 text-sm text-gray-600">Use the debug tools to inspect and modify form data.</p> -->
-            <div class="flex justify-between items-center space-x-2">
+            <div class="flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
               <!-- Reset Form Button (left side) -->
               <button @click="showResetModal = true; resetReason = 'manual';"
                 class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors duration-200 flex items-center">
@@ -64,8 +64,8 @@
                 </span>
               </div>
 
-              <!-- Debug Tools (right side) -->
-              <div class="flex space-x-2">
+              <!-- Debug Tools (right side, moved to a new row on mobile) -->
+              <div class="w-full sm:w-auto flex justify-end">
                 <DebugTools />
               </div>
             </div>
@@ -383,6 +383,7 @@ const formatEventId = (id: string): string => {
 };
 
 const tabs = ref<Tab[]>([{ name: "Tab 1", formData: [], formId: uuidv4() }]);
+const formFields = ref<FormField[]>([]);
 const currentTab = ref(0);
 const eventId = ref("");
 
@@ -390,7 +391,7 @@ const currentFormId = computed(() => tabs.value[currentTab.value].formId);
 
 
 // Form versioning control
-const FORM_VERSION = "2025.4.3_PROD_ED3"; // Update this when you want to force a form reset
+const FORM_VERSION = "2025.4.3_PROD_ED4"; // Update this when you want to force a form reset
 const FORM_VERSION_KEY = "pit-scouting-form-version";
 
 
@@ -447,178 +448,227 @@ const cancelReset = () => {
 };
 
 // Form Questions and Fields info
-const formFields = ref<FormField[]>([
-  {
-    question: "Team number",
-    type: "autocomplete",
-    required: true,
-    value: null,
-    originalIndex: 0
-  },
-  {
-    i: "https://lh7-us.googleusercontent.com/pUWvHrPDa5IfrQcFalk4lO0e4PhD3sLMP0jyLJU8PTWWGfw5r-Wa4qDQNHhbu0byYLzXScP5lfTSUCsvbNI-FlwDY2L7Ra0-TgYqf5Eabw0INSFE3ah4QCqCqHFrsaPKyCOt8m2Yo-H2ie9E7apzh6c8AO147A",
-    w: "50%",
-    question: "Type of drive train",
-    description: "Select the type of drive train used in your robot design.",
-    type: "radio",
-    options: [
-      'Tank Drive ("skid steer", plates on both sides of wheels)',
-      "West Coast Drive (wheels mounted off one side of tube)",
-      "Swerve Drive",
-      "Other",
-    ],
-    optionValues: [
-      'Tank Drive',
-      "West Coast Drive",
-      "Swerve Drive",
-      "Other",
-    ],
-    value: null,
-    required: true,
-    showOtherInput: false,
-    otherValue: "",
-    showDescription: false,
-    originalIndex: 1
-  },
-  {
-    i: "https://lh7-us.googleusercontent.com/PCI7CaG88MiY50L7AM0CVTs9dRd3NQgqW4B2rd64vmjHaNDMEHR0EkWYqv-rzHBnGBC08NzWtr7W97lIk226Q9WVCPuTKuOSZcpb6eyNC5Q3HGmFQwp8005gRcxiS09RjeWUJQJTK-vQGDWd0QAbpSipLSkExw",
-    w: "100%",
-    question: "Type of wheels used",
-    description: "Choose the type of wheels used on your robot.",
-    type: "radio",
-    options: [
-      "Traction",
-      "Mecanum (rollers at 45° angle)",
-      "Omni (rollers at 90° angle)",
-      "Other",
-    ],
-    optionValues: [
-      "Traction",
-      "Mecanum",
-      "Omni",
-      "Other",
-    ],
-    value: null,
-    required: true,
-    showOtherInput: false,
-    otherValue: "",
-    showDescription: false,
-    originalIndex: 2
-  },
-  {
-    question: "Intake Use:",
-    type: "checkbox",
-    options: ["Ground", "Station", "None", "Other"],
-    optionValues: ["Ground", "Station", "None", "Other"],
-    value: [],
-    required: true,
-    showOtherInput: false,
-    otherValue: "",
-    originalIndex: 3
-  },
-  {
-    question: "Scoring Locations:",
-    type: "checkbox",
-    options: ["L1", "L2", "L3", "L4", "Algae in Processor", "Algae in Net", "Other"],
-    optionValues: ["L1", "L2", "L3", "L4", "Algae in Processor", "Algae in Net", "Other"],
-    value: [],
-    required: true,
-    showOtherInput: false,
-    otherValue: "",
-    originalIndex: 4
-  },
-  {
-    question: "Cage Climbing:",
-    type: "checkbox",
-    options: ["Deep Climb", "Shallow Climb", "No Climb"],
-    optionValues: ["Deep Climb", "Shallow Climb", "No Climb"],
-    value: [],
-    required: true,
-    originalIndex: 5
-  },
-  {
-    question: "Robot leaves their Starting Zone during autonomous?",
-    type: "radio",
-    options: ["Yes", "No"],
-    optionValues: ["Yes", "No"],
-    value: null,
-    required: true,
-    showOtherInput: false,
-    otherValue: "",
-    originalIndex: 6
-  },
-  {
-    question: "Robot Weight",
-    description: "Enter the weight of the robot in pounds.",
-    type: "number",
-    required: true,
-    value: null,
-    originalIndex: 7
-  },
-  {
-    question: "Robot Length",
-    description: "Enter the length of the robot in inches without bumpers(front to back).",
-    type: "number",
-    required: true,
-    value: null,
-    originalIndex: 8
-  },
-  {
-    question: "Robot Width",
-    description: "Enter the width of the robot in inches without bumpers(left to right).",
-    type: "number",
-    required: true,
-    value: null,
-    originalIndex: 9
-  },
-  {
-    question: "Robot Height",
-    description: "Enter the height of the robot in inches from the floor to the highest point on the robot at the start of the match.",
-    type: "number",
-    required: true,
-    value: null,
-    originalIndex: 10
-  },
-  {
-    question: "Height when fully extended",
-    description: "In inches.",
-    type: "number",
-    required: true,
-    value: null,
-    originalIndex: 11
-  },
-  {
-    question: "Drive Team Members",
-    type: "radio",
-    options: [
-      "One person driving and operating the robot during a match",
-      "Other",
-    ],
-    optionValues: [
-      "One person driving and operating the robot during a match",
-      "Other",
-    ],
-    value: null,
-    required: true,
-    showOtherInput: false,
-    otherValue: "",
-    originalIndex: 12
-  },
-  {
-    question: "Hours/Weeks of Practice",
-    type: "text",
-    required: true,
-    value: null,
-    originalIndex: 13
-  },
-  {
-    question: "Additional Comments",
-    type: "textarea",
-    required: false,
-    value: null,
-    originalIndex: 14
-  },
-]);
+const initializeDefaultFormFields = () => {
+  // Make sure we're working with the original form field definitions
+  const defaultFields = [
+    {
+      question: "Team number",
+      type: "autocomplete",
+      required: true,
+      value: null,
+      originalIndex: 0
+    },
+    {
+      i: "https://lh7-us.googleusercontent.com/pUWvHrPDa5IfrQcFalk4lO0e4PhD3sLMP0jyLJU8PTWWGfw5r-Wa4qDQNHhbu0byYLzXScP5lfTSUCsvbNI-FlwDY2L7Ra0-TgYqf5Eabw0INSFE3ah4QCqCqHFrsaPKyCOt8m2Yo-H2ie9E7apzh6c8AO147A",
+      w: "50%",
+      question: "Type of drive train",
+      description: "Select the type of drive train used in your robot design.",
+      type: "radio",
+      options: [
+        'Tank Drive ("skid steer", plates on both sides of wheels)',
+        "West Coast Drive (wheels mounted off one side of tube)",
+        "Swerve Drive",
+        "Other",
+      ],
+      optionValues: [
+        'Tank Drive',
+        "West Coast Drive",
+        "Swerve Drive",
+        "Other",
+      ],
+      value: null,
+      required: true,
+      showOtherInput: false,
+      otherValue: "",
+      showDescription: false,
+      originalIndex: 1
+    },
+    {
+      i: "https://lh7-us.googleusercontent.com/PCI7CaG88MiY50L7AM0CVTs9dRd3NQgqW4B2rd64vmjHaNDMEHR0EkWYqv-rzHBnGBC08NzWtr7W97lIk226Q9WVCPuTKuOSZcpb6eyNC5Q3HGmFQwp8005gRcxiS09RjeWUJQJTK-vQGDWd0QAbpSipLSkExw",
+      w: "100%",
+      question: "Type of wheels used",
+      description: "Choose the type of wheels used on your robot.",
+      type: "radio",
+      options: [
+        "Traction",
+        "Mecanum (rollers at 45° angle)",
+        "Omni (rollers at 90° angle)",
+        "Other",
+      ],
+      optionValues: [
+        "Traction",
+        "Mecanum",
+        "Omni",
+        "Other",
+      ],
+      value: null,
+      required: true,
+      showOtherInput: false,
+      otherValue: "",
+      showDescription: false,
+      originalIndex: 2
+    },
+    {
+      question: "Intake Use:",
+      type: "checkbox",
+      options: ["Ground", "Station", "None", "Other"],
+      optionValues: ["Ground", "Station", "None", "Other"],
+      value: [],
+      required: true,
+      showOtherInput: false,
+      otherValue: "",
+      originalIndex: 3
+    },
+    {
+      question: "Scoring Locations:",
+      type: "checkbox",
+      options: ["L1", "L2", "L3", "L4", "Algae in Processor", "Algae in Net", "Other"],
+      optionValues: ["L1", "L2", "L3", "L4", "Algae in Processor", "Algae in Net", "Other"],
+      value: [],
+      required: true,
+      showOtherInput: false,
+      otherValue: "",
+      originalIndex: 4
+    },
+    {
+      question: "Cage Climbing:",
+      type: "checkbox",
+      options: ["Deep Climb", "Shallow Climb", "No Climb"],
+      optionValues: ["Deep Climb", "Shallow Climb", "No Climb"],
+      value: [],
+      required: true,
+      originalIndex: 5
+    },
+    {
+      question: "Robot leaves their Starting Zone during autonomous?",
+      type: "radio",
+      options: ["Yes", "No"],
+      optionValues: ["Yes", "No"],
+      value: null,
+      required: true,
+      showOtherInput: false,
+      otherValue: "",
+      originalIndex: 6
+    },
+    {
+      question: "Robot Weight",
+      description: "Enter the weight of the robot in pounds.",
+      type: "number",
+      required: true,
+      value: null,
+      originalIndex: 7
+    },
+    {
+      question: "Robot Length",
+      description: "Enter the length of the robot in inches without bumpers(front to back).",
+      type: "number",
+      required: true,
+      value: null,
+      originalIndex: 8
+    },
+    {
+      question: "Robot Width",
+      description: "Enter the width of the robot in inches without bumpers(left to right).",
+      type: "number",
+      required: true,
+      value: null,
+      originalIndex: 9
+    },
+    {
+      question: "Robot Height",
+      description: "Enter the height of the robot in inches from the floor to the highest point on the robot at the start of the match.",
+      type: "number",
+      required: true,
+      value: null,
+      originalIndex: 10
+    },
+    {
+      question: "Height when fully extended",
+      description: "In inches.",
+      type: "number",
+      required: true,
+      value: null,
+      originalIndex: 11
+    },
+    {
+      question: "Drive Team Members",
+      type: "radio",
+      options: [
+        "One person driving and operating the robot during a match",
+        "Other",
+      ],
+      optionValues: [
+        "One person driving and operating the robot during a match",
+        "Other",
+      ],
+      value: null,
+      required: true,
+      showOtherInput: false,
+      otherValue: "",
+      originalIndex: 12
+    },
+    {
+      question: "Hours/Weeks of Practice",
+      type: "text",
+      required: true,
+      value: null,
+      originalIndex: 13
+    },
+    {
+      question: "Additional Comments",
+      type: "textarea",
+      required: false,
+      value: null,
+      originalIndex: 14
+    },
+  ];
+  
+  // Set formFields to the default fields
+  formFields.value = JSON.parse(JSON.stringify(defaultFields));
+  
+  // Create a new tab with these default fields
+  tabs.value = [
+    {
+      name: "Tab 1",
+      formData: JSON.parse(JSON.stringify(defaultFields)),
+      formId: uuidv4(),
+    },
+  ];
+  
+  currentTab.value = 0;
+  
+  // Save to localStorage to ensure persistence
+  saveToLocalStorage();
+};
+
+// Ensure form fields are always available
+const ensureFormFieldsExist = () => {
+  if (!formFields.value || formFields.value.length === 0) {
+    // If formFields is empty, reinitialize with default values
+    initializeDefaultFormFields();
+  }
+};
+
+onMounted(async () => {
+  // Initialize the store to get user data
+  userStore.initializeStore();
+  
+  await loadTeams('');
+  await loadEventId();
+  
+  // Load data from localStorage
+  loadFromLocalStorage();
+  
+  // Ensure form fields exist after loading
+  ensureFormFieldsExist();
+  
+  // Check if form version has changed
+  const storedVersion = localStorage.getItem(FORM_VERSION_KEY);
+  if (storedVersion !== FORM_VERSION) {
+    resetReason.value = "version-change";
+    showResetModal.value = true;
+  }
+});
 
 const fullRobotImages = ref<ImageData[]>([]);
 const driveTrainImages = ref<ImageData[]>([]);
@@ -1091,21 +1141,49 @@ const saveToLocalStorage = () => {
 const loadFromLocalStorage = () => {
   const savedTabs = localStorage.getItem("surveyTabs");
   const savedCurrentTab = localStorage.getItem("currentTab");
+
   if (savedTabs) {
-    tabs.value = JSON.parse(savedTabs);
-    currentTab.value = savedCurrentTab ? parseInt(savedCurrentTab) : 0;
-    
-    // 确保所有表单字段都有otherValue属性
-    formFields.value = tabs.value[currentTab.value].formData.map(field => {
-      if ((field.type === 'radio' || field.type === 'checkbox') && field.options?.includes('Other')) {
-        return {
-          ...field,
-          otherValue: field.otherValue || ""
-        };
+    try {
+      // Parse stored tab data
+      tabs.value = JSON.parse(savedTabs);
+      currentTab.value = savedCurrentTab ? parseInt(savedCurrentTab) : 0;
+
+      // Ensure current tab exists
+      if (currentTab.value >= tabs.value.length) {
+        currentTab.value = 0;
       }
-      return field;
-    });
+
+      // Load form data for the current tab
+      const savedFormData = localStorage.getItem(`formData_${tabs.value[currentTab.value].formId}`);
+      
+      if (savedFormData) {
+        // If we have saved form data, use it
+        formFields.value = JSON.parse(savedFormData);
+      } else {
+        // If no saved form data exists for this tab, use the default form fields
+        // This ensures we always have form fields even after a refresh
+        formFields.value = JSON.parse(JSON.stringify(
+          formFields.value.map(field => ({
+            ...field,
+            value: field.type === "checkbox" ? [] : null,
+            error: undefined,
+          }))
+        ));
+        
+        // Save these default fields to the tab
+        tabs.value[currentTab.value].formData = formFields.value;
+        saveFormData();
+      }
+    } catch (error) {
+      console.error("Error parsing saved tabs from localStorage:", error);
+      initializeDefaultFormFields();
+    }
+  } else {
+    // If no saved tabs exist, initialize default form fields
+    initializeDefaultFormFields();
   }
+
+  // Load images
   loadImagesFromLocalStorage();
 };
 
