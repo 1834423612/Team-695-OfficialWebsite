@@ -56,7 +56,7 @@
                             </div>
                         </div>
 
-                        <!-- Modified Search Button with Loading State -->
+                        <!-- Search Button with Loading State -->
                         <div class="flex justify-end">
                             <button type="submit" :disabled="isSearching"
                                 class="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-300 transform hover:-translate-y-1 flex items-center shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
@@ -174,37 +174,77 @@
                             <Icon icon="mdi:account-group" class="mr-2 text-indigo-500" />
                             Submission Users
                         </h2>
-                        
+
                         <div class="overflow-x-auto">
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Username
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            User Info
                                         </th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Display Name
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Device Info
                                         </th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Submissions
                                         </th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Last Submission
                                         </th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     <tr v-for="user in submissionUsers" :key="user.userId" class="hover:bg-gray-50">
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            {{ user.username }}
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <div
+                                                    class="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                                                    <Icon icon="mdi:account" class="h-5 w-5 text-indigo-600" />
+                                                </div>
+                                                <div class="ml-4">
+                                                    <div class="text-sm font-medium text-gray-900">{{ user.displayName
+                                                        }}</div>
+                                                    <div class="text-xs text-gray-500">@{{ user.username }}</div>
+                                                    <div class="text-xs text-gray-500">ID: {{ user.userId.substring(0,
+                                                        8) }}...</div>
+                                                </div>
+                                            </div>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ user.displayName }}
+                                        <td class="px-6 py-4">
+                                            <div class="text-sm text-gray-900">{{ getBrowserInfo(user.userAgent) }}
+                                            </div>
+                                            <div class="text-xs text-gray-500">{{ getDeviceType(user.userAgent) }}</div>
+                                            <div class="text-xs text-gray-500">{{ user.ip }}</div>
+                                            <div class="text-xs text-gray-500">Language: {{ user.language }}</div>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                {{ user.count }}
-                                            </span>
+                                        <td class="px-6 py-4">
+                                            <div class="flex flex-col gap-2">
+                                                <div class="text-sm font-medium text-gray-900 mb-1">
+                                                    Total:
+                                                    <span
+                                                        class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                        {{ user.count }}
+                                                    </span>
+                                                </div>
+
+                                                <!-- Group submissions by event -->
+                                                <div v-for="(submissions, eventId) in user.submissionsByEvent"
+                                                    :key="eventId" class="mb-2">
+                                                    <div class="text-xs font-medium text-gray-700 mb-1">{{ eventId }}:
+                                                    </div>
+                                                    <div class="flex flex-wrap gap-1">
+                                                        <span v-for="submission in submissions" :key="submission.id"
+                                                            class="px-2 py-1 text-xs leading-4 font-medium rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100"
+                                                            :title="`Submitted on ${formatDate(submission.timestamp)}`">
+                                                            {{ submission.teamNumber }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {{ formatDate(user.lastSubmission) }}
@@ -256,8 +296,7 @@
                                         <div class="space-y-4">
                                             <!-- Available Fields -->
                                             <div class="mb-6">
-                                                <h4
-                                                    class="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                                                <h4 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
                                                     <Icon icon="mdi:playlist-plus" class="mr-2 w-5 h-5 text-blue-500" />
                                                     Available Fields
                                                 </h4>
@@ -280,8 +319,7 @@
 
                                             <!-- Selected Fields with Enhanced Mobile Drag and Drop -->
                                             <div>
-                                                <h4
-                                                    class="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                                                <h4 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
                                                     <Icon icon="mdi:sort" class="mr-2 w-5 h-5 text-indigo-500" />
                                                     Selected Fields (Drag to reorder)
                                                 </h4>
@@ -298,25 +336,22 @@
                                                             draggedItem === index ? 'bg-indigo-200 shadow-lg scale-[1.02] z-10' : 'bg-gray-50',
                                                             dragOverIndex === index ? 'border-2 border-indigo-500' : 'border border-gray-200',
                                                             'hover:bg-gray-100'
-                                                        ]" 
-                                                        ref="draggableItems"
+                                                        ]" ref="draggableItems"
                                                         @touchstart.passive="touchStart($event, index)"
                                                         @touchmove.prevent="touchMove($event, index)"
-                                                        @touchend="touchEnd($event)"
-                                                        @touchcancel="touchEnd($event)"
-                                                        draggable="true" 
-                                                        @dragstart="dragStart($event, index)"
+                                                        @touchend="touchEnd($event)" @touchcancel="touchEnd($event)"
+                                                        draggable="true" @dragstart="dragStart($event, index)"
                                                         @dragover.prevent="dragOver($event, index)"
                                                         @dragenter.prevent="dragEnter($event, index)"
                                                         @dragleave="dragLeave($event, index)"
-                                                        @drop="drop($event, index)" 
-                                                        @dragend="dragEnd"
+                                                        @drop="drop($event, index)" @dragend="dragEnd"
                                                         @mousedown="preventMultiSelection">
                                                         <div
                                                             class="p-1.5 mr-2 rounded-md bg-gray-200 text-gray-500 drag-handle">
                                                             <Icon icon="mdi:drag" class="w-4 h-4" />
                                                         </div>
-                                                        <span class="truncate flex-1 text-gray-800" :title="formatFieldName(field)">
+                                                        <span class="truncate flex-1 text-gray-800"
+                                                            :title="formatFieldName(field)">
                                                             {{ formatFieldName(field) }}
                                                         </span>
                                                         <span
@@ -381,12 +416,14 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <div class="flex items-center">
-                                                <div class="flex-shrink-0 h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                                                <div
+                                                    class="flex-shrink-0 h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
                                                     <Icon icon="mdi:account" class="h-4 w-4 text-indigo-600" />
                                                 </div>
                                                 <div class="ml-3">
                                                     <div class="text-sm font-medium text-gray-900">
-                                                        {{ survey.userData?.displayName || survey.userData?.username || "Unknown" }}
+                                                        {{ survey.userData?.displayName || survey.userData?.username ||
+                                                        "Unknown" }}
                                                     </div>
                                                     <div class="text-xs text-gray-500">
                                                         {{ formatDate(survey.timestamp) }}
@@ -468,6 +505,9 @@ ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
 
 // Define interfaces
 interface SurveyData {
+    [x: string]:
+    /// <reference types="../../../../node_modules/.vue-global-types/vue_3.5_0_0_0.d.ts" />
+    any;
     id: number;
     event_id: string;
     form_id: string;
@@ -477,11 +517,14 @@ interface SurveyData {
         driveTrainImages: { url: string; name: string; size: number }[];
     };
     timestamp: string;
-    userData?: {
+    user_data?: {
         username: string;
         displayName: string;
         userId: string;
     };
+    user_agent?: string;
+    ip?: string;
+    language?: string;
 }
 
 interface ModalImage {
@@ -542,6 +585,14 @@ interface SubmissionUser {
     userId: string;
     count: number;
     lastSubmission: string;
+    userAgent: string;
+    ip: string;
+    language: string;
+    submissionsByEvent: Record<string, Array<{
+        id: number;
+        teamNumber: string;
+        timestamp: string;
+    }>>;
 }
 
 // Reactive state
@@ -650,6 +701,12 @@ const fetchData = async () => {
             if (typeof item.upload === 'string') {
                 item.upload = JSON.parse(item.upload);
             }
+
+            // Map user_data to userData for backward compatibility
+            if (item.user_data) {
+                item.userData = item.user_data;
+            }
+
             return item;
         });
     } catch (err: any) {
@@ -767,32 +824,97 @@ const filteredChartFields = computed(() => {
 // Compute submission users
 const submissionUsers = computed(() => {
     const users: Record<string, SubmissionUser> = {};
-    
+
     filteredSurveyData.value.forEach(survey => {
-        if (survey.userData && survey.userData.userId) {
-            const userId = survey.userData.userId;
-            
+        // Use user_data instead of userData
+        if (survey.user_data && survey.user_data.userId) {
+            const userId = survey.user_data.userId;
+
             if (!users[userId]) {
                 users[userId] = {
                     userId,
-                    username: survey.userData.username || 'Unknown',
-                    displayName: survey.userData.displayName || survey.userData.username || 'Unknown',
+                    username: survey.user_data.username || 'Unknown',
+                    displayName: survey.user_data.displayName || survey.user_data.username || 'Unknown',
                     count: 0,
-                    lastSubmission: survey.timestamp
+                    lastSubmission: survey.timestamp,
+                    // Add device info
+                    userAgent: survey.user_agent || 'Unknown',
+                    ip: survey.ip || 'Unknown',
+                    language: survey.language || 'Unknown',
+                    // Add submissions by event
+                    submissionsByEvent: {}
                 };
             }
-            
+
             users[userId].count++;
-            
+
+            // Group submissions by event
+            const eventId = survey.event_id;
+            if (!users[userId].submissionsByEvent[eventId]) {
+                users[userId].submissionsByEvent[eventId] = [];
+            }
+
+            // Add team number to submissions
+            const teamNumber = getFieldValue(survey.data, "Team number");
+            if (teamNumber) {
+                users[userId].submissionsByEvent[eventId].push({
+                    id: survey.id,
+                    teamNumber,
+                    timestamp: survey.timestamp
+                });
+            }
+
             // Update last submission if this one is newer
             if (new Date(survey.timestamp) > new Date(users[userId].lastSubmission)) {
                 users[userId].lastSubmission = survey.timestamp;
             }
         }
     });
-    
+
     return Object.values(users).sort((a, b) => b.count - a.count);
 });
+
+// Detect browser and OS from user agent
+const getBrowserInfo = (userAgent: string): string => {
+    let browserInfo = "Unknown";
+
+    if (userAgent.includes("Chrome") && !userAgent.includes("Edg")) {
+        browserInfo = "Chrome";
+    } else if (userAgent.includes("Firefox")) {
+        browserInfo = "Firefox";
+    } else if (userAgent.includes("Safari") && !userAgent.includes("Chrome")) {
+        browserInfo = "Safari";
+    } else if (userAgent.includes("Edg")) {
+        browserInfo = "Edge";
+    } else if (userAgent.includes("MSIE") || userAgent.includes("Trident/")) {
+        browserInfo = "Internet Explorer";
+    }
+
+    if (userAgent.includes("Windows")) {
+        browserInfo += " on Windows";
+    } else if (userAgent.includes("Mac")) {
+        browserInfo += " on Mac";
+    } else if (userAgent.includes("Linux")) {
+        browserInfo += " on Linux";
+    } else if (userAgent.includes("Android")) {
+        browserInfo += " on Android";
+    } else if (userAgent.includes("iPhone") || userAgent.includes("iPad")) {
+        browserInfo += " on iOS";
+    }
+
+    return browserInfo;
+};
+
+// Get device type from user agent
+const getDeviceType = (userAgent: string): string => {
+    if (userAgent.includes("Mobile")) {
+        return "Mobile";
+    } else if (userAgent.includes("Tablet")) {
+        return "Tablet";
+    } else {
+        return "Desktop";
+    }
+};
 
 // Helper function to safely get field values
 const getFieldValue = (data: Record<string, any>, field: string): any => {
