@@ -135,6 +135,15 @@
             </div>
           </div>
 
+          <!-- Additional Info Display -->
+          <div class="mb-6 bg-gray-50 p-4 rounded-md border border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Additional Information</h3>
+            <p class="text-sm text-gray-600">Pit scouting area map is available at 
+              <a :href="`https://frc.nexus/en/event/${formatEventId(eventId)}/team/695/map`" target="_blank" class="text-indigo-600 hover:underline">FRC Nexus</a>
+              <Icon icon="mdi:link" class="ml-1 inline-block text-indigo-600" />
+            </p>
+          </div>
+
           <!-- Form Fields -->
           <form @submit.prevent="confirmSubmitForm">
             <div v-for="(field, index) in formFields" :key="index" class="mb-6">
@@ -367,6 +376,11 @@ const { userInfo } = storeToRefs(userStore);
 const userData = computed(() => {
   return userInfo.value || {};
 });
+
+// Format event ID for URL
+const formatEventId = (id: string): string => {
+  return id.replace('_', '').toLowerCase();
+};
 
 const tabs = ref<Tab[]>([{ name: "Tab 1", formData: [], formId: uuidv4() }]);
 const currentTab = ref(0);
