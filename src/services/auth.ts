@@ -272,33 +272,31 @@ class CasdoorService {
     // Handle the callback from Casdoor
     async signin(): Promise<string> {
         try {
-            // Exchange the authorization code for an access token using PKCE
+            // Check if we have a valid access token in localStorage or cookie
+            const existingToken = this.getToken();
+            if (existingToken) {
+                const tokenInfo = this.parseAccessToken(existingToken);
+                if (tokenInfo && tokenInfo.payload && tokenInfo.payload.exp) {
+                    const expiryTime = tokenInfo.payload.exp * 1000; // Transform to milliseconds
+                    const now = Date.now();
+                    if (expiryTime > now) {
+                        console.log('Existing access token is still valid.');
+                        return existingToken; // If Token is valid, return it
+                    }
+                }
+            }
+    
+            // If no valid token, get a new one
             const tokenResponse = await sdk.exchangeForAccessToken();
             console.log('Token response received:', !!tokenResponse);
-
+    
             if (!tokenResponse || !tokenResponse.access_token) {
                 throw new Error('Failed to exchange code for token');
             }
-
-            // 直接存储到 localStorage 作为主要存储
-            localStorage.setItem(TOKEN_COOKIE, tokenResponse.access_token);
-            if (tokenResponse.refresh_token) {
-                localStorage.setItem(REFRESH_TOKEN_COOKIE, tokenResponse.refresh_token);
-            }
-            
-            // 尝试同时存储到 cookie 作为备份
-            try {
-                Cookies.set(TOKEN_COOKIE, tokenResponse.access_token, COOKIE_OPTIONS);
-                if (tokenResponse.refresh_token) {
-                    Cookies.set(REFRESH_TOKEN_COOKIE, tokenResponse.refresh_token, COOKIE_OPTIONS);
-                }
-            } catch (cookieError) {
-                console.warn('Failed to set cookies, but tokens are stored in localStorage:', cookieError);
-            }
-
-            // 设置令牌刷新计时器
-            this.setupTokenRefresh();
-
+    
+            // Store the tokens in cookies and localStorage
+            this.storeTokensInCookies(tokenResponse);
+    
             return tokenResponse.access_token;
         } catch (error) {
             console.error('Signin error:', error);
@@ -310,7 +308,7 @@ class CasdoorService {
     private storeTokensInCookies(tokenResponse: TokenResponse): void {
         console.log('Storing tokens...');
         
-        // 首先存储到 localStorage（更可靠）
+        // Store tokens in localStorage first (more reliable)
         if (tokenResponse.access_token) {
             localStorage.setItem(TOKEN_COOKIE, tokenResponse.access_token);
         }

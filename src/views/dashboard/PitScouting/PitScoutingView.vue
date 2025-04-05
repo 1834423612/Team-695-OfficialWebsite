@@ -391,7 +391,7 @@ const currentFormId = computed(() => tabs.value[currentTab.value].formId);
 
 
 // Form versioning control
-const FORM_VERSION = "2025.4.3_PROD_ED6"; // Update this when you want to force a form reset
+const FORM_VERSION = "2025.4.5_PROD_ED2"; // Update this when you want to force a form reset
 const FORM_VERSION_KEY = "pit-scouting-form-version";
 
 
@@ -723,7 +723,14 @@ const filteredTeamSuggestions = computed(() => {
 
 const loadEventId = async () => {
   try {
-    const response = await fetch("https://api.frc695.com/api/event/event-id");
+    // 获取访问令牌
+    const token = casdoorService.getToken();
+    
+    const response = await fetch("https://api.frc695.com/api/event/event-id", {
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : ''
+      }
+    });
     const data = await response.json();
     eventId.value = data.eventId;
   } catch (error) {
@@ -870,7 +877,14 @@ const selectTeam = (team: Team) => {
 
 const loadTeams = async (query: string) => {
   try {
-    const response = await fetch(`https://api.frc695.com/api/team/teams?query=${query}&limit=20`);
+    // 获取访问令牌
+    const token = casdoorService.getToken();
+    
+    const response = await fetch(`https://api.frc695.com/api/team/teams?query=${query}&limit=20`, {
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : ''
+      }
+    });
     const data = await response.json();
     teamSuggestions.value = data;
   } catch (error) {
@@ -938,8 +952,14 @@ const uploadImage = async (type: "fullRobot" | "driveTrain", file: File) => {
   formData.append("type", type);
 
   try {
+    // 获取访问令牌
+    const token = casdoorService.getToken();
+    
     const response = await fetch("https://api.frc695.com/api/upload/upload", {
       method: "POST",
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : ''
+      },
       body: formData,
     });
     const data = await response.json();
@@ -989,7 +1009,15 @@ const confirmRemoveImage = (
 const removeImage = async (type: "fullRobot" | "driveTrain", index: number) => {
   try {
     const imageId = type === "fullRobot" ? fullRobotImages.value[index].id : driveTrainImages.value[index].id;
-    await axios.delete(`https://api.frc695.com/api/images/${imageId}`);
+    
+    // 获取访问令牌
+    const token = casdoorService.getToken();
+    
+    await axios.delete(`https://api.frc695.com/api/images/${imageId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
 
     if (type === "fullRobot") {
       fullRobotImages.value.splice(index, 1);
@@ -1242,6 +1270,9 @@ const submitForm = async () => {
   try {
     isSubmitting.value = true;
     
+    // 获取访问令牌
+    const token = casdoorService.getToken();
+    
     // Get user info including avatar
     let userAvatar = userData.value.avatar || "";
     
@@ -1323,6 +1354,7 @@ const submitForm = async () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
       },
       body: JSON.stringify(submissionData),
     });

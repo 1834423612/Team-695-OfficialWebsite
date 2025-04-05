@@ -785,6 +785,7 @@ import axios from "axios";
 import { Icon } from "@iconify/vue";
 import { Bar } from "vue-chartjs";
 import { throttle } from "lodash";
+import { casdoorService } from "@/services/auth";
 import {
     Chart as ChartJS,
     Title,
@@ -989,7 +990,16 @@ const fetchData = async () => {
     loading.value = true;
     error.value = "";
     try {
-        const response = await axios.get<SurveyData[]>("https://api.frc695.com/api/survey/query");
+        // 获取访问令牌
+        const token = casdoorService.getToken();
+        
+        // 添加授权请求头
+        const response = await axios.get<SurveyData[]>("https://api.frc695.com/api/survey/query", {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
         surveyData.value = response.data.map(item => {
             // Parse JSON strings if needed
             if (typeof item.data === 'string') {
@@ -1008,7 +1018,14 @@ const fetchData = async () => {
         });
     } catch (err: any) {
         console.error("Error fetching data:", err);
-        error.value = err.message || "Failed to fetch data. Please try again later.";
+        // 检查是否为授权错误
+        if (err.response && err.response.status === 401) {
+            error.value = "Authentication error. Please login again.";
+            // 可以选择重定向到登录页面
+            // window.location.href = '/login';
+        } else {
+            error.value = err.message || "Failed to fetch data. Please try again later.";
+        }
         surveyData.value = [];
     } finally {
         loading.value = false;
