@@ -29,8 +29,8 @@
 
           <!-- 单图展示 -->
           <img
-            src="https://r2.fastbirdcdn.online/Robotics/Robots/66ac2099b1841-20240802_Screenshot%202024-08-01%20193902.png"
-            alt="Robotics Picture"
+            src="https://r2.fastbirdcdn.online/Robotics/Robots/2025-695-Robot_Gold-Fish.jpeg"
+            alt="2025 695 Robot - Gold Fish"
             class="my-10 aspect-[8/7] w-full max-w-lg rounded-2xl object-cover sm:mt-16 lg:mt-0 lg:max-w-none " />
 
           <!-- 图片瀑布样式 -->
