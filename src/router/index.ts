@@ -56,13 +56,6 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('@/views/auth/CasdoorCallback.vue'),
     meta: { guest: true }
   },
-  // Public questionnaire submission route
-  {
-    path: '/questionnaire/:id/submit',
-    name: 'QuestionnaireSubmit',
-    component: () => import('@/views/QuestionnaireSubmit.vue'),
-    // No auth requirement - will check inside component based on questionnaire settings
-  },
   {
     path: '/Dashboard',
     name: 'dashboard',
@@ -97,37 +90,6 @@ const routes: Array<RouteRecordRaw> = [
         name: 'Pit-ScoutingAdmin',
         component: () => import('@/views/dashboard/PitScouting/PitScoutingAdminView.vue'),
         meta: { requiresAuth: true, requiresAdmin: true }
-      },
-      // Questionnaire routes
-      {
-        path: 'questionnaire',
-        name: 'QuestionnaireList',
-        component: () => import('@/views/dashboard/Questionnaire/QuestionnaireView.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: 'questionnaire/create',
-        name: 'QuestionnaireCreate',
-        component: () => import('@/views/dashboard/Questionnaire/QuestionnaireForm.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: 'questionnaire/:id',
-        name: 'QuestionnaireDetail',
-        component: () => import('@/views/dashboard/Questionnaire/QuestionnaireDetail.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: 'questionnaire/:id/edit',
-        name: 'QuestionnaireEdit',
-        component: () => import('@/views/dashboard/Questionnaire/QuestionnaireForm.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: 'questionnaire/:id/statistics',
-        name: 'QuestionnaireStatistics',
-        component: () => import('@/views/dashboard/Questionnaire/QuestionnaireStatistics.vue'),
-        meta: { requiresAuth: true }
       }
     ]
   },
