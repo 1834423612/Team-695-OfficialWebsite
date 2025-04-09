@@ -20,6 +20,7 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('@/components/NotFound.vue'),
   },
   { path: '/', component: Home },
+  { path: '/sponsors', component: () => import('@/views/Sponsors.vue') },
   { path: '/about', component: () => import('@/views/AboutContainerPage.vue') },
   // { path: '/aboutdetail', component: About },
   // { path: '/mentors', component: Mentors },
