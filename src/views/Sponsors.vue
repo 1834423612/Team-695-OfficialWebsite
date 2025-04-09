@@ -467,7 +467,7 @@
                 <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">
                     <div class="md:flex">
                         <div class="md:shrink-0 flex items-center justify-center p-6 bg-yellow-50">
-                            <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/695%20Sponsorship%20Handout_00-0vYpTf401Z5Wq2zVif8EAa0J4kYggn.png"
+                            <img src="https://r2.fastbirdcdn.online/Robotics/Resource/695_Sponsorship_Handout_preview.png"
                                 alt="Sponsorship Tiers Pyramid" class="h-48 w-auto object-contain" />
                         </div>
                         <div class="p-8">
