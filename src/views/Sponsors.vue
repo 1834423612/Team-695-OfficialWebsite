@@ -14,8 +14,8 @@
                     </p>
                     <div class="flex flex-wrap justify-center gap-4">
                         <a href="#current-sponsors"
-                        class="inline-flex items-center justify-center px-6 py-3 bg-blue-500 text-white font-semibold rounded-md hover:bg-blue-600 hover:-translate-y-1 transition-all">
-                        Our Sponsors
+                            class="inline-flex items-center justify-center px-6 py-3 bg-blue-500 text-white font-semibold rounded-md hover:bg-blue-600 hover:-translate-y-1 transition-all">
+                            Our Sponsors
                         </a>
                         <a href="#sponsorship-tiers"
                             class="inline-flex items-center justify-center px-6 py-3 bg-yellow-500 text-white font-semibold rounded-md hover:bg-yellow-600 hover:-translate-y-1 transition-all">
@@ -40,17 +40,18 @@
                         Their contributions enable our team to innovate, compete, and inspire.
                     </p>
                 </div>
-        
+
                 <!-- Loading state -->
                 <div v-if="isLoading" class="flex justify-center items-center py-16">
                     <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-500"></div>
                 </div>
-        
+
                 <!-- Error state -->
-                <div v-else-if="loadError" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative max-w-2xl mx-auto">
+                <div v-else-if="loadError"
+                    class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative max-w-2xl mx-auto">
                     <p>Unable to load sponsor information. Please try again later.</p>
                 </div>
-        
+
                 <!-- Content when loaded successfully -->
                 <div v-else>
                     <!-- Diamond Sponsors -->
@@ -62,25 +63,28 @@
                                 class="bg-white rounded-lg shadow hover:shadow-lg hover:-translate-y-1 transition-all duration-300 max-w-md mx-auto"
                                 :class="{ 'col-span-full': diamondSponsors.length === 1 }">
                                 <div class="h-32 flex items-center justify-center p-4">
-                                    <img v-if="sponsor.logo" :src="sponsor.logo" :alt="`${sponsor.name} Logo`" 
-                                        class="max-h-full max-w-full object-contain" 
+                                    <img v-if="sponsor.logo" :src="sponsor.logo" :alt="`${sponsor.name} Logo`"
+                                        class="max-h-full max-w-full object-contain"
                                         @error="handleImageError($event, sponsor)" />
-                                    <div v-else class="bg-gray-100 flex items-center justify-center w-full h-full rounded">
+                                    <div v-else
+                                        class="bg-gray-100 flex items-center justify-center w-full h-full rounded">
                                         <span class="text-gray-500 font-medium">{{ sponsor.name }}</span>
                                     </div>
                                 </div>
                                 <div class="p-4 text-center">
                                     <h4 class="text-lg font-bold text-gray-800">
-                                        <a v-if="sponsor.link" :href="sponsor.link" target="_blank" rel="noopener noreferrer"
-                                            class="hover:text-yellow-600 transition-colors">{{ sponsor.name }}</a>
+                                        <a v-if="sponsor.link" :href="sponsor.link" target="_blank"
+                                            rel="noopener noreferrer" class="hover:text-yellow-600 transition-colors">{{
+                                            sponsor.name }}</a>
                                         <span v-else>{{ sponsor.name }}</span>
                                     </h4>
-                                    <p v-if="sponsor.since" class="text-gray-600 text-sm">Supporting Team 695 since {{ sponsor.since }}</p>
+                                    <p v-if="sponsor.since" class="text-gray-600 text-sm">Supporting Team 695 since {{
+                                        sponsor.since }}</p>
                                 </div>
                             </div>
                         </div>
                     </div>
-        
+
                     <!-- Platinum Sponsors -->
                     <div v-if="platinumSponsors.length > 0" class="mb-16">
                         <h3 class="text-2xl font-bold text-center mb-8 text-slate-600">Platinum Sponsors</h3>
@@ -90,25 +94,28 @@
                                 class="bg-white rounded-lg shadow hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
                                 :class="{ 'col-span-full md:col-span-3 lg:col-span-4 max-w-sm mx-auto': platinumSponsors.length === 1 }">
                                 <div class="h-24 flex items-center justify-center p-4">
-                                    <img v-if="sponsor.logo" :src="sponsor.logo" :alt="`${sponsor.name} Logo`" 
+                                    <img v-if="sponsor.logo" :src="sponsor.logo" :alt="`${sponsor.name} Logo`"
                                         class="max-h-full max-w-full object-contain"
                                         @error="handleImageError($event, sponsor)" />
-                                    <div v-else class="bg-gray-100 flex items-center justify-center w-full h-full rounded">
+                                    <div v-else
+                                        class="bg-gray-100 flex items-center justify-center w-full h-full rounded">
                                         <span class="text-gray-500 font-medium">{{ sponsor.name }}</span>
                                     </div>
                                 </div>
                                 <div class="p-4 text-center">
                                     <h4 class="text-lg font-bold text-gray-800">
-                                        <a v-if="sponsor.link" :href="sponsor.link" target="_blank" rel="noopener noreferrer"
-                                            class="hover:text-slate-700 transition-colors">{{ sponsor.name }}</a>
+                                        <a v-if="sponsor.link" :href="sponsor.link" target="_blank"
+                                            rel="noopener noreferrer" class="hover:text-slate-700 transition-colors">{{
+                                            sponsor.name }}</a>
                                         <span v-else>{{ sponsor.name }}</span>
                                     </h4>
-                                    <p v-if="sponsor.since" class="text-gray-600 text-sm">Supporting Team 695 since {{ sponsor.since }}</p>
+                                    <p v-if="sponsor.since" class="text-gray-600 text-sm">Supporting Team 695 since {{
+                                        sponsor.since }}</p>
                                 </div>
                             </div>
                         </div>
                     </div>
-        
+
                     <!-- Gold Sponsors -->
                     <div v-if="goldSponsors.length > 0" class="mb-16">
                         <h3 class="text-2xl font-bold text-center mb-8 text-yellow-700">Gold Sponsors</h3>
@@ -118,20 +125,23 @@
                                 class="bg-white rounded-lg shadow hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
                                 :class="{ 'col-span-full md:col-span-3 lg:col-span-4 max-w-sm mx-auto': goldSponsors.length === 1 }">
                                 <div class="h-24 flex items-center justify-center p-4">
-                                    <img v-if="sponsor.logo" :src="sponsor.logo" :alt="`${sponsor.name} Logo`" 
+                                    <img v-if="sponsor.logo" :src="sponsor.logo" :alt="`${sponsor.name} Logo`"
                                         class="max-h-full max-w-full object-contain"
                                         @error="handleImageError($event, sponsor)" />
-                                    <div v-else class="bg-gray-100 flex items-center justify-center w-full h-full rounded">
+                                    <div v-else
+                                        class="bg-gray-100 flex items-center justify-center w-full h-full rounded">
                                         <span class="text-gray-500 font-medium">{{ sponsor.name }}</span>
                                     </div>
                                 </div>
                                 <div class="p-4 text-center">
                                     <h4 class="text-lg font-bold text-gray-800">
-                                        <a v-if="sponsor.link" :href="sponsor.link" target="_blank" rel="noopener noreferrer"
-                                            class="hover:text-yellow-600 transition-colors">{{ sponsor.name }}</a>
+                                        <a v-if="sponsor.link" :href="sponsor.link" target="_blank"
+                                            rel="noopener noreferrer" class="hover:text-yellow-600 transition-colors">{{
+                                            sponsor.name }}</a>
                                         <span v-else>{{ sponsor.name }}</span>
                                     </h4>
-                                    <p v-if="sponsor.since" class="text-gray-600 text-sm">Supporting Team 695 since {{ sponsor.since }}</p>
+                                    <p v-if="sponsor.since" class="text-gray-600 text-sm">Supporting Team 695 since {{
+                                        sponsor.since }}</p>
                                 </div>
                             </div>
                         </div>
@@ -146,20 +156,23 @@
                                 class="bg-white rounded-lg shadow hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
                                 :class="{ 'col-span-full md:col-span-3 lg:col-span-4 max-w-sm mx-auto': silverSponsors.length === 1 }">
                                 <div class="h-24 flex items-center justify-center p-4">
-                                    <img v-if="sponsor.logo" :src="sponsor.logo" :alt="`${sponsor.name} Logo`" 
+                                    <img v-if="sponsor.logo" :src="sponsor.logo" :alt="`${sponsor.name} Logo`"
                                         class="max-h-full max-w-full object-contain"
                                         @error="handleImageError($event, sponsor)" />
-                                    <div v-else class="bg-gray-100 flex items-center justify-center w-full h-full rounded">
+                                    <div v-else
+                                        class="bg-gray-100 flex items-center justify-center w-full h-full rounded">
                                         <span class="text-gray-500 font-medium">{{ sponsor.name }}</span>
                                     </div>
                                 </div>
                                 <div class="p-4 text-center">
                                     <h4 class="text-lg font-bold text-gray-800">
-                                        <a v-if="sponsor.link" :href="sponsor.link" target="_blank" rel="noopener noreferrer"
-                                            class="hover:text-gray-700 transition-colors">{{ sponsor.name }}</a>
+                                        <a v-if="sponsor.link" :href="sponsor.link" target="_blank"
+                                            rel="noopener noreferrer" class="hover:text-gray-700 transition-colors">{{
+                                            sponsor.name }}</a>
                                         <span v-else>{{ sponsor.name }}</span>
                                     </h4>
-                                    <p v-if="sponsor.since" class="text-gray-600 text-sm">Supporting Team 695 since {{ sponsor.since }}</p>
+                                    <p v-if="sponsor.since" class="text-gray-600 text-sm">Supporting Team 695 since {{
+                                        sponsor.since }}</p>
                                 </div>
                             </div>
                         </div>
@@ -174,20 +187,23 @@
                                 class="bg-white rounded-lg shadow hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
                                 :class="{ 'col-span-full md:col-span-3 lg:col-span-4 max-w-sm mx-auto': bronzeSponsors.length === 1 }">
                                 <div class="h-24 flex items-center justify-center p-4">
-                                    <img v-if="sponsor.logo" :src="sponsor.logo" :alt="`${sponsor.name} Logo`" 
+                                    <img v-if="sponsor.logo" :src="sponsor.logo" :alt="`${sponsor.name} Logo`"
                                         class="max-h-full max-w-full object-contain"
                                         @error="handleImageError($event, sponsor)" />
-                                    <div v-else class="bg-gray-100 flex items-center justify-center w-full h-full rounded">
+                                    <div v-else
+                                        class="bg-gray-100 flex items-center justify-center w-full h-full rounded">
                                         <span class="text-gray-500 font-medium">{{ sponsor.name }}</span>
                                     </div>
                                 </div>
                                 <div class="p-4 text-center">
                                     <h4 class="text-lg font-bold text-gray-800">
-                                        <a v-if="sponsor.link" :href="sponsor.link" target="_blank" rel="noopener noreferrer"
-                                            class="hover:text-yellow-600 transition-colors">{{ sponsor.name }}</a>
+                                        <a v-if="sponsor.link" :href="sponsor.link" target="_blank"
+                                            rel="noopener noreferrer" class="hover:text-yellow-600 transition-colors">{{
+                                            sponsor.name }}</a>
                                         <span v-else>{{ sponsor.name }}</span>
                                     </h4>
-                                    <p v-if="sponsor.since" class="text-gray-600 text-sm">Supporting Team 695 since {{ sponsor.since }}</p>
+                                    <p v-if="sponsor.since" class="text-gray-600 text-sm">Supporting Team 695 since {{
+                                        sponsor.since }}</p>
                                 </div>
                             </div>
                         </div>
@@ -467,7 +483,7 @@
                 <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">
                     <div class="md:flex">
                         <div class="md:shrink-0 flex items-center justify-center p-6 bg-yellow-50">
-                            <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/695%20Sponsorship%20Handout_00-0vYpTf401Z5Wq2zVif8EAa0J4kYggn.png"
+                            <img src="https://r2.fastbirdcdn.online/Robotics/Resource/695_Sponsorship_Handout_preview.png"
                                 alt="Sponsorship Tiers Pyramid" class="h-48 w-auto object-contain" />
                         </div>
                         <div class="p-8">
@@ -479,7 +495,8 @@
                                 Download our complete sponsorship information packet for detailed information about our
                                 team, sponsorship opportunities, and how your support makes a difference.
                             </p>
-                            <a href="https://r2.fastbirdcdn.online/Robotics/Resource/695%20Sponsorship%20Handout.pdf" target="_blank"
+                            <a href="https://r2.fastbirdcdn.online/Robotics/Resource/695%20Sponsorship%20Handout.pdf"
+                                target="_blank"
                                 class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
                                 <Icon icon="mdi:download" />
                                 Download Sponsorship PDF
@@ -573,21 +590,13 @@
                                     </div>
 
                                     <div>
-                                        <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                                        <label for="phone"
+                                            class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                                         <div class="relative">
-                                            <input 
-                                                type="tel" 
-                                                id="phone"
-                                                v-model="phoneInput"
-                                                @input="formatPhoneNumber"
+                                            <input type="tel" id="phone" v-model="phoneInput" @input="formatPhoneNumber"
                                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-blue-500 focus:ring focus:ring-blue-200"
-                                                placeholder="(555) 123-4567" 
-                                            />
-                                            <input 
-                                                type="hidden" 
-                                                :value="phoneRaw" 
-                                                name="phone_raw"
-                                            />
+                                                placeholder="(555) 123-4567" />
+                                            <input type="hidden" :value="phoneRaw" name="phone_raw" />
                                         </div>
                                     </div>
 
@@ -663,7 +672,8 @@
                                 </div>
 
                                 <div>
-                                    <a href="https://r2.fastbirdcdn.online/Robotics/Resource/695%20Sponsorship%20Handout.pdf" target="_blank"
+                                    <a href="https://r2.fastbirdcdn.online/Robotics/Resource/695%20Sponsorship%20Handout.pdf"
+                                        target="_blank"
                                         class="inline-flex items-center gap-3 px-5 py-2.5 bg-white text-blue-600 rounded-md hover:bg-yellow-100 transition-colors">
                                         <Icon icon="mdi:download" class="text-lg flex-shrink-0" aria-hidden="true" />
                                         <span class="truncate">Download Sponsorship Form</span>
@@ -719,9 +729,8 @@
                                 class="text-gray-600 leading-relaxed px-6 py-4 bg-gray-50 border-t border-gray-200">
                                 <p>
                                     Sponsorship funds are used to cover competition registration fees, purchase robot
-                                    parts and materials, provide team uniforms, support travel to competitions, and
-                                    maintain our workshop equipment. Every dollar goes directly to supporting our
-                                    students and their robotics journey.
+                                    parts and materials, provide team uniforms, and maintain our workshop equipment.
+                                    Every dollar goes directly to supporting our students and their robotics journey.
                                 </p>
                             </div>
                         </div>
