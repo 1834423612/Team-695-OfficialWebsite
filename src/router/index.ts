@@ -90,7 +90,13 @@ const routes: Array<RouteRecordRaw> = [
         name: 'Pit-ScoutingAdmin',
         component: () => import('@/views/dashboard/PitScouting/PitScoutingAdminView.vue'),
         meta: { requiresAuth: true, requiresAdmin: true }
-      }
+      },
+      {
+        path: 'Assignments',
+        name: 'Assignments',
+        component: () => import('@/views/dashboard/ScoutingAssignmentView.vue'),
+        meta: { requiresAuth: true }
+      },
     ]
   },
   // Keep the old routes for backward compatibility, but redirect to dashboard
