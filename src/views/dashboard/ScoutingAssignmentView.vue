@@ -785,8 +785,8 @@ export default defineComponent({
 
                 // Determine which endpoint to use based on user role
                 const endpoint = isAdmin.value
-                    ? `http://localhost:3000/api/assignments/events/${selectedEvent.value}`
-                    : `http://localhost:3000/api/assignments/user/${selectedEvent.value}`;
+                    ? `https://api.team695.com/api/assignments/events/${selectedEvent.value}`
+                    : `https://api.team695.com/api/assignments/user/${selectedEvent.value}`;
 
                 const response = await fetch(endpoint, {
                     headers: {
@@ -822,7 +822,7 @@ export default defineComponent({
                     throw new Error('Authentication token not found');
                 }
 
-                const response = await fetch('http://localhost:3000/api/auth/users', {
+                const response = await fetch('https://api.team695.com/api/auth/users', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -906,7 +906,7 @@ export default defineComponent({
                     throw new Error('Authentication token not found');
                 }
 
-                const response = await fetch(`http://localhost:3000/api/assignments/${assignment.id}`, {
+                const response = await fetch(`https://api.team695.com/api/assignments/${assignment.id}`, {
                     method: 'PUT',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -1068,7 +1068,7 @@ export default defineComponent({
                     throw new Error('Authentication token not found');
                 }
 
-                const response = await fetch(`http://localhost:3000/api/assignments/${assignmentToDelete.value.id}`, {
+                const response = await fetch(`https://api.team695.com/api/assignments/${assignmentToDelete.value.id}`, {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -1144,7 +1144,7 @@ export default defineComponent({
 
                 if (editingAssignment.value) {
                     // Update existing assignment
-                    const response = await fetch(`http://localhost:3000/api/assignments/${editingAssignment.value.id}`, {
+                    const response = await fetch(`https://api.team695.com/api/assignments/${editingAssignment.value.id}`, {
                         method: 'PUT',
                         headers: {
                             'Authorization': `Bearer ${token}`,
@@ -1190,7 +1190,7 @@ export default defineComponent({
                         assigner_data: assignerData
                     };
                     
-                    const response = await fetch('http://localhost:3000/api/assignments', {
+                    const response = await fetch('https://api.team695.com/api/assignments', {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${token}`,

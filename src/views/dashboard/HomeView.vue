@@ -40,7 +40,7 @@
               <h3 class="text-sm font-medium text-gray-900 sm:text-lg">
                 <span class="block text-md sm:text-lg font-semibold">Current Version:</span>
                 <span class="ml-0 mt-1 px-2 py-1 bg-blue-100 text-blue-600 text-xs rounded-md inline-block">
-                  Beta_feat-DB_PR_0.4.37
+                  Beta_feat-DB_PR_0.4.102
                 </span>
               </h3>
             </div>
@@ -103,6 +103,22 @@
             <Icon icon="mdi:arrow-top-right" class="h-5 w-5 text-gray-400" />
           </div>
         </a>
+
+        <router-link to="/dashboard/assignments"
+          class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300">
+          <div class="p-5 flex items-center justify-between">
+            <div class="flex items-center">
+              <div class="flex-shrink-0 bg-green-100 rounded-md p-3">
+                <Icon icon="mdi:clipboard-list" class="h-6 w-6 text-green-600" />
+              </div>
+              <div class="ml-5">
+                <h3 class="text-lg font-medium text-gray-900">Assignments</h3>
+                <p class="text-sm text-gray-500">View and manage your tasks</p>
+              </div>
+            </div>
+            <Icon icon="mdi:arrow-top-right" class="h-5 w-5 text-gray-400" />
+          </div>
+        </router-link>
 
         <!-- <a href="#" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300">
             <div class="p-5">
