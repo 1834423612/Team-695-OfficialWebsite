@@ -657,9 +657,7 @@ export default defineComponent({
         const error = ref('');
         const assignments = ref<any[]>([]);
         const events = ref([
-            { key: '2025ohcl', name: 'Cleveland Regional 2025' },
-            { key: '2025flor', name: 'Orlando Regional 2025' },
-            { key: '2025micmp', name: 'Michigan Championship 2025' }
+            { key: '2025ohcl', name: '2025 Buckeye Regional' },
         ]);
         const selectedEvent = ref('2025ohcl');
         const activeTab = ref('all');
