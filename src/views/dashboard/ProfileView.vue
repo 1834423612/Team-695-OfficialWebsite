@@ -328,7 +328,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, computed } from 'vue';
+import { defineComponent, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { casdoorService } from '@/services/auth';
 import { Icon } from '@iconify/vue';
@@ -344,25 +344,25 @@ export default defineComponent({
     const router = useRouter();
     const casdoorUrl = 'https://sso.team695.com';
 
-    // Check if in development mode
+    // 检查是否在开发模式
     const isDev = import.meta.env.DEV;
 
-    // Use the Pinia store
+    // 使用 Pinia 存储
     const userStore = useUserStore();
     
-    // Use storeToRefs to maintain reactivity
+    // 使用 storeToRefs 来保持响应性
     const { userInfo, orgData } = storeToRefs(userStore);
     
-    // Access other properties directly from the store
+    // 直接从存储访问其他属性
     const isLoading = computed(() => userStore.isLoading);
     const error = computed(() => userStore.error);
 
-    // Computed property for user data
+    // 用户数据计算属性
     const userData = computed(() => {
       return userInfo.value || {};
     });
 
-    // Computed property to get Google-related properties
+    // 计算 Google 相关属性的属性
     const googleProperties = computed(() => {
       if (!userData.value.properties) return {};
       
@@ -374,7 +374,7 @@ export default defineComponent({
         }, {} as Record<string, any>);
     });
     
-    // Computed property to get non-Google properties
+    // 非 Google 属性的计算属性
     const otherProperties = computed(() => {
       if (!userData.value.properties) return {};
       
