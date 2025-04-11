@@ -620,9 +620,10 @@ class CasdoorService {
                 const response = await fetch(userInfoUrl, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json',
                     },
-                    // Skip credentials for CORS in development
-                    ...(isDevelopment ? {} : { credentials: 'include' }),
+                    // Remove credentials configuration to avoid preflight requests
+                    mode: 'cors'
                 });
 
                 if (!response.ok) {
@@ -651,9 +652,10 @@ class CasdoorService {
                     const response = await fetch(userInfoUrl, {
                         headers: {
                             'Authorization': `Bearer ${token}`,
+                            'Accept': 'application/json',
                         },
-                        // Skip credentials for CORS in development
-                        ...(isDevelopment ? {} : { credentials: 'include' }),
+                        // 移除credentials配置
+                        mode: 'cors'
                     });
 
                     if (!response.ok) {
@@ -692,20 +694,20 @@ class CasdoorService {
     private async fetchUserInfoFromAPI(token: string): Promise<UserInfo> {
         const userInfoUrl = `${config.serverUrl}/api/get-account`;
         
-        // Create different fetch options based on environment to handle CORS
+        // 修改fetch选项来解决CORS问题
         const fetchOptions: RequestInit = {
             headers: {
                 'Authorization': `Bearer ${token}`,
+                // 添加额外的头信息以避免触发复杂请求
+                'Accept': 'application/json',
             },
-            cache: 'no-store',
+            // 移除cache配置，可能引起preflight请求
+            // cache: 'no-store',
+            // 对所有环境移除credentials配置，这通常会触发预检请求
+            // credentials: 'include', 
+            // mode: 'cors' 显式设置模式
+            mode: 'cors'
         };
-        
-        // Only include credentials in production, not in development (to avoid CORS issues)
-        if (!isDevelopment) {
-            fetchOptions.credentials = 'include';
-        } else {
-            console.log('Development mode: omitting credentials to avoid CORS issues');
-        }
         
         const response = await fetch(userInfoUrl, fetchOptions);
 
@@ -805,19 +807,17 @@ class CasdoorService {
             // Call Casdoor's /api/logout API
             const token = this.getToken();
             if (token) {
-                // Create fetch options based on environment
+                // 修改fetch选项
                 const fetchOptions: RequestInit = {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    // 移除credentials
+                    mode: 'cors'
                 };
-                
-                // Only include credentials in production
-                if (!isDevelopment) {
-                    fetchOptions.credentials = 'include';
-                }
                 
                 await fetch(`${config.serverUrl}/api/logout`, fetchOptions)
                     .catch(e => console.warn('Server logout failed:', e));
