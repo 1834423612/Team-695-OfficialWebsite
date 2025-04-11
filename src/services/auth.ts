@@ -616,13 +616,14 @@ class CasdoorService {
             // Try alternate endpoints if primary fails
             try {
                 // Try second endpoint
-                const userInfoUrl = `${config.serverUrl}/api/userinfo`;
+                // Determine API URL based on environment
+                const baseUrl = isDevelopment ? '/api/sso' : config.serverUrl;
+                const userInfoUrl = `${baseUrl}/api/userinfo`;
                 const response = await fetch(userInfoUrl, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Accept': 'application/json',
                     },
-                    // Remove credentials configuration to avoid preflight requests
                     mode: 'cors'
                 });
 
@@ -648,13 +649,14 @@ class CasdoorService {
                 
                 // Try third endpoint
                 try {
-                    const userInfoUrl = `${config.serverUrl}/api/get-user`;
+                    // Determine API URL based on environment
+                    const baseUrl = isDevelopment ? '/api/sso' : config.serverUrl;
+                    const userInfoUrl = `${baseUrl}/api/get-user`;
                     const response = await fetch(userInfoUrl, {
                         headers: {
                             'Authorization': `Bearer ${token}`,
                             'Accept': 'application/json',
                         },
-                        // 移除credentials配置
                         mode: 'cors'
                     });
 
@@ -692,20 +694,15 @@ class CasdoorService {
     
     // Helper method to fetch user info from primary API endpoint
     private async fetchUserInfoFromAPI(token: string): Promise<UserInfo> {
-        const userInfoUrl = `${config.serverUrl}/api/get-account`;
+        // Determine API URL based on environment
+        const baseUrl = isDevelopment ? '/api/sso' : config.serverUrl;
+        const userInfoUrl = `${baseUrl}/api/get-account`;
         
-        // 修改fetch选项来解决CORS问题
         const fetchOptions: RequestInit = {
             headers: {
                 'Authorization': `Bearer ${token}`,
-                // 添加额外的头信息以避免触发复杂请求
                 'Accept': 'application/json',
             },
-            // 移除cache配置，可能引起preflight请求
-            // cache: 'no-store',
-            // 对所有环境移除credentials配置，这通常会触发预检请求
-            // credentials: 'include', 
-            // mode: 'cors' 显式设置模式
             mode: 'cors'
         };
         
@@ -807,7 +804,8 @@ class CasdoorService {
             // Call Casdoor's /api/logout API
             const token = this.getToken();
             if (token) {
-                // 修改fetch选项
+                // Determine API URL based on environment
+                const baseUrl = isDevelopment ? '/api/sso' : config.serverUrl;
                 const fetchOptions: RequestInit = {
                     method: 'POST',
                     headers: {
@@ -815,11 +813,10 @@ class CasdoorService {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
                     },
-                    // 移除credentials
                     mode: 'cors'
                 };
                 
-                await fetch(`${config.serverUrl}/api/logout`, fetchOptions)
+                await fetch(`${baseUrl}/api/logout`, fetchOptions)
                     .catch(e => console.warn('Server logout failed:', e));
             }
         } catch (error) {
