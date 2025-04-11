@@ -6,8 +6,7 @@
         <div class="px-6 py-8 md:p-10 md:flex md:items-center md:justify-between">
           <div>
             <h2 class="text-2xl font-bold text-white">
-              Welcome back, {{ userData.firstName || userData.displayName || (userData.name ?
-              userData.name.split('@')[0] : 'User') }}!
+              Welcome back, {{ userData.firstName || (userData.displayName ? userData.displayName.split(' ')[0] : userData.name) }}!
             </h2>
             <p class="mt-2 text-blue-100">
               {{ new Date().toLocaleDateString('en-US', {
@@ -520,9 +519,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
-import { casdoorService } from '@/services/auth';
+import { defineComponent, computed } from 'vue';
 import { Icon } from '@iconify/vue';
 import { useUserStore } from '@/stores/userStore';
 import { storeToRefs } from 'pinia';
@@ -533,43 +530,24 @@ components: {
   Icon
 },
 setup() {
-  const router = useRouter();
-  
-  // Use the Pinia store
+  // 使用 Pinia 存储
   const userStore = useUserStore();
   
-  // Use storeToRefs to maintain reactivity
-  // Only destructure what we need to avoid TypeScript errors
+  // 使用 storeToRefs 来保持响应性
   const { userInfo, orgData } = storeToRefs(userStore);
   
-  // Access other properties directly from the store
+  // 直接从存储访问其他属性
   const storeIsLoading = computed(() => userStore.isLoading);
   const storeError = computed(() => userStore.error);
 
-  // Computed property for user data
+  // 用户数据计算属性
   const userData = computed(() => {
     return userInfo.value || {};
   });
 
   const logout = () => {
-    casdoorService.logout();
-    userStore.clearUserInfo(); // Clear user info in the store
-    router.push({ name: 'login' }).catch(err => {
-      console.error('Failed to navigate to login:', err);
-    });
+    userStore.clearUserInfo(); // 清除存储中的用户信息
   };
-
-  onMounted(() => {
-    // Check if user is logged in
-    if (!casdoorService.isLoggedIn()) {
-      router.push({ name: 'login' });
-      return;
-    }
-
-    // Initialize the store only if not already initialized
-    // This prevents redundant API calls during navigation
-    userStore.initializeStore();
-  });
 
   return {
     userData,
