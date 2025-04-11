@@ -41,6 +41,10 @@
                   clip-rule="evenodd" />
               </svg>
             </a>
+            <a href="https://www.youtube.com/@bisonrobotics695" target="_blank" class="text-gray-400 hover:text-white">
+              <span class="sr-only">YouTube</span>
+              <Icon icon="mdi:youtube" class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true" />
+            </a>
             <!-- <a href="#" class="text-gray-400 hover:text-white">
               <span class="sr-only">Twitter</span>
               <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">

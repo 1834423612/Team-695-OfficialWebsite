@@ -1,10 +1,11 @@
 import { defineStore } from 'pinia';
 import { casdoorService } from '@/services/auth';
+// import { ref, computed } from 'vue';
 
-// Define interface for the store state
+// 定义存储状态接口
 export interface UserStoreState {
-    userInfo: any | null;
-    orgData: any | null;
+    userInfo: any;
+    orgData: any;
     isLoading: boolean;
     error: string | null;
     lastFetchTime: number | null;
@@ -18,90 +19,116 @@ export const useUserStore = defineStore('user', {
         isLoading: false,
         error: null,
         lastFetchTime: null,
-        isInitialized: false // Track if the store has been initialized
+        isInitialized: false
     }),
 
-    // Persistence is handled via a plugin like pinia-plugin-persistedstate
-
-    actions: {
-        async initializeStore() {
-            // If already initialized and data was fetched recently (within 15 minutes), don't fetch again
-            const now = Date.now();
-            const fifteenMinutes = 15 * 60 * 1000;
-
-            if (this.isInitialized && this.lastFetchTime && (now - this.lastFetchTime < fifteenMinutes)) {
-                console.log('Using cached user data - last fetch was less than 15 minutes ago');
-                return;
-            }
-
-            // If we have cached data, mark as initialized to prevent showing loading state
-            if (this.userInfo) {
-                this.isInitialized = true;
-            }
-
-            // Refresh data in the background
-            this.refreshUserInfo().catch(error => {
-                console.error('Failed to refresh user data:', error);
-            });
+    getters: {
+        isLoggedIn(): boolean {
+            return casdoorService.isLoggedIn();
         },
 
-        async refreshUserInfo() {
-            // Don't set loading to true if we already have data
-            // This prevents UI flicker when refreshing in the background
-            if (!this.userInfo) {
+        // 获取当前用户名，兼容多种情况
+        userName(): string {
+            if (!this.userInfo) return 'User';
+            return this.userInfo.displayName ||
+                (this.userInfo.name ? this.userInfo.name.split('@')[0] : 'User');
+        },
+
+        // 检查是否为管理员
+        isAdmin(): boolean {
+            if (!this.userInfo) return false;
+            return !!this.userInfo.isAdmin;
+        },
+
+        // 返回头像URL或null
+        avatarUrl(): string | null {
+            return this.userInfo?.avatar || null;
+        }
+    },
+
+    actions: {
+        // 初始化存储
+        async initializeStore() {
+            console.log('Initializing user store...');
+
+            // 如果已初始化且有数据，则不重复初始化
+            if (this.isInitialized && this.userInfo) {
+                console.log('User store already initialized with data');
+                return this.userInfo;
+            }
+
+            // 如果未登录，则不初始化
+            if (!casdoorService.isLoggedIn()) {
+                console.log('User not logged in, skipping initialization');
+                return null;
+            }
+
+            // 如果最近已获取数据，则不重复获取
+            const now = Date.now();
+            if (this.lastFetchTime && now - this.lastFetchTime < 5 * 60 * 1000) {
+                console.log('Using cached user data (less than 5 minutes old)');
+                this.isInitialized = true;
+                return this.userInfo;
+            }
+
+            return this.refreshUserInfo(false);
+        },
+
+        // 刷新用户信息
+        async refreshUserInfo(showLoading = true) {
+            console.log('Refreshing user info...');
+
+            // 如果显示加载中且当前无数据，则设置加载状态
+            if (showLoading && !this.userInfo) {
                 this.isLoading = true;
             }
 
             this.error = null;
 
             try {
-                // Get the token
-                const token = casdoorService.getToken();
+                // 获取用户信息
+                const userInfo = await casdoorService.getUserInfo(showLoading);
+                console.log('User info received:', userInfo ? 'yes' : 'no');
 
-                if (!token) {
-                    throw new Error('No authentication token found');
-                }
-
-                // Hardcoded server URL to avoid the undefined serverUrl issue
-                const serverUrl = 'https://sso.team695.com';
-
-                // Fetch user info from the get-account endpoint
-                const response = await fetch(`${serverUrl}/api/get-account`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch user info: ${response.statusText}`);
-                }
-
-                // Parse the response
-                const data = await response.json();
-
-                // Update the store
-                this.userInfo = data.data;
-                this.orgData = data.data2;
+                this.userInfo = userInfo;
+                this.orgData = userInfo.data2;
                 this.lastFetchTime = Date.now();
                 this.isInitialized = true;
-            } catch (err: any) {
-                console.error('Error loading user info:', err);
-                this.error = err.message || 'Failed to load user information';
-
-                // If we don't have any data at all, this is a critical error
-                if (!this.userInfo) {
-                    throw err; // Re-throw to allow components to handle the error
-                }
+                return userInfo;
+            } catch (error) {
+                console.error('Failed to fetch user info:', error);
+                this.error = error instanceof Error ? error.message : String(error);
+                throw error;
             } finally {
                 this.isLoading = false;
             }
         },
 
+        // 清除用户信息
         clearUserInfo() {
+            console.log('Clearing user info');
             this.userInfo = null;
             this.orgData = null;
             this.lastFetchTime = null;
             this.isInitialized = false;
+        },
+
+        // 检查并确保用户登录状态
+        async ensureAuthenticated() {
+            if (!casdoorService.isLoggedIn()) {
+                return false;
+            }
+
+            if (!this.userInfo) {
+                try {
+                    await this.initializeStore();
+                } catch (e) {
+                    console.error('Failed to initialize store during auth check:', e);
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 });

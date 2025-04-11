@@ -2,6 +2,8 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 import Home from '../views/Home.vue';
 import { casdoorService } from '@/services/auth';
+// Import the user store
+import { useUserStore } from '@/stores/userStore';
 // import About from '../views/About.vue';
 // import MentorDetail from '../views/MentorDetail.vue';
 // import Members from '../views/Members.vue';
@@ -20,6 +22,7 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('@/components/NotFound.vue'),
   },
   { path: '/', component: Home },
+  { path: '/sponsors', component: () => import('@/views/Sponsors.vue') },
   { path: '/about', component: () => import('@/views/AboutContainerPage.vue') },
   // { path: '/aboutdetail', component: About },
   // { path: '/mentors', component: Mentors },
@@ -55,6 +58,18 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('@/views/auth/CasdoorCallback.vue'),
     meta: { guest: true }
   },
+  // Redirect to the uppercase /Dashboard route
+  {
+    path: '/dashboard',
+    redirect: _to => {
+      if (casdoorService.isLoggedIn()) {
+        return { name: 'DashboardHome' };
+      } else {
+        return { name: 'login' };
+      }
+    },
+    meta: { requiresAuth: true }
+  },
   {
     path: '/Dashboard',
     name: 'dashboard',
@@ -89,18 +104,24 @@ const routes: Array<RouteRecordRaw> = [
         name: 'Pit-ScoutingAdmin',
         component: () => import('@/views/dashboard/PitScouting/PitScoutingAdminView.vue'),
         meta: { requiresAuth: true, requiresAdmin: true }
-      }
+      },
+      {
+        path: 'Assignments',
+        name: 'Assignments',
+        component: () => import('@/views/dashboard/ScoutingAssignmentView.vue'),
+        meta: { requiresAuth: true }
+      },
     ]
   },
   // Keep the old routes for backward compatibility, but redirect to dashboard
   { 
     path: '/pit-scouting', 
-    redirect: '/dashboard/Pit-Scouting',
+    redirect: '/Dashboard/Pit-Scouting',
     meta: { requiresAuth: true } 
   },
   { 
     path: '/pit-scouting/dashboard', 
-    redirect: '/dashboard/Pit-Scouting/Admin',
+    redirect: '/Dashboard/Pit-Scouting/Admin',
     meta: { requiresAuth: true } 
   },
 ];
@@ -112,28 +133,41 @@ const router = createRouter({
 });
 
 // Navigation guard
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to, _from, next) => {
   const isLoggedIn = casdoorService.isLoggedIn();
   
-  // Routes that require authentication
+  // 需要认证的路由
   if (to.matched.some(record => record.meta.requiresAuth)) {
     if (!isLoggedIn) {
       next({ name: 'login' });
       return;
     }
     
-    // Check for admin routes
+    // 获取用户存储
+    const userStore = useUserStore();
+    
+    // 确保用户信息已加载
+    if (!userStore.userInfo) {
+      try {
+        await userStore.initializeStore();
+      } catch (error) {
+        console.error('Failed to initialize user store during navigation:', error);
+        // 如果无法加载用户信息但仍然登录，则继续导航
+      }
+    }
+    
+    // 检查管理员路由
     if (to.matched.some(record => record.meta.requiresAdmin)) {
-      // You'll need to implement this function in your casdoorService
-      const isAdmin = casdoorService.isUserAdmin();
+      const isAdmin = userStore.isAdmin || casdoorService.isUserAdmin();
       if (!isAdmin) {
+        console.warn('User is not an admin, redirecting to dashboard home');
         next({ name: 'DashboardHome' });
         return;
       }
     }
   }
   
-  // Routes for guests only (like login)
+  // 仅限游客的路由（如登录页）
   if (to.matched.some(record => record.meta.guest)) {
     if (isLoggedIn && to.name !== 'callback') {
       next({ name: 'DashboardHome' });

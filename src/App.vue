@@ -23,9 +23,10 @@ export default defineComponent({
   setup() {
     const route = useRoute();
 
-    // Check if the current path is /dashboard or its subpages
+    // Check if the current path is /dashboard or /Dashboard or their subpages
     const isDashboardRoute = computed(() => {
-      return route.path.startsWith('/dashboard');
+      const path = route.path.toLowerCase();
+      return path.startsWith('/dashboard');
     });
 
     return {
