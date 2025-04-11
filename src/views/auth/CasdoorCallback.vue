@@ -4,19 +4,26 @@
             <div class="text-center">
                 <div class="flex justify-center mb-4">
                     <div class="flex items-center justify-center">
-                        <Icon icon="line-md:loading-loop" class="w-12 h-12 text-blue-600" />
+                        <Icon v-if="isLoading" icon="line-md:loading-loop" class="w-12 h-12 text-blue-600" />
+                        <Icon v-else-if="message.includes('success')" icon="mdi:check-circle" class="w-12 h-12 text-green-500" />
+                        <Icon v-else icon="mdi:alert-circle" class="w-12 h-12 text-red-500" />
                     </div>
                 </div>
                 <h2 class="text-xl font-semibold text-gray-800 mb-2">{{ message }}</h2>
                 <p class="text-gray-600">{{ subMessage }}</p>
-                <div v-if="showDebug" class="mt-4 p-4 bg-gray-100 rounded text-left text-xs overflow-auto max-h-40">
+                <div v-if="showDebug" class="mt-4 p-4 bg-gray-100 rounded text-left text-xs overflow-auto max-h-60">
                     <pre>{{ debugInfo }}</pre>
                 </div>
-                <!-- Only show the button if the user is logged in and in development mode -->
-                <button v-if="showRedirectButton" @click="redirectToDashboard"
-                    class="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-                    Go to Dashboard
-                </button>
+                <div v-if="showRetryButton" class="mt-4 space-y-2">
+                    <button @click="handleManualLogin" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                        Try Again
+                    </button>
+                    <div class="mt-2">
+                        <button @click="handleDirectLogin" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+                            Use Direct Login
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -26,90 +33,141 @@
 import { defineComponent, ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { casdoorService } from '@/services/auth';
-import Cookies from 'js-cookie';
+import { Icon } from '@iconify/vue';
+import { useUserStore } from '@/stores/userStore';
 
 export default defineComponent({
     name: 'CallbackView',
+    components: {
+        Icon
+    },
     setup() {
         const router = useRouter();
-        const message = ref('Logging in...');
-        const subMessage = ref('Please wait while we process your login request');
+        const userStore = useUserStore();
+        const message = ref('Processing Authentication...');
+        const subMessage = ref('Please wait while we complete your login');
         const showDebug = ref(false);
         const debugInfo = ref('');
-        const showRedirectButton = ref(false);
+        const showRetryButton = ref(false);
+        const isLoading = ref(true);
+        const maxRetries = 3;
+        const retryCount = ref(0);
 
-        const checkTokenStatus = () => {
-            const cookieToken = Cookies.get('casdoor-token');
-            const localStorageToken = localStorage.getItem('casdoor-token');
+        // 生成调试信息
+        const generateDebugInfo = () => {
+            const urlParams = new URLSearchParams(window.location.search);
             const info = {
-                cookieToken: cookieToken ? 'Exists' : 'Does not exist',
-                localStorageToken: localStorageToken ? 'Exists' : 'Does not exist',
-                isLoggedIn: casdoorService.isLoggedIn() ? 'Yes' : 'No',
                 url: window.location.href,
+                hasCode: urlParams.has('code'),
+                code: urlParams.has('code') ? `${urlParams.get('code')?.substring(0, 5)}...` : null,
+                hasState: urlParams.has('state'),
+                state: urlParams.has('state') ? urlParams.get('state') : null,
                 hasHash: !!window.location.hash,
-                hasCode: new URLSearchParams(window.location.search).has('code'),
+                isLoggedIn: casdoorService.isLoggedIn() ? 'Yes' : 'No',
+                storedState: sessionStorage.getItem('casdoor-state') || 'None',
+                retryCount: retryCount.value,
+                timestamp: new Date().toISOString(),
                 userAgent: navigator.userAgent
             };
+            
             debugInfo.value = JSON.stringify(info, null, 2);
             return info;
         };
 
-        const redirectToDashboard = () => {
-            router.push({ path: '/dashboard' });
+        // 处理登录流程
+        const processLogin = async () => {
+            if (retryCount.value >= maxRetries) {
+                message.value = 'Maximum retries reached';
+                subMessage.value = 'Please try using the direct login button';
+                isLoading.value = false;
+                showRetryButton.value = true;
+                showDebug.value = true;
+                return;
+            }
+            
+            retryCount.value++;
+            isLoading.value = true;
+            message.value = 'Attempting to login...';
+            subMessage.value = `Attempt ${retryCount.value}/${maxRetries}`;
+            showRetryButton.value = false;
+            
+            try {
+                // 清除旧的处理标记
+                localStorage.removeItem('auth_callback_processed');
+                
+                // 获取认证令牌
+                await casdoorService.signin();
+                
+                // 获取用户信息
+                await userStore.refreshUserInfo();
+                
+                // 登录成功
+                message.value = 'Login successful!';
+                subMessage.value = 'Redirecting to dashboard...';
+                isLoading.value = false;
+                
+                // 延迟重定向以显示成功消息
+                setTimeout(() => {
+                    router.push({ path: '/dashboard' });
+                }, 1500);
+            } catch (error) {
+                console.error('Authentication error:', error);
+                
+                if (retryCount.value < maxRetries) {
+                    // 自动重试
+                    message.value = 'Login attempt failed';
+                    subMessage.value = `Retrying (${retryCount.value}/${maxRetries})...`;
+                    
+                    setTimeout(() => {
+                        processLogin();
+                    }, 1000);
+                } else {
+                    // 达到最大重试次数
+                    message.value = 'Login failed after multiple attempts';
+                    subMessage.value = 'Please try the options below';
+                    showDebug.value = true;
+                    showRetryButton.value = true;
+                    isLoading.value = false;
+                    generateDebugInfo();
+                }
+            }
         };
 
-        const handleManualTokenStorage = () => {
-            const token = new URLSearchParams(window.location.search).get('token');
-            if (token) {
-                localStorage.setItem('casdoor-token', token);
-                Cookies.set('casdoor-token', token);
-                return true;
-            }
-            return false;
+        // 手动触发登录流程
+        const handleManualLogin = async () => {
+            retryCount.value = 0;
+            await processLogin();
+        };
+
+        // 直接重定向到 Casdoor 登录页
+        const handleDirectLogin = () => {
+            // 清除所有相关存储
+            sessionStorage.clear();
+            localStorage.removeItem('auth_callback_processed');
+            localStorage.removeItem('casdoor-token');
+            localStorage.removeItem('casdoor-refresh-token');
+            localStorage.removeItem('casdoor-user-info');
+            
+            // 重定向到登录页
+            casdoorService.startLogin();
         };
 
         onMounted(async () => {
-            try {
-                const tokenStatus = checkTokenStatus();
-                console.log('Initial token status:', tokenStatus);
-
-                const manuallyHandled = handleManualTokenStorage();
-                if (!manuallyHandled) {
-                    message.value = 'Processing authentication...';
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const hasCode = urlParams.has('code');
-                    if (hasCode) {
-                        await casdoorService.signin();
-                    } else {
-                        throw new Error('No authorization code found in URL');
-                    }
-                }
-
-                const finalTokenStatus = checkTokenStatus();
-                console.log('Final token status:', finalTokenStatus);
-
-                if (casdoorService.isLoggedIn()) {
-                    message.value = 'Login successful!';
-                    subMessage.value = 'Click the button below to proceed to the dashboard.';
-                    if (process.env.NODE_ENV === 'development') {
-                        showRedirectButton.value = true; // Show button in development mode
-                    } else {
-                        redirectToDashboard(); // Automatically redirect in production mode
-                    }
-                } else {
-                    message.value = 'Login process completed, but no valid token detected';
-                    subMessage.value = 'Please check the debug information below or contact the administrator';
-                    showDebug.value = true;
-                }
-            } catch (error) {
-                console.error('Authentication error:', error);
-                message.value = 'Login failed';
-                subMessage.value = 'Please try again or contact the administrator';
-                showDebug.value = true;
-                setTimeout(() => {
-                    router.push({ path: '/login' });
-                }, 5000);
+            // 检查URL中是否有授权码
+            const urlParams = new URLSearchParams(window.location.search);
+            if (!urlParams.has('code')) {
+                message.value = 'Missing authorization code';
+                subMessage.value = 'Please try again';
+                showRetryButton.value = true;
+                isLoading.value = false;
+                return;
             }
+            
+            // 生成调试信息
+            generateDebugInfo();
+            
+            // 开始登录流程
+            await processLogin();
         });
 
         return {
@@ -117,8 +175,10 @@ export default defineComponent({
             subMessage,
             showDebug,
             debugInfo,
-            showRedirectButton,
-            redirectToDashboard
+            showRetryButton,
+            isLoading,
+            handleManualLogin,
+            handleDirectLogin
         };
     }
 });

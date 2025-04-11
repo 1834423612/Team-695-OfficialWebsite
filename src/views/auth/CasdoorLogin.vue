@@ -53,17 +53,9 @@
             </div>
 
             <div class="text-center text-xs text-gray-500">
-                <!-- <p>By signing in, you agree to our Terms of Service and Privacy Policy</p> -->
                 <p class="mt-1">© {{ new Date().getFullYear() }} Team695. All rights reserved.</p>
             </div>
         </div>
-
-        <!-- <div class="mt-8 flex items-center space-x-2">
-            <Icon icon="mdi:help-circle-outline" class="h-5 w-5 text-white" />
-            <span class="text-sm text-white font-medium">Need help? 
-                <a href="#" class="text-white underline hover:text-blue-100">Contact support</a>
-            </span>
-        </div> -->
     </div>
 </template>
 

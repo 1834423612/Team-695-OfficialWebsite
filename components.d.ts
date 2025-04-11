@@ -30,7 +30,6 @@ declare module 'vue' {
     MenuIcon: typeof import('./src/components/MenuIcon.vue')['default']
     MobileDropdownMenu: typeof import('./src/components/Header/MobileDropdownMenu.vue')['default']
     NotFound: typeof import('./src/components/NotFound.vue')['default']
-    PitScoutingDashboard: typeof import('./src/components/PitScoutingDashboard.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     TeamMember: typeof import('./src/components/Member/TeamMember.vue')['default']

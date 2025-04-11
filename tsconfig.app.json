@@ -28,10 +28,11 @@
     "paths": {
       "@/*": ["src/*"]
     },
-    "types": ["vite/client", "@types/node"],
+    "types": ["vite/client", "@types/node", "pinia-plugin-persistedstate"],
   },
   "include": [
     "src/**/*.ts", 
+    "src/**/*.d.ts",
     "src/**/*.tsx", 
     "src/**/*.vue", 
     "src/**/*.js", 
