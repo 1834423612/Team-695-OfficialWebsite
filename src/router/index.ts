@@ -58,6 +58,18 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('@/views/auth/CasdoorCallback.vue'),
     meta: { guest: true }
   },
+  // Redirect to the uppercase /Dashboard route
+  {
+    path: '/dashboard',
+    redirect: _to => {
+      if (casdoorService.isLoggedIn()) {
+        return { name: 'DashboardHome' };
+      } else {
+        return { name: 'login' };
+      }
+    },
+    meta: { requiresAuth: true }
+  },
   {
     path: '/Dashboard',
     name: 'dashboard',
@@ -104,12 +116,12 @@ const routes: Array<RouteRecordRaw> = [
   // Keep the old routes for backward compatibility, but redirect to dashboard
   { 
     path: '/pit-scouting', 
-    redirect: '/dashboard/Pit-Scouting',
+    redirect: '/Dashboard/Pit-Scouting',
     meta: { requiresAuth: true } 
   },
   { 
     path: '/pit-scouting/dashboard', 
-    redirect: '/dashboard/Pit-Scouting/Admin',
+    redirect: '/Dashboard/Pit-Scouting/Admin',
     meta: { requiresAuth: true } 
   },
 ];

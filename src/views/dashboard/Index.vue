@@ -22,16 +22,16 @@
                                 </div>
                             </div>
                             <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
-                                <router-link to="/dashboard" :class="[
-                                    isExactActive('/dashboard')
+                                <router-link to="/Dashboard" :class="[
+                                    isExactActive('/Dashboard')
                                         ? 'border-blue-500 text-gray-900'
                                         : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
                                     'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium'
                                 ]">
                                     Dashboard
                                 </router-link>
-                                <router-link to="/dashboard/Pit-Scouting" :class="[
-                                    isExactActive('/dashboard/Pit-Scouting')
+                                <router-link to="/Dashboard/Pit-Scouting" :class="[
+                                    isExactActive('/Dashboard/Pit-Scouting')
                                         ? 'border-blue-500 text-gray-900'
                                         : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
                                     'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium'
@@ -82,8 +82,8 @@
                                         <div v-if="showUserMenu"
                                             class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
                                             <div class="py-1">
-                                                <router-link to="/dashboard/profile" :class="[
-                                                    isExactActive('/dashboard/profile')
+                                                <router-link to="/Dashboard/profile" :class="[
+                                                    isExactActive('/Dashboard/profile')
                                                         ? 'bg-blue-50 text-blue-700'
                                                         : 'text-gray-700 hover:bg-gray-100',
                                                     'px-4 py-2 text-sm flex items-center'
@@ -166,18 +166,18 @@
 
                 <!-- Mobile Navigation Links -->
                 <div class="pt-2 pb-3 space-y-1 bg-white shadow-inner">
-                    <router-link to="/dashboard" exact
+                    <router-link to="/Dashboard" exact
                         class="pl-3 pr-4 py-2 border-l-4 text-base font-medium flex items-center" :class="[
-                            isExactActive('/dashboard')
+                            isExactActive('/Dashboard')
                                 ? 'border-blue-500 text-blue-700 bg-blue-50'
                                 : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800'
                         ]">
                         <Icon icon="mdi:view-dashboard" class="h-5 w-5 mr-2" />
                         Dashboard
                     </router-link>
-                    <router-link to="/dashboard/Pit-Scouting" exact
+                    <router-link to="/Dashboard/Pit-Scouting" exact
                         class="pl-3 pr-4 py-2 border-l-4 text-base font-medium flex items-center" :class="[
-                            isExactActive('/dashboard/Pit-Scouting')
+                            isExactActive('/Dashboard/Pit-Scouting')
                                 ? 'border-blue-500 text-blue-700 bg-blue-50'
                                 : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800'
                         ]">
@@ -199,10 +199,10 @@
                 <!-- Mobile User Actions -->
                 <div class="pb-1 border-t border-gray-200 bg-white">
                     <div class="space-y-1">
-                        <router-link to="/dashboard/profile"
+                        <router-link to="/Dashboard/profile"
                             class="pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium flex items-center"
                             :class="[
-                                isExactActive('/dashboard/profile')
+                                isExactActive('/Dashboard/profile')
                                     ? 'border-blue-500 text-blue-700 bg-blue-50'
                                     : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800'
                             ]">
@@ -291,12 +291,14 @@ export default defineComponent({
         // 用户数据计算属性
         const userData = computed(() => userInfo.value || {});
 
-        // 改进的路由活动检测
+        // 改进的路由活动检测，考虑大小写
         const isExactActive = (path: string) => {
-            if (path === '/dashboard' && route.path === '/dashboard') {
+            const normalizePath = (p: string) => p.toLowerCase();
+            
+            if (normalizePath(path) === '/dashboard' && normalizePath(route.path) === '/dashboard') {
                 return true;
             }
-            return path !== '/dashboard' && route.path === path;
+            return normalizePath(path) !== '/dashboard' && normalizePath(route.path) === normalizePath(path);
         };
 
         // 路由变化时关闭菜单
