@@ -147,13 +147,34 @@ router.beforeEach(async (to, _from, next) => {
     }
     
     // 仅做基本令牌格式检查，详细验证留给 AuthManager 组件处理
-    if (!(await casdoorService.validateLocalToken())) {
-      console.warn('Router guard: Basic token validation failed');
-      next({ 
-        name: 'login',
-        query: { redirect: to.fullPath, reason: 'invalid-token' }
+    // 添加超时保护，确保不会无限期等待
+    try {
+      // 创建一个带超时的验证Promise
+      const validateWithTimeout = Promise.race([
+        casdoorService.validateLocalToken(),
+        // 添加1秒超时
+        new Promise<boolean>((_, reject) => {
+          setTimeout(() => reject(new Error('Token validation timeout')), 1000);
+        })
+      ]);
+      
+      // 尝试验证令牌，超时或失败都允许继续导航（AuthManager将处理详细验证）
+      const isValid = await validateWithTimeout.catch(error => {
+        console.warn('Router guard: Token validation timed out or failed:', error.message);
+        return true; // 超时时继续导航，让AuthManager处理
       });
-      return;
+
+      if (!isValid) {
+        console.warn('Router guard: Basic token validation failed');
+        next({ 
+          name: 'login',
+          query: { redirect: to.fullPath, reason: 'invalid-token' }
+        });
+        return;
+      }
+    } catch (error) {
+      console.error('Router guard: Error during token validation:', error);
+      // 出现异常时仍然允许导航，让AuthManager组件处理
     }
     
     // 简单检查 - AuthManager 会负责进一步验证
