@@ -16,6 +16,32 @@
 import { defineComponent, ref, computed, PropType, onMounted, watch } from 'vue';
 import { avatarCache } from '@/services/avatarCache';
 
+// 定义用于throttling的辅助函数
+function throttle(fn: Function, delay: number): (...args: any[]) => void {
+    let lastCall = 0;
+    let timeoutId: number | null = null;
+
+    return function (...args: any[]) {
+        const now = Date.now();
+        const timeSinceLastCall = now - lastCall;
+
+        if (timeSinceLastCall >= delay) {
+            lastCall = now;
+            fn(...args);
+        } else if (!timeoutId) {
+            // 设置一个延迟执行，确保函数最终被调用
+            timeoutId = window.setTimeout(() => {
+                lastCall = Date.now();
+                timeoutId = null;
+                fn(...args);
+            }, delay - timeSinceLastCall);
+        }
+    };
+}
+
+// 环境变量检测
+const isDevelopment = process.env.NODE_ENV === 'development';
+
 export default defineComponent({
     name: 'CachedAvatar',
     inheritAttrs: false,
@@ -126,7 +152,7 @@ export default defineComponent({
         });
 
         // 加载头像
-        const loadAvatar = async () => {
+        const loadAvatarImpl = async () => {
             loading.value = true;
             loadFailed.value = false;
 
@@ -144,21 +170,29 @@ export default defineComponent({
                     name: props.name
                 };
 
-                console.log(`Loading avatar for ${props.userId} with src: ${props.src || 'none'}`);
+                if (isDevelopment) {
+                    console.log(`Loading avatar for ${props.userId} with src: ${props.src || 'none'}`);
+                }
                 
                 // 如果提供了src，优先使用
                 if (props.src) {
                     // 显示日志以便调试
-                    console.log(`Avatar URL provided: ${props.src}`);
+                    if (isDevelopment) {
+                        console.log(`Avatar URL provided: ${props.src}`);
+                    }
                     
                     try {
                         // 将用户信息传递给getAvatar以便生成默认头像
                         const cachedSrc = await avatarCache.getAvatar(props.userId, props.src, userInfo);
                         avatarSrc.value = cachedSrc;
                         loading.value = false;
-                        console.log(`Avatar loaded from source: ${props.src.substring(0, 30)}...`);
+                        if (isDevelopment) {
+                            console.log(`Avatar loaded from source: ${props.src.substring(0, 30)}...`);
+                        }
                     } catch (error) {
-                        console.error('Failed to load avatar from source:', error);
+                        if (isDevelopment) {
+                            console.error('Failed to load avatar from source:', error);
+                        }
                         loadFailed.value = true;
                         // 如果从源加载失败，尝试使用默认头像
                         const cachedFallback = await avatarCache.getAvatar(props.userId, undefined, userInfo);
@@ -167,22 +201,31 @@ export default defineComponent({
                     }
                 } else {
                     // 没有提供URL，使用用户信息生成默认头像
-                    console.log(`No avatar URL provided, generating default for ${props.userId}`);
+                    if (isDevelopment) {
+                        console.log(`No avatar URL provided, generating default for ${props.userId}`);
+                    }
                     const defaultSrc = await avatarCache.getAvatar(props.userId, undefined, userInfo);
                     avatarSrc.value = defaultSrc;
                     loading.value = false;
                 }
             } catch (error) {
-                console.error('Failed to load avatar:', error);
+                if (isDevelopment) {
+                    console.error('Failed to load avatar:', error);
+                }
                 loadFailed.value = true;
                 avatarSrc.value = null;
                 loading.value = false;
             }
         };
 
+        // 使用throttle包装加载函数，限制300ms内最多执行一次
+        const loadAvatar = throttle(loadAvatarImpl, 300);
+
         // 处理图片加载错误
         const handleImageError = () => {
-            console.warn(`Avatar image failed to load for user: ${props.userId}`);
+            if (isDevelopment) {
+                console.warn(`Avatar image failed to load for user: ${props.userId}`);
+            }
             loadFailed.value = true;
             avatarSrc.value = null;
             
@@ -199,7 +242,9 @@ export default defineComponent({
                 avatarSrc.value = defaultSrc;
                 loading.value = false;
             }).catch(error => {
-                console.error('Failed to generate default avatar:', error);
+                if (isDevelopment) {
+                    console.error('Failed to generate default avatar:', error);
+                }
                 loading.value = false;
             });
         };
@@ -223,14 +268,18 @@ export default defineComponent({
         watch(
             () => [props.userId, props.src, props.firstName, props.lastName, props.displayName, props.name],
             () => {
-                console.log(`Avatar props changed for ${props.userId}`);
+                if (isDevelopment) {
+                    console.log(`Avatar props changed for ${props.userId}`);
+                }
                 loadAvatar();
             }
         );
 
         // 组件挂载时初始化
         onMounted(() => {
-            console.log(`CachedAvatar mounted for ${props.userId}`);
+            if (isDevelopment) {
+                console.log(`CachedAvatar mounted for ${props.userId}`);
+            }
             
             // 确保缓存服务已初始化
             if (!avatarCache.isInitialized()) {
