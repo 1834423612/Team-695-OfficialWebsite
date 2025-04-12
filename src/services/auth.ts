@@ -1,5 +1,6 @@
 import Sdk from 'casdoor-js-sdk';
 import Cookies from 'js-cookie';
+import { avatarCache } from '@/services/avatarCache';
 
 // Define the Casdoor configuration
 const config = {
@@ -603,6 +604,13 @@ class CasdoorService {
         try {
             // Try primary endpoint first
             const userInfo = await this.fetchUserInfoFromAPI(token);
+            
+            // 如果用户有头像，缓存头像
+            if (userInfo.id && userInfo.avatar) {
+                avatarCache.cacheAvatar(userInfo.id, userInfo.avatar).catch(e => {
+                    console.warn('Failed to cache avatar:', e);
+                });
+            }
             
             // Cache the user info
             this.userInfoCache = userInfo;

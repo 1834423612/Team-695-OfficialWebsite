@@ -61,8 +61,14 @@
                                         <button @click="toggleUserMenu"
                                             class="flex items-center space-x-2 focus:outline-none">
                                             <div class="flex items-center">
-                                                <img v-if="userData.avatar" :src="userData.avatar" alt="User Avatar"
-                                                    class="h-8 w-8 rounded-full" />
+                                                <CachedAvatar
+                                                    v-if="userData.id"
+                                                    :userId="userData.id"
+                                                    :src="userData.avatar"
+                                                    :name="userData.displayName || userData.fullName || userData.name"
+                                                    :size="32"
+                                                    class="h-8 w-8"
+                                                />
                                                 <div v-else
                                                     class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
                                                     <Icon icon="mdi:account" class="h-5 w-5 text-blue-600" />
@@ -141,8 +147,14 @@
                 <div class="pt-4 pb-3 border-b border-gray-200 bg-white">
                     <div class="flex items-center px-4">
                         <div class="flex-shrink-0">
-                            <img v-if="userData.avatar" :src="userData.avatar" alt="User Avatar"
-                                class="h-10 w-10 rounded-full" />
+                            <CachedAvatar
+                                v-if="userData.id"
+                                :userId="userData.id"
+                                :src="userData.avatar"
+                                :name="userData.displayName || userData.fullName || userData.name"
+                                :size="40"
+                                class="h-10 w-10"
+                            />
                             <div v-else class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
                                 <Icon icon="mdi:account" class="h-6 w-6 text-blue-600" />
                             </div>
@@ -290,12 +302,14 @@ import { Icon } from '@iconify/vue';
 import { useUserStore } from '@/stores/userStore';
 import { storeToRefs } from 'pinia';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
+import CachedAvatar from '@/components/common/CachedAvatar.vue';
 
 export default defineComponent({
     name: 'DashboardIndexView',
     components: {
         Icon,
-        DashboardLayout
+        DashboardLayout,
+        CachedAvatar
     },
     setup() {
         const router = useRouter();
