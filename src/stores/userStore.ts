@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia';
 import { casdoorService, isInvalidAuthResponse } from '@/services/auth';
-// import { ref, computed } from 'vue';
+
+// 用户信息自动刷新间隔 (2小时)
+const USER_INFO_REFRESH_INTERVAL = 2 * 60 * 60 * 1000;
 
 // 定义存储状态接口
 export interface UserStoreState {
@@ -10,6 +12,7 @@ export interface UserStoreState {
     error: string | null;
     lastFetchTime: number | null;
     isInitialized: boolean;
+    refreshTimer: number | null; // 添加定期刷新计时器
 }
 
 export const useUserStore = defineStore('user', {
@@ -19,7 +22,8 @@ export const useUserStore = defineStore('user', {
         isLoading: false,
         error: null,
         lastFetchTime: null,
-        isInitialized: false
+        isInitialized: false,
+        refreshTimer: null // 添加定期刷新计时器
     }),
 
     getters: {
@@ -57,6 +61,7 @@ export const useUserStore = defineStore('user', {
                 
                 // 验证token是否有效
                 if (await casdoorService.isTokenValid()) {
+                    this.setupAutoRefresh(); // 设置自动刷新
                     return this.userInfo;
                 } else {
                     console.warn('Stored token is invalid, clearing user info');
@@ -79,11 +84,32 @@ export const useUserStore = defineStore('user', {
                 
                 // 即使缓存有效，也验证一下token是否有效
                 if (await casdoorService.isTokenValid()) {
+                    this.setupAutoRefresh(); // 设置自动刷新
                     return this.userInfo;
                 }
             }
 
-            return this.refreshUserInfo(false);
+            const result = await this.refreshUserInfo(false);
+            if (result) {
+                this.setupAutoRefresh(); // 设置自动刷新
+            }
+            return result;
+        },
+
+        // 设置自动刷新用户信息
+        setupAutoRefresh() {
+            // 清除现有定时器
+            if (this.refreshTimer) {
+                clearInterval(this.refreshTimer);
+            }
+
+            // 设置新的定时器，每2小时刷新一次用户信息
+            this.refreshTimer = window.setInterval(() => {
+                console.log('Auto refreshing user info');
+                this.refreshUserInfo(false).catch(error => {
+                    console.error('Auto refresh user info failed:', error);
+                });
+            }, USER_INFO_REFRESH_INTERVAL);
         },
 
         // 增强的刷新用户信息方法
@@ -145,6 +171,13 @@ export const useUserStore = defineStore('user', {
         // 清除用户信息
         clearUserInfo() {
             console.log('Clearing user info');
+            
+            // 清除刷新定时器
+            if (this.refreshTimer) {
+                clearInterval(this.refreshTimer);
+                this.refreshTimer = null;
+            }
+            
             this.userInfo = null;
             this.orgData = null;
             this.lastFetchTime = null;

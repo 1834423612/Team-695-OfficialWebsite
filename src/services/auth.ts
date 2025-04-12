@@ -39,8 +39,11 @@ const SESSION_ID_COOKIE = 'casdoor_session_id';
 const USER_INFO_CACHE = 'casdoor-user-info-cache';
 const USER_INFO_TIMESTAMP = 'casdoor-user-info-timestamp';
 
-// User info cache duration (1 hour)
-const USER_INFO_CACHE_DURATION = 60 * 60 * 1000;
+// User info cache duration (24 hours)
+const USER_INFO_CACHE_DURATION = 24 * 60 * 60 * 1000; // 24小时
+
+// Token check interval (every 5 minutes)
+const TOKEN_CHECK_INTERVAL = 5 * 60 * 1000; // 5分钟
 
 // Initialize the SDK
 const sdk = new Sdk(config);
@@ -168,12 +171,17 @@ interface TokenResponse {
     scope?: string;
 }
 
+// 添加团队API验证端点
+const TEAM_API_VALIDATE_URL = 'https://api.team695.com/auth/validate';
+
 // Create a service to handle authentication
 class CasdoorService {
     private userInfoCache: UserInfo | null = null;
     private tokenExpiryTimer: number | null = null;
+    private tokenCheckTimer: number | null = null; // 定期检查令牌有效性的定时器
     private refreshing: boolean = false;
     private refreshPromise: Promise<string> | null = null;
+    private lastValidationTime: number = 0; // 上次验证令牌的时间
     config: any;
     getBasicUserInfoFromToken: any;
 
@@ -186,6 +194,9 @@ class CasdoorService {
         
         // Listen for storage changes to sync across tabs
         window.addEventListener('storage', this.handleStorageChange);
+
+        // 初始化时启动令牌定期检查
+        this.setupTokenPeriodicCheck();
     }
     
     // Handle storage changes (for cross-tab synchronization)
@@ -830,6 +841,12 @@ class CasdoorService {
         } catch (error) {
             console.error('Error during server logout:', error);
         } finally {
+            // 清除定期检查定时器
+            if (this.tokenCheckTimer !== null) {
+                window.clearInterval(this.tokenCheckTimer);
+                this.tokenCheckTimer = null;
+            }
+
             // Clear any token refresh timer
             if (this.tokenExpiryTimer !== null) {
                 window.clearTimeout(this.tokenExpiryTimer);
@@ -871,55 +888,50 @@ class CasdoorService {
         this.storeTokensInCookies(tokenResponse);
     }
 
-    // Check if the token is actually valid (not just present)
-    async validateToken(): Promise<boolean> {
-        const token = this.getToken();
+    // 使用团队API验证令牌
+    async validateWithTeamApi(token: string | null = null): Promise<{valid: boolean, isAdmin: boolean}> {
+        if (!token) {
+            token = this.getToken();
+        }
         
-        if (!token) return false;
+        if (!token) {
+            return { valid: false, isAdmin: false };
+        }
         
         try {
-            // Try to make a lightweight API call to validate the token
-            const baseUrl = isDevelopment ? '/api/sso' : config.serverUrl;
-            const response = await fetch(`${baseUrl}/api/get-account`, {
+            const response = await fetch(TEAM_API_VALIDATE_URL, {
+                method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Accept': 'application/json',
-                },
-                mode: 'cors'
+                    'Content-Type': 'application/json'
+                }
             });
             
-            if (!response.ok) return false;
-            
-            const data = await response.json();
-            
-            // 检测是否为无效响应
-            if (isInvalidAuthResponse(data)) {
-                console.warn('Invalid auth response detected, token may be expired');
-                
-                // 尝试刷新token
-                try {
-                    await this.refreshAccessToken();
-                    return true;
-                } catch (error) {
-                    console.error('Failed to refresh token:', error);
-                    // 刷新失败则主动登出
-                    await this.logout();
-                    return false;
-                }
+            if (!response.ok) {
+                console.warn(`Team API validation failed with status: ${response.status}`);
+                return { valid: false, isAdmin: false };
             }
             
-            return true;
+            const result = await response.json();
+            
+            if (result.success && result.data && typeof result.data.valid === 'boolean') {
+                console.log('Team API validation result:', result.data);
+                return {
+                    valid: result.data.valid,
+                    isAdmin: !!result.data.isAdmin
+                };
+            }
+            
+            return { valid: false, isAdmin: false };
         } catch (error) {
-            console.error('Token validation error:', error);
-            return false;
+            console.error('Team API validation error:', error);
+            return { valid: false, isAdmin: false };
         }
     }
-    
-    // Enhanced isLoggedIn that not only checks for token presence but also its validity
-    async isTokenValid(): Promise<boolean> {
-        if (!this.isLoggedIn()) return false;
-        
-        // Parse token expiration time
+
+    // Basic token validation without external API calls
+    private async validateLocalToken(): Promise<boolean> {
         const token = this.getToken();
         if (!token) return false;
         
@@ -936,6 +948,151 @@ class CasdoorService {
                     await this.refreshAccessToken();
                     return true;
                 } catch (error) {
+                    console.error('Token expired and refresh failed during local validation:', error);
+                    await this.logout();
+                    return false;
+                }
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('Error in local token validation:', error);
+            return false;
+        }
+    }
+
+    // 触发认证无效事件的辅助方法
+    private triggerInvalidAuthEvent(message: string): void {
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('auth:invalid', { 
+                detail: { message }
+            }));
+        }
+    }
+
+    // 综合验证方法，结合本地验证和团队API验证
+    async validateToken(): Promise<boolean> {
+        const token = this.getToken();
+        
+        if (!token) return false;
+
+        try {
+            // 首先验证令牌格式和过期时间
+            const tokenInfo = this.parseAccessToken(token);
+            if (!tokenInfo || !tokenInfo.payload || !tokenInfo.payload.exp) {
+                console.warn('Token lacks expiration information');
+                return false;
+            }
+            
+            const expiryTime = tokenInfo.payload.exp * 1000;
+            const now = Date.now();
+            
+            // 如果令牌明显已过期，无需调用API
+            if (expiryTime <= now) {
+                console.warn('Token has expired based on exp claim');
+                try {
+                    await this.refreshAccessToken();
+                    return true;
+                } catch (error) {
+                    console.error('Failed to refresh expired token:', error);
+                    await this.logout();
+                    this.triggerInvalidAuthEvent('Your session has expired. Please login again.');
+                    return false;
+                }
+            }
+
+            // 使用团队API验证令牌
+            const teamApiResult = await this.validateWithTeamApi(token);
+            if (!teamApiResult.valid) {
+                console.warn('Team API indicates token is invalid');
+                
+                // 尝试刷新token
+                try {
+                    await this.refreshAccessToken();
+                    
+                    // 再次验证刷新后的令牌
+                    const refreshedToken = this.getToken();
+                    if (!refreshedToken) return false;
+                    
+                    const refreshedResult = await this.validateWithTeamApi(refreshedToken);
+                    if (!refreshedResult.valid) {
+                        // 如果刷新后的令牌仍然无效，则登出
+                        console.error('Refreshed token is still invalid according to Team API');
+                        await this.logout();
+                        this.triggerInvalidAuthEvent('Your session could not be restored. Please login again.');
+                        return false;
+                    }
+                    
+                    // 刷新成功
+                    this.lastValidationTime = Date.now();
+                    return true;
+                } catch (error) {
+                    console.error('Failed to refresh invalid token:', error);
+                    await this.logout();
+                    this.triggerInvalidAuthEvent('Your session has expired. Please login again.');
+                    return false;
+                }
+            }
+            
+            // 如果令牌即将过期（30分钟内），主动刷新
+            if (expiryTime - now < 30 * 60 * 1000) {
+                console.log('Token will expire soon, preemptively refreshing');
+                this.refreshAccessToken().catch(err => 
+                    console.warn('Preemptive token refresh failed:', err)
+                );
+            }
+
+            // 更新上次验证时间
+            this.lastValidationTime = Date.now();
+            return true;
+            
+        } catch (error) {
+            console.error('Token validation error:', error);
+            return false;
+        }
+    }
+    
+    // 检查token是否有效（公开方法，首选使用团队API验证）
+    async isTokenValid(): Promise<boolean> {
+        if (!this.isLoggedIn()) return false;
+        
+        try {
+            // Try team API first
+            const token = this.getToken();
+            if (!token) return false;
+            
+            const teamApiResult = await this.validateWithTeamApi(token);
+            if (!teamApiResult.valid) {
+                console.warn('Team API indicates token is invalid');
+                
+                // 尝试刷新token
+                try {
+                    await this.refreshAccessToken();
+                    
+                    // 再次验证刷新后的令牌
+                    const refreshedToken = this.getToken();
+                    if (!refreshedToken) return false;
+                    
+                    const refreshedResult = await this.validateWithTeamApi(refreshedToken);
+                    return refreshedResult.valid;
+                } catch (error) {
+                    console.error('Token validation and refresh failed:', error);
+                    return false;
+                }
+            }
+            
+            // Parse token expiration time as additional check
+            const tokenInfo = this.parseAccessToken(token);
+            if (!tokenInfo || !tokenInfo.payload || !tokenInfo.payload.exp) return false;
+            
+            const expiryTime = tokenInfo.payload.exp * 1000;
+            const now = Date.now();
+            
+            // If token is expired despite team API saying it's valid, refresh it
+            if (expiryTime <= now) {
+                try {
+                    await this.refreshAccessToken();
+                } catch (error) {
                     console.error('Token expired and refresh failed:', error);
                     await this.logout();
                     return false;
@@ -944,9 +1101,37 @@ class CasdoorService {
             
             return true;
         } catch (error) {
-            console.error('Error validating token expiration:', error);
-            return false;
+            console.error('Error validating token with team API:', error);
+            
+            // Fall back to basic validation
+            return this.validateLocalToken();
         }
+    }
+
+    // 处理API响应中的认证错误
+    checkApiResponse(response: any): boolean {
+        // 检查是否为标准错误响应
+        if (response && response.success === true && response.data) {
+            const data = response.data;
+            
+            // 检查特定的错误消息格式
+            if (data.status === 'error' && data.msg && 
+                (data.msg.includes('token') || 
+                 data.msg.includes('Access') || 
+                 data.msg.includes('exist'))) {
+                
+                console.warn('API returned auth error:', data.msg);
+                
+                // 触发无效认证处理
+                setTimeout(() => {
+                    this.handleInvalidAuthResponse().catch(console.error);
+                }, 0);
+                
+                return false;
+            }
+        }
+        
+        return true;
     }
     
     // Handle invalid auth responses globally
@@ -960,10 +1145,65 @@ class CasdoorService {
             // If refresh fails, log out and clear everything
             await this.logout();
             // 通知用户需要重新登录
-            if (typeof window !== 'undefined') {
-                window.dispatchEvent(new CustomEvent('auth:invalid', { detail: { message: 'Your session has expired. Please login again.' } }));
-            }
+            this.triggerInvalidAuthEvent('Your session has expired. Please login again.');
             return false;
+        }
+    }
+
+    // 设置定期检查令牌有效性的定时器
+    private setupTokenPeriodicCheck(): void {
+        // 清除已有定时器
+        if (this.tokenCheckTimer !== null) {
+            window.clearInterval(this.tokenCheckTimer);
+            this.tokenCheckTimer = null;
+        }
+
+        // 如果用户已登录，设置定期检查
+        if (this.isLoggedIn()) {
+            const checkInterval = Math.min(TOKEN_CHECK_INTERVAL, 5 * 60 * 1000); // 最多5分钟检查一次
+            
+            this.tokenCheckTimer = window.setInterval(async () => {
+                // 验证令牌是否有效
+                try {
+                    const now = Date.now();
+                    // 只有在距离上次验证超过一定时间后才执行验证，避免频繁验证
+                    if (now - this.lastValidationTime > checkInterval / 2) {
+                        this.lastValidationTime = now;
+                        console.log('Performing periodic token validation check');
+                        
+                        // 直接使用团队API验证
+                        const teamApiResult = await this.validateWithTeamApi();
+                        if (!teamApiResult.valid) {
+                            console.warn('Token validation failed during periodic check');
+                            
+                            try {
+                                // 尝试刷新令牌
+                                await this.refreshAccessToken();
+                                
+                                // 再次验证刷新后的令牌
+                                const refreshedResult = await this.validateWithTeamApi();
+                                if (!refreshedResult.valid) {
+                                    // 如果刷新后的令牌仍然无效，则登出
+                                    console.error('Refreshed token is still invalid');
+                                    await this.logout();
+                                    this.triggerInvalidAuthEvent('Your session has expired. Please login again.');
+                                }
+                            } catch (error) {
+                                console.error('Failed to refresh token during periodic check:', error);
+                                // 如果刷新失败，触发无效认证事件
+                                this.triggerInvalidAuthEvent('Your session has expired. Please login again.');
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error during periodic token validation:', error);
+                }
+            }, checkInterval);
+            
+            // 立即进行一次初始验证
+            setTimeout(() => {
+                this.validateToken().catch(console.error);
+            }, 1000);
         }
     }
 }
@@ -986,8 +1226,30 @@ function createFullName(userData: any): string {
 
 // Helper function to detect invalid auth responses
 function isInvalidAuthResponse(response: any): boolean {
-    // 检测空响应或格式为 { status: 'ok', msg: '', sub: '', name: '', data: true, data2: null } 的响应
+    // 检测空响应
     if (!response) return true;
+    
+    // 检查显式错误响应格式
+    if (response.success === true && response.data && response.data.status === 'error') {
+        const errorMsg = response.data.msg;
+        if (errorMsg && (
+            errorMsg.includes('token') || 
+            errorMsg.includes('Access') || 
+            errorMsg.includes('exist')
+        )) {
+            return true;
+        }
+    }
+    
+    // 检查标准的无效响应特征
+    if (response.status === 'error' && 
+        response.msg && (
+            response.msg.includes('token') || 
+            response.msg.includes('Access') || 
+            response.msg.includes('exist')
+        )) {
+        return true;
+    }
     
     // 典型的无效响应特征
     if (response.status === 'ok' && 

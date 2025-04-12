@@ -143,18 +143,47 @@ router.beforeEach(async (to, _from, next) => {
       return;
     }
     
-    // 增强的token有效性验证
+    // 增强的token有效性验证 - 使用团队API
     try {
+      // 使用团队API验证
+      const validationResult = await casdoorService.validateWithTeamApi();
+      
+      if (!validationResult.valid) {
+        console.warn('Team API indicates token is invalid during navigation');
+        // 尝试刷新令牌
+        try {
+          await casdoorService.refreshAccessToken();
+          // 刷新后再次验证
+          const refreshedResult = await casdoorService.validateWithTeamApi();
+          if (!refreshedResult.valid) {
+            // 刷新后仍然无效
+            console.error('Token remains invalid after refresh during navigation');
+            await casdoorService.logout();
+            next({ name: 'login', query: { redirect: to.fullPath, reason: 'invalid-token' } });
+            return;
+          }
+        } catch (refreshError) {
+          console.error('Token refresh failed during navigation:', refreshError);
+          next({ name: 'login', query: { redirect: to.fullPath, reason: 'invalid-token' } });
+          return;
+        }
+      }
+      
+      // 验证后的管理员状态
+      if (validationResult.isAdmin) {
+        // 标记为管理员进行缓存
+        localStorage.setItem('is_admin_validated', 'true');
+      }
+    } catch (error) {
+      console.error('Error validating token with Team API:', error);
+      
+      // 降级到本地验证
       const isValid = await casdoorService.isTokenValid();
       if (!isValid) {
-        console.warn('Auth token is invalid or expired, redirecting to login');
+        console.warn('Local validation indicates token is invalid');
         next({ name: 'login' });
         return;
       }
-    } catch (error) {
-      console.error('Error validating token:', error);
-      next({ name: 'login' });
-      return;
     }
     
     // 获取用户存储
@@ -179,7 +208,28 @@ router.beforeEach(async (to, _from, next) => {
     
     // 检查管理员路由
     if (to.matched.some(record => record.meta.requiresAdmin)) {
-      const isAdmin = userStore.isAdmin || casdoorService.isUserAdmin();
+      // 优先使用团队API的管理员状态
+      const useValidatedAdmin = localStorage.getItem('is_admin_validated') === 'true';
+      
+      let isAdmin;
+      if (useValidatedAdmin) {
+        isAdmin = true;
+      } else {
+        try {
+          // 重新验证以确认管理员状态
+          const validationResult = await casdoorService.validateWithTeamApi();
+          isAdmin = validationResult.isAdmin || userStore.isAdmin || casdoorService.isUserAdmin();
+          
+          // 缓存结果
+          if (validationResult.isAdmin) {
+            localStorage.setItem('is_admin_validated', 'true');
+          }
+        } catch (error) {
+          // 降级到本地验证
+          isAdmin = userStore.isAdmin || casdoorService.isUserAdmin();
+        }
+      }
+      
       if (!isAdmin) {
         console.warn('User is not an admin, redirecting to dashboard home');
         next({ name: 'DashboardHome' });

@@ -6,6 +6,7 @@ import router from './router';
 import './assets/globals.css';
 import { Icon } from '@iconify/vue';
 import { lazyLoad } from './directives/lazyLoad';
+import ApiErrorHandler from '@/components/global/ApiErrorHandler.vue';
 
 const app = createApp(App);
 
@@ -20,4 +21,8 @@ pinia.use(piniaPluginPersistedstate);
 configureStores();
 
 app.component('Icon', Icon);
+
+// 添加全局API错误处理组件
+app.component('ApiErrorHandler', ApiErrorHandler);
+
 app.mount('#app');
