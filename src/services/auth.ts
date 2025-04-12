@@ -181,7 +181,7 @@ class CasdoorService {
     private tokenCheckTimer: number | null = null; // 定期检查令牌有效性的定时器
     private refreshing: boolean = false;
     private refreshPromise: Promise<string> | null = null;
-    private lastValidationTime: number = 0; // 上次验证令牌的时间
+    private teamApiValidationPromise: Promise<{valid: boolean, isAdmin: boolean}> | null = null;
     config: any;
     getBasicUserInfoFromToken: any;
 
@@ -900,6 +900,11 @@ class CasdoorService {
 
     // 使用团队API验证令牌
     async validateWithTeamApi(token: string | null = null): Promise<{valid: boolean, isAdmin: boolean}> {
+        // 如果已经有请求在进行中，返回该请求的Promise
+        if (this.teamApiValidationPromise) {
+            return this.teamApiValidationPromise;
+        }
+        
         if (!token) {
             token = this.getToken();
         }
@@ -909,39 +914,53 @@ class CasdoorService {
         }
         
         try {
-            const response = await fetch(TEAM_API_VALIDATE_URL, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
+            // 创建新的Promise并存储引用
+            this.teamApiValidationPromise = (async () => {
+                try {
+                    console.log('Validating token with Team API...');
+                    const response = await fetch(TEAM_API_VALIDATE_URL, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        console.warn(`Team API validation failed with status: ${response.status}`);
+                        return { valid: false, isAdmin: false };
+                    }
+                    
+                    const result = await response.json();
+                    
+                    if (result.success && result.data && typeof result.data.valid === 'boolean') {
+                        console.log('Team API validation result:', result.data);
+                        return {
+                            valid: result.data.valid,
+                            isAdmin: !!result.data.isAdmin
+                        };
+                    }
+                    
+                    return { valid: false, isAdmin: false };
+                } finally {
+                    // 无论成功失败，请求完成后清除Promise引用
+                    setTimeout(() => {
+                        this.teamApiValidationPromise = null;
+                    }, 100);
                 }
-            });
+            })();
             
-            if (!response.ok) {
-                console.warn(`Team API validation failed with status: ${response.status}`);
-                return { valid: false, isAdmin: false };
-            }
-            
-            const result = await response.json();
-            
-            if (result.success && result.data && typeof result.data.valid === 'boolean') {
-                console.log('Team API validation result:', result.data);
-                return {
-                    valid: result.data.valid,
-                    isAdmin: !!result.data.isAdmin
-                };
-            }
-            
-            return { valid: false, isAdmin: false };
+            return this.teamApiValidationPromise;
         } catch (error) {
             console.error('Team API validation error:', error);
+            this.teamApiValidationPromise = null;
             return { valid: false, isAdmin: false };
         }
     }
 
     // Basic token validation without external API calls
-    private async validateLocalToken(): Promise<boolean> {
+    public async validateLocalToken(): Promise<boolean> {
         const token = this.getToken();
         if (!token) return false;
         
@@ -1033,8 +1052,6 @@ class CasdoorService {
                         return false;
                     }
                     
-                    // 刷新成功
-                    this.lastValidationTime = Date.now();
                     return true;
                 } catch (error) {
                     console.error('Failed to refresh invalid token:', error);
@@ -1052,8 +1069,6 @@ class CasdoorService {
                 );
             }
 
-            // 更新上次验证时间
-            this.lastValidationTime = Date.now();
             return true;
             
         } catch (error) {
@@ -1170,50 +1185,45 @@ class CasdoorService {
 
         // 如果用户已登录，设置定期检查
         if (this.isLoggedIn()) {
-            const checkInterval = Math.min(TOKEN_CHECK_INTERVAL, 5 * 60 * 1000); // 最多5分钟检查一次
+            
+            const checkInterval = TOKEN_CHECK_INTERVAL; // 使用固定的5分钟间隔
             
             this.tokenCheckTimer = window.setInterval(async () => {
-                // 验证令牌是否有效
+                console.log('Token check interval triggered, checking if validation needed');
+                // 验证令牌是否有效 - 不再检查上次验证时间，每5分钟固定验证一次
                 try {
-                    const now = Date.now();
-                    // 只有在距离上次验证超过一定时间后才执行验证，避免频繁验证
-                    if (now - this.lastValidationTime > checkInterval / 2) {
-                        this.lastValidationTime = now;
-                        console.log('Performing periodic token validation check');
+                    console.log('Performing periodic token validation check');
+                    
+                    // 使用团队API验证令牌
+                    const teamApiResult = await this.validateWithTeamApi();
+                    if (!teamApiResult.valid) {
+                        console.warn('Token validation failed during periodic check');
                         
-                        // 直接使用团队API验证
-                        const teamApiResult = await this.validateWithTeamApi();
-                        if (!teamApiResult.valid) {
-                            console.warn('Token validation failed during periodic check');
+                        try {
+                            // 尝试刷新令牌
+                            await this.refreshAccessToken();
                             
-                            try {
-                                // 尝试刷新令牌
-                                await this.refreshAccessToken();
-                                
-                                // 再次验证刷新后的令牌
-                                const refreshedResult = await this.validateWithTeamApi();
-                                if (!refreshedResult.valid) {
-                                    // 如果刷新后的令牌仍然无效，则登出
-                                    console.error('Refreshed token is still invalid');
-                                    await this.logout();
-                                    this.triggerInvalidAuthEvent('Your session has expired. Please login again.');
-                                }
-                            } catch (error) {
-                                console.error('Failed to refresh token during periodic check:', error);
-                                // 如果刷新失败，触发无效认证事件
+                            // 再次验证刷新后的令牌
+                            const refreshedResult = await this.validateWithTeamApi();
+                            if (!refreshedResult.valid) {
+                                // 如果刷新后的令牌仍然无效，则登出
+                                console.error('Refreshed token is still invalid');
+                                await this.logout();
                                 this.triggerInvalidAuthEvent('Your session has expired. Please login again.');
                             }
+                        } catch (error) {
+                            console.error('Failed to refresh token during periodic check:', error);
+                            // 如果刷新失败，触发无效认证事件
+                            this.triggerInvalidAuthEvent('Your session has expired. Please login again.');
                         }
                     }
+                    
                 } catch (error) {
                     console.error('Error during periodic token validation:', error);
                 }
             }, checkInterval);
             
-            // 立即进行一次初始验证
-            setTimeout(() => {
-                this.validateToken().catch(console.error);
-            }, 1000);
+            // 不需要立即验证，因为组件挂载后会进行一次初始验证
         }
     }
 }

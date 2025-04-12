@@ -22,7 +22,7 @@ export default defineComponent({
         
         // 上次验证时间
         const lastValidationCheck = ref(0);
-        const VALIDATION_INTERVAL = 60000; // 1分钟验证间隔
+        const VALIDATION_INTERVAL = 5 * 60 * 1000; // 修正为标准5分钟验证间隔
 
         // 处理认证错误事件
         const handleAuthError = async (event: CustomEvent) => {
@@ -116,6 +116,9 @@ export default defineComponent({
         
         // 定期验证令牌
         const setupPeriodicValidation = () => {
+            // 刷新页面时重置上次验证时间
+            lastValidationCheck.value = Date.now();
+            
             // 进行初始验证
             setTimeout(async () => {
                 try {
