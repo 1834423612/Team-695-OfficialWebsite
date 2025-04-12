@@ -8,9 +8,11 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    ApiErrorHandler: typeof import('./src/components/global/ApiErrorHandler.vue')['default']
     Avatar: typeof import('./src/components/Avatar.vue')['default']
     AvatarFallback: typeof import('./src/components/AvatarFallback.vue')['default']
     AvatarImage: typeof import('./src/components/AvatarImage.vue')['default']
+    CachedAvatar: typeof import('./src/components/common/CachedAvatar.vue')['default']
     Card: typeof import('./src/components/Card.vue')['default']
     CardContent: typeof import('./src/components/CardContent.vue')['default']
     CardDescription: typeof import('./src/components/CardDescription.vue')['default']

@@ -22,16 +22,16 @@
                                 </div>
                             </div>
                             <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
-                                <router-link to="/dashboard" :class="[
-                                    isExactActive('/dashboard')
+                                <router-link to="/Dashboard" :class="[
+                                    isExactActive('/Dashboard')
                                         ? 'border-blue-500 text-gray-900'
                                         : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
                                     'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium'
                                 ]">
                                     Dashboard
                                 </router-link>
-                                <router-link to="/dashboard/Pit-Scouting" :class="[
-                                    isExactActive('/dashboard/Pit-Scouting')
+                                <router-link to="/Dashboard/Pit-Scouting" :class="[
+                                    isExactActive('/Dashboard/Pit-Scouting')
                                         ? 'border-blue-500 text-gray-900'
                                         : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
                                     'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium'
@@ -61,8 +61,17 @@
                                         <button @click="toggleUserMenu"
                                             class="flex items-center space-x-2 focus:outline-none">
                                             <div class="flex items-center">
-                                                <img v-if="userData.avatar" :src="userData.avatar" alt="User Avatar"
-                                                    class="h-8 w-8 rounded-full" />
+                                                <CachedAvatar
+                                                    v-if="userData.id"
+                                                    :userId="userData.id"
+                                                    :src="userData.avatar"
+                                                    :name="userData.name"
+                                                    :firstName="userData.firstName"
+                                                    :lastName="userData.lastName"
+                                                    :displayName="userData.displayName"
+                                                    :size="32"
+                                                    class="h-8 w-8"
+                                                />
                                                 <div v-else
                                                     class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
                                                     <Icon icon="mdi:account" class="h-5 w-5 text-blue-600" />
@@ -82,8 +91,8 @@
                                         <div v-if="showUserMenu"
                                             class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
                                             <div class="py-1">
-                                                <router-link to="/dashboard/profile" :class="[
-                                                    isExactActive('/dashboard/profile')
+                                                <router-link to="/Dashboard/profile" :class="[
+                                                    isExactActive('/Dashboard/profile')
                                                         ? 'bg-blue-50 text-blue-700'
                                                         : 'text-gray-700 hover:bg-gray-100',
                                                     'px-4 py-2 text-sm flex items-center'
@@ -141,8 +150,17 @@
                 <div class="pt-4 pb-3 border-b border-gray-200 bg-white">
                     <div class="flex items-center px-4">
                         <div class="flex-shrink-0">
-                            <img v-if="userData.avatar" :src="userData.avatar" alt="User Avatar"
-                                class="h-10 w-10 rounded-full" />
+                            <CachedAvatar
+                                v-if="userData.id"
+                                :userId="userData.id"
+                                :src="userData.avatar"
+                                :name="userData.name"
+                                :firstName="userData.firstName"
+                                :lastName="userData.lastName"
+                                :displayName="userData.displayName"
+                                :size="40"
+                                class="h-10 w-10"
+                            />
                             <div v-else class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
                                 <Icon icon="mdi:account" class="h-6 w-6 text-blue-600" />
                             </div>
@@ -166,18 +184,18 @@
 
                 <!-- Mobile Navigation Links -->
                 <div class="pt-2 pb-3 space-y-1 bg-white shadow-inner">
-                    <router-link to="/dashboard" exact
+                    <router-link to="/Dashboard" exact
                         class="pl-3 pr-4 py-2 border-l-4 text-base font-medium flex items-center" :class="[
-                            isExactActive('/dashboard')
+                            isExactActive('/Dashboard')
                                 ? 'border-blue-500 text-blue-700 bg-blue-50'
                                 : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800'
                         ]">
                         <Icon icon="mdi:view-dashboard" class="h-5 w-5 mr-2" />
                         Dashboard
                     </router-link>
-                    <router-link to="/dashboard/Pit-Scouting" exact
+                    <router-link to="/Dashboard/Pit-Scouting" exact
                         class="pl-3 pr-4 py-2 border-l-4 text-base font-medium flex items-center" :class="[
-                            isExactActive('/dashboard/Pit-Scouting')
+                            isExactActive('/Dashboard/Pit-Scouting')
                                 ? 'border-blue-500 text-blue-700 bg-blue-50'
                                 : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800'
                         ]">
@@ -199,10 +217,10 @@
                 <!-- Mobile User Actions -->
                 <div class="pb-1 border-t border-gray-200 bg-white">
                     <div class="space-y-1">
-                        <router-link to="/dashboard/profile"
+                        <router-link to="/Dashboard/profile"
                             class="pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium flex items-center"
                             :class="[
-                                isExactActive('/dashboard/profile')
+                                isExactActive('/Dashboard/profile')
                                     ? 'border-blue-500 text-blue-700 bg-blue-50'
                                     : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800'
                             ]">
@@ -222,6 +240,26 @@
             <!-- Main Content -->
             <div class="flex-grow">
                 <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+                    <!-- 面包屑导航 -->
+                    <nav class="mb-4 flex items-center text-sm text-gray-500" aria-label="Breadcrumb">
+                        <div class="flex">
+                            <div class="flex items-center">
+                                <router-link to="/Dashboard" class="hover:text-blue-600 flex items-center">
+                                    <Icon icon="mdi:view-dashboard" class="h-4 w-4 mr-1" />
+                                    Dashboard
+                                </router-link>
+                                
+                                <template v-if="currentBreadcrumb">
+                                    <Icon icon="mdi:chevron-right" class="h-4 w-4 mx-2 text-gray-400" />
+                                    <span class="text-gray-900 font-medium flex items-center">
+                                        <Icon :icon="getBreadcrumbIcon(currentBreadcrumb.path)" class="h-4 w-4 mr-1" />
+                                        {{ currentBreadcrumb.name }}
+                                    </span>
+                                </template>
+                            </div>
+                        </div>
+                    </nav>
+                    
                     <router-view></router-view>
                 </div>
             </div>
@@ -263,19 +301,21 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, watch, onUnmounted } from 'vue';
+import { defineComponent, ref, computed, watch, onUnmounted, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { casdoorService } from '@/services/auth';
 import { Icon } from '@iconify/vue';
 import { useUserStore } from '@/stores/userStore';
 import { storeToRefs } from 'pinia';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
+import CachedAvatar from '@/components/common/CachedAvatar.vue';
 
 export default defineComponent({
     name: 'DashboardIndexView',
     components: {
         Icon,
-        DashboardLayout
+        DashboardLayout,
+        CachedAvatar
     },
     setup() {
         const router = useRouter();
@@ -291,12 +331,50 @@ export default defineComponent({
         // 用户数据计算属性
         const userData = computed(() => userInfo.value || {});
 
-        // 改进的路由活动检测
+        // 面包屑导航映射
+        const breadcrumbMap: Record<string, { name: string; icon: string }> = {
+            '/Dashboard/profile': { name: 'Profile', icon: 'mdi:account-circle' },
+            '/Dashboard/Pit-Scouting': { name: 'Pit Scouting', icon: 'mdi:clipboard-text' },
+            // 可以根据需要添加更多路由映射
+        };
+
+        // 当前面包屑
+        const currentBreadcrumb = computed(() => {
+            // 尝试精确匹配
+            const path = route.path;
+            const lowercasePath = path.toLowerCase();
+            
+            // 查找对应路径的面包屑信息
+            for (const [key, value] of Object.entries(breadcrumbMap)) {
+                if (lowercasePath === key.toLowerCase()) {
+                    return { ...value, path: key };
+                }
+            }
+
+            // 尝试匹配路径前缀
+            for (const [key, value] of Object.entries(breadcrumbMap)) {
+                if (lowercasePath.startsWith(key.toLowerCase())) {
+                    return { ...value, path: key };
+                }
+            }
+
+            // 没有匹配则返回null
+            return null;
+        });
+
+        // 根据路径获取图标
+        const getBreadcrumbIcon = (path: string) => {
+            return breadcrumbMap[path]?.icon || 'mdi:chevron-right';
+        };
+
+        // 改进的路由活动检测，考虑大小写
         const isExactActive = (path: string) => {
-            if (path === '/dashboard' && route.path === '/dashboard') {
+            const normalizePath = (p: string) => p.toLowerCase();
+            
+            if (normalizePath(path) === '/dashboard' && normalizePath(route.path) === '/dashboard') {
                 return true;
             }
-            return path !== '/dashboard' && route.path === path;
+            return normalizePath(path) !== '/dashboard' && normalizePath(route.path) === normalizePath(path);
         };
 
         // 路由变化时关闭菜单
@@ -362,11 +440,33 @@ export default defineComponent({
             }
         };
 
+        // 添加全局认证错误监听器
+        const handleAuthInvalid = (event: CustomEvent) => {
+            console.warn('Auth invalid event detected:', event.detail);
+            // 显示提醒消息
+            alert(event.detail.message || 'Your session has expired. Please login again.');
+            // 执行登出
+            logout();
+        };
+
+        // 注册全局认证事件监听器
+        onMounted(() => {
+            window.addEventListener('auth:invalid', handleAuthInvalid as EventListener);
+            
+            // 首次加载时验证token有效性
+            casdoorService.isTokenValid().catch(error => {
+                console.error('Initial token validation failed:', error);
+                // 如果初始验证失败，执行登出
+                logout();
+            });
+        });
+
         // 添加点击外部监听器
         document.addEventListener('click', handleClickOutside);
 
         onUnmounted(() => {
             document.removeEventListener('click', handleClickOutside);
+            window.removeEventListener('auth:invalid', handleAuthInvalid as EventListener);
         });
 
         return {
@@ -378,7 +478,9 @@ export default defineComponent({
             logout,
             isExactActive,
             toggleUserMenu,
-            toggleNotifications
+            toggleNotifications,
+            currentBreadcrumb,
+            getBreadcrumbIcon
         };
     }
 });

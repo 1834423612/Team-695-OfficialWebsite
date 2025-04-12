@@ -1,5 +1,6 @@
 <template>
   <div>
+    <ApiErrorHandler />
     <!-- Show Header when not on /dashboard or its subpages -->
     <Header v-if="!isDashboardRoute" />
     <router-view></router-view>
@@ -13,19 +14,22 @@ import { defineComponent, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import Header from './components/Header.vue';
 import Footer from './components/Footer.vue';
+import ApiErrorHandler from '@/components/global/ApiErrorHandler.vue';
 
 export default defineComponent({
   name: 'App',
   components: {
     Header,
     Footer,
+    ApiErrorHandler,
   },
   setup() {
     const route = useRoute();
 
-    // Check if the current path is /dashboard or its subpages
+    // Check if the current path is /dashboard or /Dashboard or their subpages
     const isDashboardRoute = computed(() => {
-      return route.path.startsWith('/dashboard');
+      const path = route.path.toLowerCase();
+      return path.startsWith('/dashboard');
     });
 
     return {
