@@ -108,7 +108,7 @@ const AvatarDebugTools = {
         const results: Record<string, any> = {};
         let i = 0;
         
-        for (const img of avatarImgs) {
+        Array.from(avatarImgs).forEach(async (img) => {
             const src = img.getAttribute('src');
             if (src && !src.startsWith('data:')) {
                 try {
@@ -119,7 +119,7 @@ const AvatarDebugTools = {
                     results[src] = { success: false, error: e };
                 }
             }
-        }
+        });
         
         console.table(results);
         return results;
