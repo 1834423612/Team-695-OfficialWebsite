@@ -19,7 +19,7 @@ const AvatarDebugTools = {
         let count = 0;
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            if (key && key.startsWith('avatar_cache_')) {
+            if (key?.startsWith('avatar_cache_')) {
                 count++;
             }
         }
@@ -31,7 +31,7 @@ const AvatarDebugTools = {
         let shown = 0;
         for (let i = 0; i < localStorage.length && shown < 5; i++) {
             const key = localStorage.key(i);
-            if (key && key.startsWith('avatar_cache_')) {
+            if (key?.startsWith('avatar_cache_')) {
                 const value = localStorage.getItem(key);
                 if (value) {
                     try {
@@ -60,7 +60,7 @@ const AvatarDebugTools = {
         
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            if (key && key.startsWith('avatar_cache_')) {
+            if (key?.startsWith('avatar_cache_')) {
                 const value = localStorage.getItem(key);
                 if (value) {
                     try {
@@ -108,18 +108,22 @@ const AvatarDebugTools = {
         const results: Record<string, any> = {};
         let i = 0;
         
-        Array.from(avatarImgs).forEach(async (img) => {
-            const src = img.getAttribute('src');
-            if (src && !src.startsWith('data:')) {
-                try {
-                    const userId = `manual_${i++}`;
-                    const result = await avatarCache.cacheAvatar(userId, src);
-                    results[src] = { success: !!result, userId };
-                } catch (e) {
-                    results[src] = { success: false, error: e };
+        // 使用 Promise.all 等待所有异步操作完成
+        await Promise.all(
+            Array.from(avatarImgs).map(async (img) => {
+                const src = img.getAttribute('src');
+                if (src && !src.startsWith('data:')) {
+                    const index = i++;
+                    const userId = `manual_${index}`;
+                    try {
+                        const result = await avatarCache.cacheAvatar(userId, src);
+                        results[src] = { success: !!result, userId };
+                    } catch (e) {
+                        results[src] = { success: false, error: String(e) };
+                    }
                 }
-            }
-        });
+            })
+        );
         
         console.table(results);
         return results;
