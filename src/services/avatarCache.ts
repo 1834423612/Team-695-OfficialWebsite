@@ -1,6 +1,9 @@
 /**
  * 用户头像缓存服务
  * 用于缓存用户头像到浏览器，避免频繁请求和第三方头像限流问题
+ * 
+ * 使用 IndexedDB 作为主要存储，提供更大的存储空间和更好的性能
+ * 同时保留内存缓存，以便快速访问常用头像
  */
 
 // 缓存键名前缀
@@ -9,6 +12,10 @@ const CACHE_PREFIX = 'avatar_cache_';
 const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000;
 // 头像默认尺寸
 const DEFAULT_SIZE = 200;
+// 数据库名称和版本
+const DB_NAME = 'avatar_cache_db';
+const DB_VERSION = 1;
+const STORE_NAME = 'avatars';
 
 interface CacheEntry {
     dataUrl: string;
@@ -19,8 +26,17 @@ interface CacheEntry {
 class AvatarCacheService {
     // 内存缓存，用于快速访问
     private memoryCache: Map<string, CacheEntry> = new Map();
+    // 数据库连接
+    private dbPromise: Promise<IDBDatabase> | null = null;
     // 是否已初始化
     private initialized: boolean = false;
+    // 初始化Promise，用于跟踪初始化过程
+    private initPromise: Promise<void> | null = null;
+
+    constructor() {
+        // 构造函数中自动启动初始化过程
+        this.initPromise = this.init();
+    }
 
     /**
      * 检查服务是否已初始化
@@ -30,41 +46,43 @@ class AvatarCacheService {
     }
 
     /**
-     * 初始化缓存服务，加载本地存储的缓存
+     * 初始化缓存服务
+     * - 打开IndexedDB连接
+     * - 加载关键头像到内存缓存
+     * 
+     * 多次调用是安全的，会返回相同的Promise
      */
-    public init(): void {
-        if (this.initialized) return;
+    public async init(): Promise<void> {
+        // 如果已经有初始化过程在进行，直接返回该Promise
+        if (this.initPromise) {
+            return this.initPromise;
+        }
 
+        // 如果已初始化完成，直接返回
+        if (this.initialized) {
+            return Promise.resolve();
+        }
+
+        console.log('Initializing avatar cache service...');
+        
         try {
-            // 从localStorage加载现有缓存
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && key.startsWith(CACHE_PREFIX)) {
-                    const value = localStorage.getItem(key);
-                    if (value) {
-                        try {
-                            const entry = JSON.parse(value) as CacheEntry;
-                            // 检查缓存是否有效
-                            if (Date.now() - entry.timestamp < CACHE_DURATION) {
-                                // 提取用户ID作为键
-                                const userId = key.substring(CACHE_PREFIX.length);
-                                this.memoryCache.set(userId, entry);
-                            } else {
-                                // 清除过期缓存
-                                localStorage.removeItem(key);
-                            }
-                        } catch (e) {
-                            console.warn('Invalid cache entry:', key, e);
-                            localStorage.removeItem(key);
-                        }
-                    }
-                }
-            }
-
+            // 打开数据库连接
+            this.dbPromise = this.openDatabase();
+            await this.dbPromise;
+            
+            // 迁移旧的localStorage数据到IndexedDB
+            await this.migrateFromLocalStorage();
+            
+            // 从IndexedDB预加载最近的头像到内存缓存
+            await this.preloadRecentAvatars();
+            
             this.initialized = true;
-            console.log(`Avatar cache initialized with ${this.memoryCache.size} entries`);
+            console.log(`Avatar cache initialized with ${this.memoryCache.size} entries in memory cache`);
         } catch (e) {
             console.error('Failed to initialize avatar cache:', e);
+            // 重置初始化状态，允许重试
+            this.initPromise = null;
+            throw e;
         }
     }
 
@@ -74,11 +92,12 @@ class AvatarCacheService {
      * @param avatarUrl 头像URL
      */
     public async cacheAvatar(userId: string, avatarUrl: string | null | undefined): Promise<string | null> {
-        if (!this.initialized) this.init();
-        if (!userId || !avatarUrl) return null;
+        // 确保服务已初始化
+        if (!this.initialized) {
+            await this.init();
+        }
 
-        // 清除旧版本缓存键（如果有）
-        this.clearOldCache(userId);
+        if (!userId || !avatarUrl) return null;
 
         try {
             console.log(`Caching avatar for user ${userId}: ${avatarUrl}`);
@@ -98,38 +117,8 @@ class AvatarCacheService {
             // 更新内存缓存
             this.memoryCache.set(userId, entry);
 
-            // 更新localStorage缓存 - 确保使用正确的键
-            const cacheKey = `${CACHE_PREFIX}${userId}`;
-
-            // 转换为JSON字符串并保存
-            const entryJson = JSON.stringify(entry);
-            try {
-                localStorage.setItem(cacheKey, entryJson);
-                console.log(`Avatar cached in localStorage with key: ${cacheKey} (${entryJson.length} bytes)`);
-
-                // 检查是否成功保存
-                const saved = localStorage.getItem(cacheKey);
-                if (!saved) {
-                    console.warn('Failed to verify localStorage save, item not found after setting');
-                }
-            } catch (storageError) {
-                // 检查是否是配额错误
-                if (storageError instanceof DOMException &&
-                    (storageError.name === 'QuotaExceededError' ||
-                        storageError.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
-                    console.warn('localStorage quota exceeded, clearing old caches');
-                    this.clearOldestCaches();
-
-                    // 再次尝试保存
-                    try {
-                        localStorage.setItem(cacheKey, entryJson);
-                    } catch (e) {
-                        console.error('Still failed to save avatar to localStorage after clearing old caches');
-                    }
-                } else {
-                    console.error('Error saving to localStorage:', storageError);
-                }
-            }
+            // 保存到IndexedDB
+            await this.saveToDb(userId, entry);
 
             return dataUrl;
         } catch (e) {
@@ -143,6 +132,7 @@ class AvatarCacheService {
      * @param userId 用户ID
      * @param avatarUrl 原始头像URL（如果缓存不存在或过期）
      * @param userInfo 用户信息对象（用于生成更准确的默认头像）
+     * @param cacheOnly 是否只使用缓存（不获取新头像）
      */
     public async getAvatar(
         userId: string, 
@@ -152,28 +142,49 @@ class AvatarCacheService {
             lastName?: string,
             displayName?: string,
             name?: string
-        }
+        },
+        cacheOnly: boolean = false
     ): Promise<string> {
-        if (!this.initialized) this.init();
-
-        // 检查是否有旧版本缓存键
-        this.migrateOldCache(userId);
+        // 确保服务已初始化
+        if (!this.initialized) {
+            await this.init();
+        }
         
         // 检查内存缓存
-        const cacheKey = userId;
-        const cachedEntry = this.memoryCache.get(cacheKey);
+        const cachedEntry = this.memoryCache.get(userId);
         
         // 如果有有效缓存，返回缓存的数据URL
         if (cachedEntry && Date.now() - cachedEntry.timestamp < CACHE_DURATION) {
             // 如果提供了新URL且与缓存的不同，异步更新缓存
-            if (avatarUrl && cachedEntry.originalUrl !== avatarUrl) {
+            if (avatarUrl && cachedEntry.originalUrl !== avatarUrl && !cacheOnly) {
                 this.cacheAvatar(userId, avatarUrl).catch(console.error);
             }
             return cachedEntry.dataUrl;
         }
         
-        // 如果没有有效缓存但提供了URL，尝试缓存并返回
-        if (avatarUrl) {
+        // 如果内存缓存中没有，尝试从IndexedDB获取
+        try {
+            const entry = await this.getFromDb(userId);
+            if (entry && Date.now() - entry.timestamp < CACHE_DURATION) {
+                // 将找到的条目放入内存缓存
+                this.memoryCache.set(userId, entry);
+                
+                // 如果提供了新URL且与缓存的不同，异步更新缓存
+                if (avatarUrl && entry.originalUrl !== avatarUrl && !cacheOnly) {
+                    this.cacheAvatar(userId, avatarUrl).catch(console.error);
+                }
+                
+                return entry.dataUrl;
+            }
+        } catch (e) {
+            console.warn(`Failed to get avatar from DB for ${userId}:`, e);
+        }
+        
+        // 检查并迁移旧缓存 - 确保调用 migrateOldCache
+        this.migrateOldCache(userId);
+        
+        // 如果没有有效缓存但提供了URL且不是只使用缓存模式，尝试缓存并返回
+        if (avatarUrl && !cacheOnly) {
             const dataUrl = await this.cacheAvatar(userId, avatarUrl);
             if (dataUrl) return dataUrl;
         }
@@ -192,22 +203,57 @@ class AvatarCacheService {
      * 清除特定用户的头像缓存
      * @param userId 用户ID
      */
-    public clearCache(userId: string): void {
-        const cacheKey = userId;
-        this.memoryCache.delete(cacheKey);
-        localStorage.removeItem(`${CACHE_PREFIX}${cacheKey}`);
+    public async clearCache(userId: string): Promise<void> {
+        // 确保服务已初始化
+        if (!this.initialized) {
+            await this.init();
+        }
 
-        // 清除旧版本缓存键（如果有）
+        // 从内存缓存移除
+        this.memoryCache.delete(userId);
+        
+        // 从IndexedDB移除
+        try {
+            const db = await this.dbPromise;
+            if (!db) return;
+            
+            const transaction = db.transaction([STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            await promisifyRequest(store.delete(userId));
+        } catch (e) {
+            console.error(`Failed to delete avatar for ${userId} from DB:`, e);
+        }
+        
+        // 清除旧版本localStorage缓存（兼容性）
+        localStorage.removeItem(`${CACHE_PREFIX}${userId}`);
         this.clearOldCache(userId);
     }
 
     /**
      * 清除所有头像缓存
      */
-    public clearAllCache(): void {
-        this.memoryCache.clear();
+    public async clearAllCache(): Promise<void> {
+        // 确保服务已初始化
+        if (!this.initialized) {
+            await this.init();
+        }
 
-        // 清除所有相关的localStorage项
+        // 清除内存缓存
+        this.memoryCache.clear();
+        
+        // 清除IndexedDB
+        try {
+            const db = await this.dbPromise;
+            if (!db) return;
+            
+            const transaction = db.transaction([STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            await promisifyRequest(store.clear());
+        } catch (e) {
+            console.error('Failed to clear avatar database:', e);
+        }
+        
+        // 清除localStorage中的旧缓存（兼容性）
         for (let i = localStorage.length - 1; i >= 0; i--) {
             const key = localStorage.key(i);
             if (key && key.startsWith(CACHE_PREFIX)) {
@@ -432,15 +478,206 @@ class AvatarCacheService {
             console.error('Error clearing oldest caches:', e);
         }
     }
+
+    /**
+     * 打开IndexedDB数据库连接
+     */
+    private openDatabase(): Promise<IDBDatabase> {
+        return new Promise((resolve, reject) => {
+            if (!window.indexedDB) {
+                reject(new Error('IndexedDB not supported in this browser'));
+                return;
+            }
+            
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
+            
+            request.onerror = (event) => {
+                reject(new Error(`Failed to open IndexedDB: ${(event.target as any).errorCode}`));
+            };
+            
+            request.onsuccess = (event) => {
+                const db = (event.target as IDBOpenDBRequest).result;
+                resolve(db);
+            };
+            
+            request.onupgradeneeded = (event) => {
+                const db = (event.target as IDBOpenDBRequest).result;
+                
+                // 创建对象存储
+                if (!db.objectStoreNames.contains(STORE_NAME)) {
+                    db.createObjectStore(STORE_NAME);
+                }
+            };
+        });
+    }
+    
+    /**
+     * 将缓存条目保存到IndexedDB
+     */
+    private async saveToDb(userId: string, entry: CacheEntry): Promise<void> {
+        try {
+            const db = await this.dbPromise;
+            if (!db) return;
+            
+            const transaction = db.transaction([STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            
+            try {
+                await promisifyRequest(store.put(entry, userId));
+            } catch (storageError) {
+                console.warn('Storage error, attempting to clear space:', storageError);
+                // 存储遇到问题时清理空间
+                await this.ensureStorageSpace();
+                // 再次尝试保存
+                const newTransaction = db.transaction([STORE_NAME], 'readwrite');
+                const newStore = newTransaction.objectStore(STORE_NAME);
+                await promisifyRequest(newStore.put(entry, userId));
+            }
+        } catch (e) {
+            console.error(`Failed to save avatar to IndexedDB for ${userId}:`, e);
+            throw e;
+        }
+    }
+    
+    /**
+     * 从IndexedDB获取缓存条目
+     */
+    private async getFromDb(userId: string): Promise<CacheEntry | undefined> {
+        try {
+            const db = await this.dbPromise;
+            if (!db) return undefined;
+            
+            const transaction = db.transaction([STORE_NAME], 'readonly');
+            const store = transaction.objectStore(STORE_NAME);
+            const result = await promisifyRequest<CacheEntry | undefined>(store.get(userId));
+            return result;
+        } catch (e) {
+            console.error(`Failed to get avatar from IndexedDB for ${userId}:`, e);
+            throw e;
+        }
+    }
+    
+    /**
+     * 从IndexedDB获取所有缓存条目
+     */
+    private async getAllFromDb(): Promise<Array<[string, CacheEntry]>> {
+        try {
+            const db = await this.dbPromise;
+            if (!db) return [];
+            
+            const transaction = db.transaction([STORE_NAME], 'readonly');
+            const store = transaction.objectStore(STORE_NAME);
+            const values = await promisifyRequest<CacheEntry[]>(store.getAll());
+            const keys = await promisifyRequest<IDBValidKey[]>(store.getAllKeys());
+            
+            // 修复类型错误，确保正确构建[string, CacheEntry][]数组
+            const result: Array<[string, CacheEntry]> = [];
+            
+            for (let i = 0; i < keys.length; i++) {
+                if (i < values.length) {
+                    result.push([String(keys[i]), values[i]]);
+                }
+            }
+            
+            return result;
+        } catch (e) {
+            console.error('Failed to get all avatars from IndexedDB:', e);
+            throw e;
+        }
+    }
+    
+    /**
+     * 迁移旧的localStorage数据到IndexedDB
+     */
+    private async migrateFromLocalStorage(): Promise<void> {
+        try {
+            const migratedKeys: string[] = [];
+            
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith(CACHE_PREFIX)) {
+                    const userId = key.substring(CACHE_PREFIX.length);
+                    const value = localStorage.getItem(key);
+                    
+                    if (value) {
+                        try {
+                            const entry = JSON.parse(value) as CacheEntry;
+                            
+                            // 迁移到IndexedDB
+                            await this.saveToDb(userId, entry);
+                            migratedKeys.push(key);
+                        } catch (e) {
+                            console.warn(`Failed to parse localStorage entry for ${key}:`, e);
+                        }
+                    }
+                }
+            }
+            
+            // 迁移成功后清除localStorage条目
+            for (const key of migratedKeys) {
+                localStorage.removeItem(key);
+            }
+            
+            if (migratedKeys.length > 0) {
+                console.log(`Migrated ${migratedKeys.length} avatar entries from localStorage to IndexedDB`);
+            }
+        } catch (e) {
+            console.error('Failed to migrate from localStorage:', e);
+        }
+    }
+    
+    /**
+     * 从IndexedDB预加载最近的头像到内存缓存
+     */
+    private async preloadRecentAvatars(limit: number = 20): Promise<void> {
+        try {
+            const allEntries = await this.getAllFromDb();
+            
+            // 按时间戳排序，只加载最近的
+            allEntries.sort((a, b) => b[1].timestamp - a[1].timestamp);
+            
+            // 限制加载数量
+            const recentEntries = allEntries.slice(0, limit);
+            
+            // 加载到内存缓存
+            for (const [userId, entry] of recentEntries) {
+                this.memoryCache.set(userId, entry);
+            }
+            
+            console.log(`Preloaded ${recentEntries.length} recent avatars into memory cache`);
+        } catch (e) {
+            console.error('Failed to preload recent avatars:', e);
+        }
+    }
+
+    /**
+     * 保存到IndexedDB时遇到存储问题时清理缓存空间
+     */
+    private async ensureStorageSpace(): Promise<void> {
+        try {
+            // 在保存遇到存储问题时调用 clearOldestCaches
+            await this.clearOldestCaches();
+            console.log('Storage space cleared for new avatars');
+        } catch (e) {
+            console.error('Failed to ensure storage space:', e);
+        }
+    }
+}
+
+/**
+ * 将IndexedDB请求转换为Promise
+ */
+function promisifyRequest<T>(request: IDBRequest<T>): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
 }
 
 // 创建并导出单例实例
 export const avatarCache = new AvatarCacheService();
 
-// 初始化实例
-avatarCache.init();
-
-// 导出完成后，手动运行一些调试代码以验证
+// 在导出完成后，在开发环境中添加调试功能
 if (process.env.NODE_ENV === 'development') {
     // 在开发环境中添加全局调试变量
     (window as any).avatarCacheDebug = {
@@ -449,36 +686,41 @@ if (process.env.NODE_ENV === 'development') {
             console.log(`Testing cache for ${userId} with ${url}`);
             const result = await avatarCache.cacheAvatar(userId, url);
             console.log('Result:', result ? 'Success' : 'Failed');
-
-            // 验证存储
-            const cacheKey = `${CACHE_PREFIX}${userId}`;
-            const stored = localStorage.getItem(cacheKey);
-            console.log(`Stored in localStorage: ${!!stored}`);
-
             return result;
         },
-        getAllCaches: () => {
-            const result: Record<string, any> = {};
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && key.startsWith(CACHE_PREFIX)) {
-                    try {
-                        const value = localStorage.getItem(key);
-                        if (value) {
-                            const entry = JSON.parse(value);
-                            result[key] = {
-                                userId: key.substring(CACHE_PREFIX.length),
-                                originalUrl: entry.originalUrl,
-                                timestamp: new Date(entry.timestamp).toLocaleString(),
-                                dataUrlLength: entry.dataUrl?.length || 0
-                            };
-                        }
-                    } catch (e) {
-                        result[key] = 'Error parsing';
-                    }
+        getAllCaches: async () => {
+            try {
+                // 确保服务已初始化
+                if (!avatarCache.isInitialized()) {
+                    await avatarCache.init();
                 }
+                
+                const db = await (avatarCache as any).dbPromise;
+                if (!db) return {};
+                
+                const transaction = db.transaction([STORE_NAME], 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                const keys = await promisifyRequest<IDBValidKey[]>(store.getAllKeys());
+                const values = await promisifyRequest<CacheEntry[]>(store.getAll());
+                
+                const result: Record<string, any> = {};
+                
+                for (let i = 0; i < keys.length; i++) {
+                    const userId = String(keys[i]);
+                    const entry = values[i];
+                    
+                    result[userId] = {
+                        originalUrl: entry.originalUrl,
+                        timestamp: new Date(entry.timestamp).toLocaleString(),
+                        dataUrlLength: entry.dataUrl?.length || 0
+                    };
+                }
+                
+                return result;
+            } catch (e) {
+                console.error('Error getting all caches:', e);
+                return { error: String(e) };
             }
-            return result;
         }
     };
 }
