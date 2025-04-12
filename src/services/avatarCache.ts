@@ -110,14 +110,24 @@ class AvatarCacheService {
      * 获取缓存的头像
      * @param userId 用户ID
      * @param avatarUrl 原始头像URL（如果缓存不存在或过期）
+     * @param userInfo 用户信息对象（可选，用于生成更准确的默认头像）
      */
-    public async getAvatar(userId: string, avatarUrl?: string): Promise<string> {
+    public async getAvatar(
+        userId: string, 
+        avatarUrl?: string,
+        userInfo?: {
+            firstName?: string,
+            lastName?: string,
+            displayName?: string,
+            name?: string
+        }
+    ): Promise<string> {
         if (!this.initialized) this.init();
-
+        
         // 检查内存缓存
         const cacheKey = userId;
         const cachedEntry = this.memoryCache.get(cacheKey);
-
+        
         // 如果有有效缓存，返回缓存的数据URL
         if (cachedEntry && Date.now() - cachedEntry.timestamp < CACHE_DURATION) {
             // 如果提供了新URL且与缓存的不同，异步更新缓存
@@ -126,15 +136,21 @@ class AvatarCacheService {
             }
             return cachedEntry.dataUrl;
         }
-
+        
         // 如果没有有效缓存但提供了URL，尝试缓存并返回
         if (avatarUrl) {
             const dataUrl = await this.cacheAvatar(userId, avatarUrl);
             if (dataUrl) return dataUrl;
         }
-
+        
         // 如果所有尝试都失败，返回原始URL或默认头像
-        return avatarUrl || this.getDefaultAvatar(userId);
+        return avatarUrl || this.getDefaultAvatar(
+            userId,
+            userInfo?.firstName,
+            userInfo?.lastName,
+            userInfo?.displayName,
+            userInfo?.name
+        );
     }
 
     /**
@@ -163,26 +179,60 @@ class AvatarCacheService {
     }
 
     /**
-     * 获取基于用户ID的默认头像
+     * 获取基于用户信息的默认头像
      * @param userId 用户ID
+     * @param firstName 名字
+     * @param lastName 姓氏
+     * @param displayName 显示名称
+     * @param name 用户名
      */
-    private getDefaultAvatar(userId: string): string {
+    private getDefaultAvatar(userId: string, firstName?: string, lastName?: string, displayName?: string, name?: string): string {
+        // 生成首字母
+        let initials: string;
+        
+        // 优先使用firstName和lastName
+        if (firstName && lastName) {
+            initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
+        }
+        // 其次使用displayName并尝试拆分
+        else if (displayName) {
+            const parts = displayName.trim().split(/\s+/);
+            if (parts.length >= 2) {
+                initials = (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+            } else {
+                initials = displayName.substring(0, 2).toUpperCase();
+            }
+        }
+        // 再次使用name
+        else if (name) {
+            const parts = name.trim().split(/\s+/);
+            if (parts.length >= 2) {
+                initials = (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+            } else {
+                initials = name.substring(0, 2).toUpperCase();
+            }
+        }
+        // 最后使用userId
+        else {
+            initials = userId.substring(0, 2).toUpperCase();
+        }
+        
         // 根据用户ID生成一致的颜色
         const hash = this.hashCode(userId);
         const hue = hash % 360;
         const saturation = 75;
         const lightness = 65;
-
+        
         // 创建一个简单的SVG作为默认头像
         const svg = `
         <svg xmlns="http://www.w3.org/2000/svg" width="${DEFAULT_SIZE}" height="${DEFAULT_SIZE}" viewBox="0 0 100 100">
             <rect width="100" height="100" fill="hsl(${hue}, ${saturation}%, ${lightness}%)" />
             <text x="50" y="50" font-family="Arial" font-size="40" fill="white" text-anchor="middle" dominant-baseline="central">
-            ${userId.substring(0, 2).toUpperCase()}
+                ${initials}
             </text>
         </svg>
         `;
-
+        
         return `data:image/svg+xml;base64,${btoa(svg)}`;
     }
 

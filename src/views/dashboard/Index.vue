@@ -65,7 +65,10 @@
                                                     v-if="userData.id"
                                                     :userId="userData.id"
                                                     :src="userData.avatar"
-                                                    :name="userData.displayName || userData.fullName || userData.name"
+                                                    :name="userData.name"
+                                                    :firstName="userData.firstName"
+                                                    :lastName="userData.lastName"
+                                                    :displayName="userData.displayName"
                                                     :size="32"
                                                     class="h-8 w-8"
                                                 />
@@ -151,7 +154,10 @@
                                 v-if="userData.id"
                                 :userId="userData.id"
                                 :src="userData.avatar"
-                                :name="userData.displayName || userData.fullName || userData.name"
+                                :name="userData.name"
+                                :firstName="userData.firstName"
+                                :lastName="userData.lastName"
+                                :displayName="userData.displayName"
                                 :size="40"
                                 class="h-10 w-10"
                             />

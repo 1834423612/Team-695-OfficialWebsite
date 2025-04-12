@@ -621,6 +621,16 @@ class CasdoorService {
                 avatarCache.cacheAvatar(userInfo.id, userInfo.avatar).catch(e => {
                     console.warn('Failed to cache avatar:', e);
                 });
+                
+                // 尝试提前获取头像，同时传递用户信息以便生成更好的默认头像
+                avatarCache.getAvatar(userInfo.id, userInfo.avatar, {
+                    firstName: userInfo.firstName,
+                    lastName: userInfo.lastName,
+                    displayName: userInfo.displayName,
+                    name: userInfo.name
+                }).catch(e => {
+                    console.warn('Failed to preload avatar:', e);
+                });
             }
             
             // Cache the user info

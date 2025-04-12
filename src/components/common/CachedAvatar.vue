@@ -40,6 +40,18 @@ export default defineComponent({
             type: String,
             default: ''
         },
+        firstName: {
+            type: String,
+            default: ''
+        },
+        lastName: {
+            type: String,
+            default: ''
+        },
+        displayName: {
+            type: String,
+            default: ''
+        },
         rounded: {
             type: Boolean,
             default: true
@@ -84,18 +96,32 @@ export default defineComponent({
             return style;
         });
 
-        // 计算用户首字母
+        // 优化的首字母生成逻辑，优先使用firstName和lastName
         const initials = computed(() => {
+            // 如果有firstName和lastName，使用两者首字母
+            if (props.firstName && props.lastName) {
+                return (props.firstName.charAt(0) + props.lastName.charAt(0)).toUpperCase();
+            }
+            
+            // 如果只有displayName，尝试拆分并使用首尾词的首字母
+            if (props.displayName) {
+                const parts = props.displayName.trim().split(/\s+/);
+                if (parts.length >= 2) {
+                    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+                }
+                return props.displayName.substring(0, 2).toUpperCase();
+            }
+            
+            // 如果有name属性，使用name的前两个字母
             if (props.name) {
-                // 从用户名生成首字母
                 const parts = props.name.trim().split(/\s+/);
                 if (parts.length >= 2) {
-                    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+                    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
                 }
                 return props.name.substring(0, 2).toUpperCase();
             }
 
-            // 如果没有提供名称，使用用户ID前两个字符
+            // 如果都没有，使用用户ID前两个字符（降级方案）
             return props.userId.substring(0, 2).toUpperCase();
         });
 
