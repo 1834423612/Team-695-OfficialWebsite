@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { casdoorService } from '@/services/auth';
+import { casdoorService, isInvalidAuthResponse } from '@/services/auth';
 // import { ref, computed } from 'vue';
 
 // 定义存储状态接口
@@ -54,7 +54,15 @@ export const useUserStore = defineStore('user', {
             // 如果已初始化且有数据，则不重复初始化
             if (this.isInitialized && this.userInfo) {
                 console.log('User store already initialized with data');
-                return this.userInfo;
+                
+                // 验证token是否有效
+                if (await casdoorService.isTokenValid()) {
+                    return this.userInfo;
+                } else {
+                    console.warn('Stored token is invalid, clearing user info');
+                    this.clearUserInfo();
+                    return null;
+                }
             }
 
             // 如果未登录，则不初始化
@@ -68,14 +76,18 @@ export const useUserStore = defineStore('user', {
             if (this.lastFetchTime && now - this.lastFetchTime < 5 * 60 * 1000) {
                 console.log('Using cached user data (less than 5 minutes old)');
                 this.isInitialized = true;
-                return this.userInfo;
+                
+                // 即使缓存有效，也验证一下token是否有效
+                if (await casdoorService.isTokenValid()) {
+                    return this.userInfo;
+                }
             }
 
             return this.refreshUserInfo(false);
         },
 
-        // 刷新用户信息
-        async refreshUserInfo(showLoading = true) {
+        // 增强的刷新用户信息方法
+        async refreshUserInfo(showLoading = true): Promise<any> {
             console.log('Refreshing user info...');
 
             // 如果显示加载中且当前无数据，则设置加载状态
@@ -86,9 +98,26 @@ export const useUserStore = defineStore('user', {
             this.error = null;
 
             try {
+                // 先验证token有效性
+                if (!(await casdoorService.isTokenValid())) {
+                    throw new Error('Authentication token is invalid');
+                }
+                
                 // 获取用户信息
                 const userInfo = await casdoorService.getUserInfo(showLoading);
                 console.log('User info received:', userInfo ? 'yes' : 'no');
+                
+                // 检测是否为无效响应
+                if (isInvalidAuthResponse(userInfo)) {
+                    console.warn('Invalid user info response detected');
+                    // 尝试处理无效认证
+                    if (await casdoorService.handleInvalidAuthResponse()) {
+                        // 如果处理成功，重新获取用户信息
+                        return this.refreshUserInfo(showLoading);
+                    } else {
+                        throw new Error('Authentication session expired');
+                    }
+                }
 
                 this.userInfo = userInfo;
                 this.orgData = userInfo.data2;
@@ -98,6 +127,15 @@ export const useUserStore = defineStore('user', {
             } catch (error) {
                 console.error('Failed to fetch user info:', error);
                 this.error = error instanceof Error ? error.message : String(error);
+                
+                // 如果是认证错误，清除用户信息
+                if (error instanceof Error && 
+                    (error.message.includes('Authentication') || 
+                     error.message.includes('Unauthorized') || 
+                     error.message.includes('token'))) {
+                    this.clearUserInfo();
+                }
+                
                 throw error;
             } finally {
                 this.isLoading = false;

@@ -143,6 +143,20 @@ router.beforeEach(async (to, _from, next) => {
       return;
     }
     
+    // 增强的token有效性验证
+    try {
+      const isValid = await casdoorService.isTokenValid();
+      if (!isValid) {
+        console.warn('Auth token is invalid or expired, redirecting to login');
+        next({ name: 'login' });
+        return;
+      }
+    } catch (error) {
+      console.error('Error validating token:', error);
+      next({ name: 'login' });
+      return;
+    }
+    
     // 获取用户存储
     const userStore = useUserStore();
     
@@ -152,7 +166,14 @@ router.beforeEach(async (to, _from, next) => {
         await userStore.initializeStore();
       } catch (error) {
         console.error('Failed to initialize user store during navigation:', error);
-        // 如果无法加载用户信息但仍然登录，则继续导航
+        // 如果出现认证错误，重定向到登录
+        if (error instanceof Error && 
+            (error.message.includes('Authentication') || 
+             error.message.includes('Unauthorized') || 
+             error.message.includes('token'))) {
+          next({ name: 'login' });
+          return;
+        }
       }
     }
     
@@ -170,8 +191,18 @@ router.beforeEach(async (to, _from, next) => {
   // 仅限游客的路由（如登录页）
   if (to.matched.some(record => record.meta.guest)) {
     if (isLoggedIn && to.name !== 'callback') {
-      next({ name: 'DashboardHome' });
-      return;
+      // 即使是guest路由，也要验证token有效性
+      try {
+        const isValid = await casdoorService.isTokenValid();
+        if (isValid) {
+          next({ name: 'DashboardHome' });
+          return;
+        }
+        // 如果token无效，继续访问guest路由
+      } catch (error) {
+        // 忽略错误，继续访问guest路由
+        console.warn('Token validation failed on guest route:', error);
+      }
     }
   }
   

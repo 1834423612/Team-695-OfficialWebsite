@@ -862,6 +862,102 @@ class CasdoorService {
         
         this.storeTokensInCookies(tokenResponse);
     }
+
+    // Check if the token is actually valid (not just present)
+    async validateToken(): Promise<boolean> {
+        const token = this.getToken();
+        
+        if (!token) return false;
+        
+        try {
+            // Try to make a lightweight API call to validate the token
+            const baseUrl = isDevelopment ? '/api/sso' : config.serverUrl;
+            const response = await fetch(`${baseUrl}/api/get-account`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json',
+                },
+                mode: 'cors'
+            });
+            
+            if (!response.ok) return false;
+            
+            const data = await response.json();
+            
+            // 检测是否为无效响应
+            if (isInvalidAuthResponse(data)) {
+                console.warn('Invalid auth response detected, token may be expired');
+                
+                // 尝试刷新token
+                try {
+                    await this.refreshAccessToken();
+                    return true;
+                } catch (error) {
+                    console.error('Failed to refresh token:', error);
+                    // 刷新失败则主动登出
+                    await this.logout();
+                    return false;
+                }
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('Token validation error:', error);
+            return false;
+        }
+    }
+    
+    // Enhanced isLoggedIn that not only checks for token presence but also its validity
+    async isTokenValid(): Promise<boolean> {
+        if (!this.isLoggedIn()) return false;
+        
+        // Parse token expiration time
+        const token = this.getToken();
+        if (!token) return false;
+        
+        try {
+            const tokenInfo = this.parseAccessToken(token);
+            if (!tokenInfo || !tokenInfo.payload || !tokenInfo.payload.exp) return false;
+            
+            const expiryTime = tokenInfo.payload.exp * 1000;
+            const now = Date.now();
+            
+            // If token is expired, try to refresh it
+            if (expiryTime <= now) {
+                try {
+                    await this.refreshAccessToken();
+                    return true;
+                } catch (error) {
+                    console.error('Token expired and refresh failed:', error);
+                    await this.logout();
+                    return false;
+                }
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('Error validating token expiration:', error);
+            return false;
+        }
+    }
+    
+    // Handle invalid auth responses globally
+    async handleInvalidAuthResponse(): Promise<boolean> {
+        try {
+            // Try to refresh the token
+            await this.refreshAccessToken();
+            return true;
+        } catch (error) {
+            console.error('Failed to refresh token after invalid response:', error);
+            // If refresh fails, log out and clear everything
+            await this.logout();
+            // 通知用户需要重新登录
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('auth:invalid', { detail: { message: 'Your session has expired. Please login again.' } }));
+            }
+            return false;
+        }
+    }
 }
 
 // Helper function to create a full name from user data
@@ -880,8 +976,28 @@ function createFullName(userData: any): string {
     return userData.name || '';
 }
 
+// Helper function to detect invalid auth responses
+function isInvalidAuthResponse(response: any): boolean {
+    // 检测空响应或格式为 { status: 'ok', msg: '', sub: '', name: '', data: true, data2: null } 的响应
+    if (!response) return true;
+    
+    // 典型的无效响应特征
+    if (response.status === 'ok' && 
+        (!response.sub || response.sub === '') && 
+        (!response.name || response.name === '') && 
+        (response.data === true || response.data === null) && 
+        response.data2 === null) {
+        return true;
+    }
+    
+    return false;
+}
+
 // Export a singleton instance
 export const casdoorService = new CasdoorService();
 
 // Export the SDK for direct access if needed
 export { sdk };
+
+// Export the helper function to detect invalid auth responses
+export { isInvalidAuthResponse };

@@ -283,7 +283,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, watch, onUnmounted } from 'vue';
+import { defineComponent, ref, computed, watch, onUnmounted, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { casdoorService } from '@/services/auth';
 import { Icon } from '@iconify/vue';
@@ -420,11 +420,33 @@ export default defineComponent({
             }
         };
 
+        // 添加全局认证错误监听器
+        const handleAuthInvalid = (event: CustomEvent) => {
+            console.warn('Auth invalid event detected:', event.detail);
+            // 显示提醒消息
+            alert(event.detail.message || 'Your session has expired. Please login again.');
+            // 执行登出
+            logout();
+        };
+
+        // 注册全局认证事件监听器
+        onMounted(() => {
+            window.addEventListener('auth:invalid', handleAuthInvalid as EventListener);
+            
+            // 首次加载时验证token有效性
+            casdoorService.isTokenValid().catch(error => {
+                console.error('Initial token validation failed:', error);
+                // 如果初始验证失败，执行登出
+                logout();
+            });
+        });
+
         // 添加点击外部监听器
         document.addEventListener('click', handleClickOutside);
 
         onUnmounted(() => {
             document.removeEventListener('click', handleClickOutside);
+            window.removeEventListener('auth:invalid', handleAuthInvalid as EventListener);
         });
 
         return {
