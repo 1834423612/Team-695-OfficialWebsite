@@ -22,7 +22,7 @@ export default defineComponent({
         
         // 上次验证时间
         const lastValidationCheck = ref(0);
-        const VALIDATION_INTERVAL = 60000; // 1分钟验证间隔
+        const VALIDATION_INTERVAL = 300000; // 5分钟验证间隔
 
         // 处理认证错误事件
         const handleAuthError = async (event: CustomEvent) => {
