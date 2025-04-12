@@ -1,5 +1,12 @@
 import { avatarCache } from '@/services/avatarCache';
 
+// 缓存调试工具
+declare global {
+    interface Window {
+        avatarDebug?: typeof AvatarCacheDebugger;
+    }
+}
+
 // 为开发环境提供头像缓存调试工具
 const AvatarCacheDebugger = {
     /**
@@ -11,7 +18,7 @@ const AvatarCacheDebugger = {
         
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            if (key && key.startsWith('avatar_cache_')) {
+            if (key?.startsWith('avatar_cache_')) {
                 count++;
                 
                 try {
@@ -83,7 +90,7 @@ const AvatarCacheDebugger = {
         let remainingCount = 0;
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            if (key && key.startsWith('avatar_cache_')) {
+            if (key?.startsWith('avatar_cache_')) {
                 remainingCount++;
             }
         }
