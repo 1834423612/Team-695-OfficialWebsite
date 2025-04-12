@@ -23,7 +23,7 @@ export default defineComponent({
         // 状态标记
         const isValidating = ref(false);
         const lastValidationTime = ref(Date.now());
-        const validationInterval = 5 * 60 * 1000; // 5分钟验证一次
+        const validationInterval = 5 * 60 * 1000; // 确保固定为5分钟验证一次
         let validationTimer: number | null = null;
 
         // 请求锁，防止重复请求
@@ -197,7 +197,7 @@ export default defineComponent({
                 if (now - lastValidationTime.value >= validationInterval) {
                     validateAuth().catch(console.error);
                 }
-            }, validationInterval / 2);
+            }, validationInterval); // 直接使用完整间隔，而不是半个间隔
         };
 
         /**

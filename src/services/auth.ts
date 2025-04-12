@@ -1190,18 +1190,18 @@ class CasdoorService {
 
         // 如果用户已登录，设置定期检查
         if (this.isLoggedIn()) {
-            const checkInterval = Math.min(TOKEN_CHECK_INTERVAL, 5 * 60 * 1000); // 最多5分钟检查一次
+            const checkInterval = TOKEN_CHECK_INTERVAL; // 使用固定的5分钟间隔
             
             this.tokenCheckTimer = window.setInterval(async () => {
                 // 验证令牌是否有效
                 try {
                     const now = Date.now();
                     // 只有在距离上次验证超过一定时间后才执行验证，避免频繁验证
-                    if (now - this.lastValidationTime > checkInterval / 2) {
+                    if (now - this.lastValidationTime > checkInterval) {
                         this.lastValidationTime = now;
                         console.log('Performing periodic token validation check');
                         
-                        // 直接使用团队API验证
+                        // 使用团队API验证令牌
                         const teamApiResult = await this.validateWithTeamApi();
                         if (!teamApiResult.valid) {
                             console.warn('Token validation failed during periodic check');
