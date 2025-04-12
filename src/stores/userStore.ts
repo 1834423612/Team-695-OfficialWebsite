@@ -124,12 +124,26 @@ export const useUserStore = defineStore('user', {
             this.error = null;
 
             try {
-                // 先验证token有效性
-                if (!(await casdoorService.isTokenValid())) {
-                    throw new Error('Authentication token is invalid');
+                // 1. 先使用团队API验证token有效性
+                const validationResult = await casdoorService.validateWithTeamApi();
+                if (!validationResult.valid) {
+                    console.warn('Token validation failed before fetching user info');
+                    
+                    // 尝试刷新令牌
+                    try {
+                        await casdoorService.refreshAccessToken();
+                        
+                        // 再次验证
+                        const refreshedResult = await casdoorService.validateWithTeamApi();
+                        if (!refreshedResult.valid) {
+                            throw new Error('Authentication token remains invalid after refresh');
+                        }
+                    } catch (refreshError) {
+                        throw new Error('Authentication token is invalid');
+                    }
                 }
                 
-                // 获取用户信息
+                // 2. 验证通过后再获取用户信息
                 const userInfo = await casdoorService.getUserInfo(showLoading);
                 console.log('User info received:', userInfo ? 'yes' : 'no');
                 
@@ -149,6 +163,14 @@ export const useUserStore = defineStore('user', {
                 this.orgData = userInfo.data2;
                 this.lastFetchTime = Date.now();
                 this.isInitialized = true;
+                
+                // 3. 根据验证结果更新用户的管理员状态
+                if (validationResult.isAdmin && !userInfo.isAdmin) {
+                    console.log('Updating user admin status based on token validation');
+                    userInfo.isAdmin = true;
+                    this.userInfo.isAdmin = true;
+                }
+                
                 return userInfo;
             } catch (error) {
                 console.error('Failed to fetch user info:', error);

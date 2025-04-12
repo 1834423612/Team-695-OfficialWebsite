@@ -182,6 +182,7 @@ class CasdoorService {
     private refreshing: boolean = false;
     private refreshPromise: Promise<string> | null = null;
     private lastValidationTime: number = 0; // 上次验证令牌的时间
+    private teamApiValidationPromise: Promise<{valid: boolean, isAdmin: boolean}> | null = null;
     config: any;
     getBasicUserInfoFromToken: any;
 
@@ -900,6 +901,11 @@ class CasdoorService {
 
     // 使用团队API验证令牌
     async validateWithTeamApi(token: string | null = null): Promise<{valid: boolean, isAdmin: boolean}> {
+        // 如果已经有请求在进行中，返回该请求的Promise
+        if (this.teamApiValidationPromise) {
+            return this.teamApiValidationPromise;
+        }
+        
         if (!token) {
             token = this.getToken();
         }
@@ -909,39 +915,53 @@ class CasdoorService {
         }
         
         try {
-            const response = await fetch(TEAM_API_VALIDATE_URL, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
+            // 创建新的Promise并存储引用
+            this.teamApiValidationPromise = (async () => {
+                try {
+                    console.log('Validating token with Team API...');
+                    const response = await fetch(TEAM_API_VALIDATE_URL, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        console.warn(`Team API validation failed with status: ${response.status}`);
+                        return { valid: false, isAdmin: false };
+                    }
+                    
+                    const result = await response.json();
+                    
+                    if (result.success && result.data && typeof result.data.valid === 'boolean') {
+                        console.log('Team API validation result:', result.data);
+                        return {
+                            valid: result.data.valid,
+                            isAdmin: !!result.data.isAdmin
+                        };
+                    }
+                    
+                    return { valid: false, isAdmin: false };
+                } finally {
+                    // 无论成功失败，请求完成后清除Promise引用
+                    setTimeout(() => {
+                        this.teamApiValidationPromise = null;
+                    }, 100);
                 }
-            });
+            })();
             
-            if (!response.ok) {
-                console.warn(`Team API validation failed with status: ${response.status}`);
-                return { valid: false, isAdmin: false };
-            }
-            
-            const result = await response.json();
-            
-            if (result.success && result.data && typeof result.data.valid === 'boolean') {
-                console.log('Team API validation result:', result.data);
-                return {
-                    valid: result.data.valid,
-                    isAdmin: !!result.data.isAdmin
-                };
-            }
-            
-            return { valid: false, isAdmin: false };
+            return this.teamApiValidationPromise;
         } catch (error) {
             console.error('Team API validation error:', error);
+            this.teamApiValidationPromise = null;
             return { valid: false, isAdmin: false };
         }
     }
 
     // Basic token validation without external API calls
-    private async validateLocalToken(): Promise<boolean> {
+    public async validateLocalToken(): Promise<boolean> {
         const token = this.getToken();
         if (!token) return false;
         

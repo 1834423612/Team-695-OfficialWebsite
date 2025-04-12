@@ -7,12 +7,12 @@
                     <div>
                         <h2 class="text-2xl font-bold text-white">
                             Welcome back, {{ userData.firstName || (userData.displayName ?
-                                userData.displayName.split('')[0] : userData.name) }}!
+                            userData.displayName.split('')[0] : userData.name) }}!
                         </h2>
                         <p class="mt-2 text-blue-100">
                             {{ new Date().toLocaleDateString('en-US', {
-                                weekday: 'long', year: 'numeric', month: 'long', day:
-                                    'numeric'
+                            weekday: 'long', year: 'numeric', month: 'long', day:
+                            'numeric'
                             }) }}
                         </p>
                     </div>
@@ -125,33 +125,35 @@
                     </div>
                 </router-link>
 
-                <!-- <a href="#" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300">
-                      <div class="p-5">
-                      <div class="flex items-center">
-                          <div class="flex-shrink-0 bg-green-100 rounded-md p-3">
-                          <Icon icon="mdi:calendar-check" class="h-6 w-6 text-green-600" />
-                          </div>
-                          <div class="ml-5">
-                          <h3 class="text-lg font-medium text-gray-900">Event Schedule</h3>
-                          <p class="text-sm text-gray-500">View upcoming competitions and meetings</p>
-                          </div>
-                      </div>
-                      </div>
-                  </a>
+                <!-- <a href="#"
+                    class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300">
+                    <div class="p-5">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 bg-green-100 rounded-md p-3">
+                                <Icon icon="mdi:calendar-check" class="h-6 w-6 text-green-600" />
+                            </div>
+                            <div class="ml-5">
+                                <h3 class="text-lg font-medium text-gray-900">Event Schedule</h3>
+                                <p class="text-sm text-gray-500">View upcoming competitions and meetings</p>
+                            </div>
+                        </div>
+                    </div>
+                </a>
 
-                  <a href="#" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300">
-                      <div class="p-5">
-                      <div class="flex items-center">
-                          <div class="flex-shrink-0 bg-purple-100 rounded-md p-3">
-                          <Icon icon="mdi:robot" class="h-6 w-6 text-purple-600" />
-                          </div>
-                          <div class="ml-5">
-                          <h3 class="text-lg font-medium text-gray-900">Robot Status</h3>
-                          <p class="text-sm text-gray-500">Check build and maintenance status</p>
-                          </div>
-                      </div>
-                      </div>
-                  </a> -->
+                <a href="#"
+                    class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300">
+                    <div class="p-5">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 bg-purple-100 rounded-md p-3">
+                                <Icon icon="mdi:robot" class="h-6 w-6 text-purple-600" />
+                            </div>
+                            <div class="ml-5">
+                                <h3 class="text-lg font-medium text-gray-900">Robot Status</h3>
+                                <p class="text-sm text-gray-500">Check build and maintenance status</p>
+                            </div>
+                        </div>
+                    </div>
+                </a> -->
             </div>
         </div>
 
@@ -376,76 +378,76 @@
 
                 <!-- Example Stats Cards -->
                 <!-- <div class="bg-white overflow-hidden shadow rounded-lg">
-                  <div class="px-4 py-5 sm:p-6">
-                      <div class="flex items-center">
-                          <div class="flex-shrink-0 bg-indigo-100 rounded-md p-3">
-                              <Icon icon="mdi:calendar" class="h-6 w-6 text-indigo-600" />
-                          </div>
-                          <div class="ml-5 w-0 flex-1">
-                              <dl>
-                                  <dt class="text-sm font-medium text-gray-500 truncate">Upcoming Events</dt>
-                                  <dd>
-                                      <div class="text-lg font-medium text-gray-900">3</div>
-                                  </dd>
-                              </dl>
-                          </div>
-                      </div>
-                  </div>
-              </div>
+                    <div class="px-4 py-5 sm:p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 bg-indigo-100 rounded-md p-3">
+                                <Icon icon="mdi:calendar" class="h-6 w-6 text-indigo-600" />
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 truncate">Upcoming Events</dt>
+                                    <dd>
+                                        <div class="text-lg font-medium text-gray-900">3</div>
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-              <div class="bg-white overflow-hidden shadow rounded-lg">
-                  <div class="px-4 py-5 sm:p-6">
-                      <div class="flex items-center">
-                          <div class="flex-shrink-0 bg-green-100 rounded-md p-3">
-                              <Icon icon="mdi:account-group" class="h-6 w-6 text-green-600" />
-                          </div>
-                          <div class="ml-5 w-0 flex-1">
-                              <dl>
-                                  <dt class="text-sm font-medium text-gray-500 truncate">Team Members</dt>
-                                  <dd>
-                                      <div class="text-lg font-medium text-gray-900">42</div>
-                                  </dd>
-                              </dl>
-                          </div>
-                      </div>
-                  </div>
-              </div>
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 bg-green-100 rounded-md p-3">
+                                <Icon icon="mdi:account-group" class="h-6 w-6 text-green-600" />
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 truncate">Team Members</dt>
+                                    <dd>
+                                        <div class="text-lg font-medium text-gray-900">42</div>
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-              <div class="bg-white overflow-hidden shadow rounded-lg">
-                  <div class="px-4 py-5 sm:p-6">
-                      <div class="flex items-center">
-                          <div class="flex-shrink-0 bg-yellow-100 rounded-md p-3">
-                              <Icon icon="mdi:trophy" class="h-6 w-6 text-yellow-600" />
-                          </div>
-                          <div class="ml-5 w-0 flex-1">
-                              <dl>
-                                  <dt class="text-sm font-medium text-gray-500 truncate">Season Rank</dt>
-                                  <dd>
-                                      <div class="text-lg font-medium text-gray-900">#12</div>
-                                  </dd>
-                              </dl>
-                          </div>
-                      </div>
-                  </div>
-              </div>
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 bg-yellow-100 rounded-md p-3">
+                                <Icon icon="mdi:trophy" class="h-6 w-6 text-yellow-600" />
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 truncate">Season Rank</dt>
+                                    <dd>
+                                        <div class="text-lg font-medium text-gray-900">#12</div>
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-              <div class="bg-white overflow-hidden shadow rounded-lg">
-                  <div class="px-4 py-5 sm:p-6">
-                      <div class="flex items-center">
-                          <div class="flex-shrink-0 bg-red-100 rounded-md p-3">
-                              <Icon icon="mdi:clock" class="h-6 w-6 text-red-600" />
-                          </div>
-                          <div class="ml-5 w-0 flex-1">
-                              <dl>
-                                  <dt class="text-sm font-medium text-gray-500 truncate">Days Until Competition</dt>
-                                  <dd>
-                                      <div class="text-lg font-medium text-gray-900">18</div>
-                                  </dd>
-                              </dl>
-                          </div>
-                      </div>
-                  </div>
-              </div> -->
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 bg-red-100 rounded-md p-3">
+                                <Icon icon="mdi:clock" class="h-6 w-6 text-red-600" />
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 truncate">Days Until Competition</dt>
+                                    <dd>
+                                        <div class="text-lg font-medium text-gray-900">18</div>
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div> -->
             </div>
         </div>
 
@@ -467,71 +469,71 @@
 
                     <!-- Example Activity Items List -->
                     <!-- <li>
-                      <div class="px-4 py-4 sm:px-6">
-                          <div class="flex items-center justify-between">
-                              <div class="flex items-center">
-                                  <div
-                                      class="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                      <Icon icon="mdi:file-document" class="h-5 w-5 text-blue-600" />
-                                  </div>
-                                  <div class="ml-4">
-                                      <p class="text-sm font-medium text-blue-600">New scouting report submitted</p>
-                                      <p class="text-sm text-gray-500">Match #42 - Team 254 vs Team 1114</p>
-                                  </div>
-                              </div>
-                              <div class="ml-2 flex-shrink-0 flex">
-                                  <p
-                                      class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                      2 hours ago
-                                  </p>
-                              </div>
-                          </div>
-                      </div>
-                  </li>
-                  <li>
-                      <div class="px-4 py-4 sm:px-6">
-                          <div class="flex items-center justify-between">
-                              <div class="flex items-center">
-                                  <div
-                                      class="flex-shrink-0 h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
-                                      <Icon icon="mdi:calendar-plus" class="h-5 w-5 text-purple-600" />
-                                  </div>
-                                  <div class="ml-4">
-                                      <p class="text-sm font-medium text-blue-600">Team meeting scheduled</p>
-                                      <p class="text-sm text-gray-500">Strategy session - Tomorrow at 4:00 PM</p>
-                                  </div>
-                              </div>
-                              <div class="ml-2 flex-shrink-0 flex">
-                                  <p
-                                      class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                      Yesterday
-                                  </p>
-                              </div>
-                          </div>
-                      </div>
-                  </li>
-                  <li>
-                      <div class="px-4 py-4 sm:px-6">
-                          <div class="flex items-center justify-between">
-                              <div class="flex items-center">
-                                  <div
-                                      class="flex-shrink-0 h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                                      <Icon icon="mdi:robot" class="h-5 w-5 text-green-600" />
-                                  </div>
-                                  <div class="ml-4">
-                                      <p class="text-sm font-medium text-blue-600">Robot maintenance completed</p>
-                                      <p class="text-sm text-gray-500">Drivetrain and shooter mechanisms updated</p>
-                                  </div>
-                              </div>
-                              <div class="ml-2 flex-shrink-0 flex">
-                                  <p
-                                      class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                      3 days ago
-                                  </p>
-                              </div>
-                          </div>
-                      </div>
-                  </li> -->
+                        <div class="px-4 py-4 sm:px-6">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div
+                                        class="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                        <Icon icon="mdi:file-document" class="h-5 w-5 text-blue-600" />
+                                    </div>
+                                    <div class="ml-4">
+                                        <p class="text-sm font-medium text-blue-600">New scouting report submitted</p>
+                                        <p class="text-sm text-gray-500">Match #42 - Team 254 vs Team 1114</p>
+                                    </div>
+                                </div>
+                                <div class="ml-2 flex-shrink-0 flex">
+                                    <p
+                                        class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        2 hours ago
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="px-4 py-4 sm:px-6">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div
+                                        class="flex-shrink-0 h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
+                                        <Icon icon="mdi:calendar-plus" class="h-5 w-5 text-purple-600" />
+                                    </div>
+                                    <div class="ml-4">
+                                        <p class="text-sm font-medium text-blue-600">Team meeting scheduled</p>
+                                        <p class="text-sm text-gray-500">Strategy session - Tomorrow at 4:00 PM</p>
+                                    </div>
+                                </div>
+                                <div class="ml-2 flex-shrink-0 flex">
+                                    <p
+                                        class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        Yesterday
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="px-4 py-4 sm:px-6">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div
+                                        class="flex-shrink-0 h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                                        <Icon icon="mdi:robot" class="h-5 w-5 text-green-600" />
+                                    </div>
+                                    <div class="ml-4">
+                                        <p class="text-sm font-medium text-blue-600">Robot maintenance completed</p>
+                                        <p class="text-sm text-gray-500">Drivetrain and shooter mechanisms updated</p>
+                                    </div>
+                                </div>
+                                <div class="ml-2 flex-shrink-0 flex">
+                                    <p
+                                        class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        3 days ago
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </li> -->
                 </ul>
             </div>
         </div>
@@ -539,9 +541,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, onMounted } from 'vue';
-import { casdoorService } from '@/services/auth';
-import { useRouter } from 'vue-router';
+import { computed, defineComponent } from 'vue';
 import { useUserStore } from '@/stores/userStore';
 import { Icon } from '@iconify/vue';
 import { storeToRefs } from 'pinia';
@@ -552,7 +552,6 @@ export default defineComponent({
         Icon
     },
     setup() {
-        const router = useRouter();
         // 使用 Pinia 存储
         const userStore = useUserStore();
 
@@ -572,41 +571,7 @@ export default defineComponent({
             userStore.clearUserInfo(); // 清除存储中的用户信息
         };
 
-        onMounted(async () => {
-            // 初始验证
-            try {
-                // 验证token
-                const isValid = await casdoorService.validateToken();
-                if (!isValid) {
-                    console.warn('Token validation failed during dashboard home mount');
-
-                    // 尝试刷新
-                    try {
-                        const refreshed = await casdoorService.handleInvalidAuthResponse();
-                        if (!refreshed) {
-                            // 如果刷新失败，重定向到登录页
-                            console.error('Token refresh failed, redirecting to login');
-                            await casdoorService.logout();
-                            userStore.clearUserInfo();
-                            router.push('/login');
-                        }
-                    } catch (refreshError) {
-                        console.error('Error handling invalid token:', refreshError);
-                        router.push('/login');
-                    }
-                }
-
-                // 使用团队API确认
-                const teamApiResult = await casdoorService.validateWithTeamApi();
-                if (!teamApiResult.valid) {
-                    console.warn('Team API validation failed during dashboard home mount');
-                    // 只做日志记录，不直接登出，因为前面的验证可能已经刷新了令牌
-                    // 这样避免双重重定向
-                }
-            } catch (error) {
-                console.error('Error during dashboard home initial validation:', error);
-            }
-        });
+        // 移除Token验证逻辑，由AuthManager统一处理
 
         return {
             userData,

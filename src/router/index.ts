@@ -139,101 +139,37 @@ router.beforeEach(async (to, _from, next) => {
   // 需要认证的路由
   if (to.matched.some(record => record.meta.requiresAuth)) {
     if (!isLoggedIn) {
-      next({ name: 'login' });
+      next({ 
+        name: 'login',
+        query: { redirect: to.fullPath }
+      });
       return;
     }
     
-    // 增强的token有效性验证 - 使用团队API
-    try {
-      // 使用团队API验证
-      const validationResult = await casdoorService.validateWithTeamApi();
-      
-      if (!validationResult.valid) {
-        console.warn('Team API indicates token is invalid during navigation');
-        // 尝试刷新令牌
-        try {
-          await casdoorService.refreshAccessToken();
-          // 刷新后再次验证
-          const refreshedResult = await casdoorService.validateWithTeamApi();
-          if (!refreshedResult.valid) {
-            // 刷新后仍然无效
-            console.error('Token remains invalid after refresh during navigation');
-            await casdoorService.logout();
-            next({ name: 'login', query: { redirect: to.fullPath, reason: 'invalid-token' } });
-            return;
-          }
-        } catch (refreshError) {
-          console.error('Token refresh failed during navigation:', refreshError);
-          next({ name: 'login', query: { redirect: to.fullPath, reason: 'invalid-token' } });
-          return;
-        }
-      }
-      
-      // 验证后的管理员状态
-      if (validationResult.isAdmin) {
-        // 标记为管理员进行缓存
-        localStorage.setItem('is_admin_validated', 'true');
-      }
-    } catch (error) {
-      console.error('Error validating token with Team API:', error);
-      
-      // 降级到本地验证
-      const isValid = await casdoorService.isTokenValid();
-      if (!isValid) {
-        console.warn('Local validation indicates token is invalid');
-        next({ name: 'login' });
-        return;
-      }
+    // 仅做基本令牌格式检查，详细验证留给 AuthManager 组件处理
+    if (!(await casdoorService.validateLocalToken())) {
+      console.warn('Router guard: Basic token validation failed');
+      next({ 
+        name: 'login',
+        query: { redirect: to.fullPath, reason: 'invalid-token' }
+      });
+      return;
     }
     
-    // 获取用户存储
+    // 简单检查 - AuthManager 会负责进一步验证
     const userStore = useUserStore();
     
-    // 确保用户信息已加载
-    if (!userStore.userInfo) {
+    // 即使没有用户数据也允许继续到 Dashboard 路由，AuthManager 会处理
+    // 如果能够预加载用户信息就更好
+    if (!userStore.userInfo && userStore.lastFetchTime === null) {
       try {
-        await userStore.initializeStore();
+        // 尝试初始化，但不阻塞导航
+        userStore.initializeStore().catch(err => {
+          console.warn('Non-blocking user store initialization failed:', err);
+        });
       } catch (error) {
-        console.error('Failed to initialize user store during navigation:', error);
-        // 如果出现认证错误，重定向到登录
-        if (error instanceof Error && 
-            (error.message.includes('Authentication') || 
-             error.message.includes('Unauthorized') || 
-             error.message.includes('token'))) {
-          next({ name: 'login' });
-          return;
-        }
-      }
-    }
-    
-    // 检查管理员路由
-    if (to.matched.some(record => record.meta.requiresAdmin)) {
-      // 优先使用团队API的管理员状态
-      const useValidatedAdmin = localStorage.getItem('is_admin_validated') === 'true';
-      
-      let isAdmin;
-      if (useValidatedAdmin) {
-        isAdmin = true;
-      } else {
-        try {
-          // 重新验证以确认管理员状态
-          const validationResult = await casdoorService.validateWithTeamApi();
-          isAdmin = validationResult.isAdmin || userStore.isAdmin || casdoorService.isUserAdmin();
-          
-          // 缓存结果
-          if (validationResult.isAdmin) {
-            localStorage.setItem('is_admin_validated', 'true');
-          }
-        } catch (error) {
-          // 降级到本地验证
-          isAdmin = userStore.isAdmin || casdoorService.isUserAdmin();
-        }
-      }
-      
-      if (!isAdmin) {
-        console.warn('User is not an admin, redirecting to dashboard home');
-        next({ name: 'DashboardHome' });
-        return;
+        // 忽略错误，让 AuthManager 处理
+        console.warn('Pre-navigation user store init error:', error);
       }
     }
   }
@@ -241,18 +177,10 @@ router.beforeEach(async (to, _from, next) => {
   // 仅限游客的路由（如登录页）
   if (to.matched.some(record => record.meta.guest)) {
     if (isLoggedIn && to.name !== 'callback') {
-      // 即使是guest路由，也要验证token有效性
-      try {
-        const isValid = await casdoorService.isTokenValid();
-        if (isValid) {
-          next({ name: 'DashboardHome' });
-          return;
-        }
-        // 如果token无效，继续访问guest路由
-      } catch (error) {
-        // 忽略错误，继续访问guest路由
-        console.warn('Token validation failed on guest route:', error);
-      }
+      // 如果已登录，尝试跳转到 Dashboard 或请求的 redirect 参数
+      const redirect = to.query.redirect as string || '/Dashboard';
+      next(redirect);
+      return;
     }
   }
   
