@@ -1,5 +1,12 @@
 <template>
-    <!-- 无可视内容的管理组件 -->
+    <!-- 
+        全局身份认证管理组件
+        此组件在UI上不可见，但负责以下功能：
+        1. 定期验证用户身份令牌
+        2. 处理令牌过期和刷新
+        3. 确保只有有效用户可访问受限页面
+    -->
+    <div aria-hidden="true" class="auth-manager-component"></div>
 </template>
 
 <script lang="ts">
@@ -21,10 +28,10 @@ export default defineComponent({
         const userStore = useUserStore();
 
         // 状态标记
-        const isValidating = ref(false);
         const lastValidationTime = ref(Date.now());
-        const validationInterval = 5 * 60 * 1000; // 确保固定为5分钟验证一次
+        const validationInterval = 5 * 60 * 1000; // 5分钟验证间隔
         let validationTimer: number | null = null;
+        let pageVisible = ref(true);
 
         // 请求锁，防止重复请求
         const validationLock = ref<Promise<void> | null>(null);
@@ -42,15 +49,10 @@ export default defineComponent({
             // 创建新的验证Promise并保存引用
             validationLock.value = (async () => {
                 try {
-                    // 避免重复验证
-                    if (isValidating.value) return;
-
-                    isValidating.value = true;
                     console.log('AuthManager: Validating authentication...');
 
                     // 检查是否在Dashboard路径下
                     if (!route.path.startsWith('/Dashboard')) {
-                        isValidating.value = false;
                         return;
                     }
 
@@ -65,7 +67,6 @@ export default defineComponent({
                     const now = Date.now();
                     if (now - lastValidationTime.value < validationInterval / 2) {
                         console.log('AuthManager: Skipping validation, too soon since last check');
-                        isValidating.value = false;
                         return;
                     }
 
@@ -136,7 +137,6 @@ export default defineComponent({
                     console.error('AuthManager: Authentication validation error:', error);
                     await handleAuthFailure();
                 } finally {
-                    isValidating.value = false;
                     // 验证完成后清除锁
                     validationLock.value = null;
                 }
@@ -183,7 +183,7 @@ export default defineComponent({
         };
 
         /**
-         * 设置定期验证定时器
+         * 设置定期验证定时器，支持页面可见性检测
          */
         const setupPeriodicValidation = () => {
             // 清除现有定时器
@@ -196,9 +196,27 @@ export default defineComponent({
 
             // 创建新定时器 - 使用固定5分钟间隔
             validationTimer = window.setInterval(() => {
-                console.log('Auth check interval triggered, checking if validation needed');
-                validateAuth().catch(console.error);
+                // 只有当页面可见且没有正在进行的验证时才执行验证
+                if (pageVisible.value && !validationLock.value) {
+                    console.log('Auth check interval triggered, checking if validation needed');
+                    validateAuth().catch(console.error);
+                } else {
+                    console.log('Auth check skipped - page invisible or validation in progress');
+                }
             }, validationInterval);
+        };
+
+        /**
+         * 处理页面可见性变化
+         */
+        const handleVisibilityChange = () => {
+            pageVisible.value = document.visibilityState === 'visible';
+            
+            // 当页面重新可见时，检查验证时间，如果已过期则立即验证
+            if (pageVisible.value && Date.now() - lastValidationTime.value >= validationInterval) {
+                console.log('Page became visible, performing authentication check');
+                validateAuth().catch(console.error);
+            }
         };
 
         /**
@@ -226,8 +244,11 @@ export default defineComponent({
             // 设置定期验证
             setupPeriodicValidation();
 
-            // 监听认证无效事件 - 修复类型转换
+            // 监听认证无效事件
             window.addEventListener('auth:invalid', handleAuthInvalid);
+            
+            // 监听页面可见性变化
+            document.addEventListener('visibilitychange', handleVisibilityChange);
         });
 
         // 组件卸载前
@@ -237,9 +258,21 @@ export default defineComponent({
             }
 
             window.removeEventListener('auth:invalid', handleAuthInvalid);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
         });
 
         return {};
     },
 });
 </script>
+
+<style scoped>
+/* 让组件不可见但保持其存在于DOM中 */
+.auth-manager-component {
+    display: none;
+    height: 0;
+    width: 0;
+    position: absolute;
+    overflow: hidden;
+}
+</style>
