@@ -190,14 +190,15 @@ export default defineComponent({
             if (validationTimer !== null) {
                 window.clearInterval(validationTimer);
             }
+            
+            // 重置上次验证时间为当前时间（确保页面刷新后计时重新开始）
+            lastValidationTime.value = Date.now();
 
-            // 创建新定时器
+            // 创建新定时器 - 使用固定5分钟间隔
             validationTimer = window.setInterval(() => {
-                const now = Date.now();
-                if (now - lastValidationTime.value >= validationInterval) {
-                    validateAuth().catch(console.error);
-                }
-            }, validationInterval); // 直接使用完整间隔，而不是半个间隔
+                console.log('Auth check interval triggered, checking if validation needed');
+                validateAuth().catch(console.error);
+            }, validationInterval);
         };
 
         /**
