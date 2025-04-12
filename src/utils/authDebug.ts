@@ -4,6 +4,39 @@
  */
 import { casdoorService } from '@/services/auth';
 
+// 为全局窗口对象添加类型定义
+declare global {
+    interface Window {
+        authDebug?: typeof AuthDebugTools;
+    }
+}
+
+/**
+ * 简单的JWT签名验证工具
+ * 注意：这只是一个基本验证，不执行完整的密码学验证
+ */
+const validateSignature = (token: string): boolean => {
+    try {
+        const parts = token.split('.');
+        if (parts.length !== 3) {
+            return false;
+        }
+
+        // 检查签名是否存在且不为空
+        const signature = parts[2];
+        if (!signature || signature.trim() === '') {
+            return false;
+        }
+
+        // 检查签名是否是有效的base64url字符串
+        const base64UrlRegex = /^[A-Za-z0-9_-]+$/;
+        return base64UrlRegex.test(signature);
+    } catch (e) {
+        console.error('Error validating signature:', e);
+        return false;
+    }
+};
+
 // 调试工具对象
 const AuthDebugTools = {
     // 检查令牌状态
@@ -36,6 +69,11 @@ const AuthDebugTools = {
             console.log(`Expired: ${isExpired ? 'Yes' : 'No'}`);
             console.log(`Time remaining: ${timeRemaining} minutes`);
             console.log(`Issuer: ${payload.iss}`);
+            
+            // 添加签名验证
+            const signatureValid = validateSignature(token);
+            console.log(`Signature format valid: ${signatureValid ? 'Yes' : 'No'}`);
+            
             console.groupEnd();
 
             // 验证令牌有效性
@@ -48,6 +86,7 @@ const AuthDebugTools = {
                 status: isExpired ? 'expired' : 'valid',
                 timeRemaining,
                 payload,
+                signatureValid,
                 teamApiValid: validationResult.valid,
                 isAdmin: validationResult.isAdmin
             };
