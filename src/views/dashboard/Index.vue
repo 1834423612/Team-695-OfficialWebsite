@@ -222,6 +222,26 @@
             <!-- Main Content -->
             <div class="flex-grow">
                 <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+                    <!-- 面包屑导航 -->
+                    <nav class="mb-4 flex items-center text-sm text-gray-500" aria-label="Breadcrumb">
+                        <div class="flex">
+                            <div class="flex items-center">
+                                <router-link to="/Dashboard" class="hover:text-blue-600 flex items-center">
+                                    <Icon icon="mdi:view-dashboard" class="h-4 w-4 mr-1" />
+                                    Dashboard
+                                </router-link>
+                                
+                                <template v-if="currentBreadcrumb">
+                                    <Icon icon="mdi:chevron-right" class="h-4 w-4 mx-2 text-gray-400" />
+                                    <span class="text-gray-900 font-medium flex items-center">
+                                        <Icon :icon="getBreadcrumbIcon(currentBreadcrumb.path)" class="h-4 w-4 mr-1" />
+                                        {{ currentBreadcrumb.name }}
+                                    </span>
+                                </template>
+                            </div>
+                        </div>
+                    </nav>
+                    
                     <router-view></router-view>
                 </div>
             </div>
@@ -290,6 +310,42 @@ export default defineComponent({
 
         // 用户数据计算属性
         const userData = computed(() => userInfo.value || {});
+
+        // 面包屑导航映射
+        const breadcrumbMap: Record<string, { name: string; icon: string }> = {
+            '/Dashboard/profile': { name: 'Profile', icon: 'mdi:account-circle' },
+            '/Dashboard/Pit-Scouting': { name: 'Pit Scouting', icon: 'mdi:clipboard-text' },
+            // 可以根据需要添加更多路由映射
+        };
+
+        // 当前面包屑
+        const currentBreadcrumb = computed(() => {
+            // 尝试精确匹配
+            const path = route.path;
+            const lowercasePath = path.toLowerCase();
+            
+            // 查找对应路径的面包屑信息
+            for (const [key, value] of Object.entries(breadcrumbMap)) {
+                if (lowercasePath === key.toLowerCase()) {
+                    return { ...value, path: key };
+                }
+            }
+
+            // 尝试匹配路径前缀
+            for (const [key, value] of Object.entries(breadcrumbMap)) {
+                if (lowercasePath.startsWith(key.toLowerCase())) {
+                    return { ...value, path: key };
+                }
+            }
+
+            // 没有匹配则返回null
+            return null;
+        });
+
+        // 根据路径获取图标
+        const getBreadcrumbIcon = (path: string) => {
+            return breadcrumbMap[path]?.icon || 'mdi:chevron-right';
+        };
 
         // 改进的路由活动检测，考虑大小写
         const isExactActive = (path: string) => {
@@ -380,7 +436,9 @@ export default defineComponent({
             logout,
             isExactActive,
             toggleUserMenu,
-            toggleNotifications
+            toggleNotifications,
+            currentBreadcrumb,
+            getBreadcrumbIcon
         };
     }
 });

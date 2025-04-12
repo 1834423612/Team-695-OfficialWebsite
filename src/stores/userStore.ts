@@ -129,6 +129,14 @@ export const useUserStore = defineStore('user', {
             }
 
             return true;
+        },
+
+        // Add this method to update user info with new data
+        updateUserInfo(userData: any) {
+            this.userInfo = userData;
+            // Store in localStorage for persistence
+            localStorage.setItem('userInfo', JSON.stringify(userData));
+            return Promise.resolve();
         }
     }
 });
