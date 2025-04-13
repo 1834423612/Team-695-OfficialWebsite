@@ -16,7 +16,7 @@
 import { defineComponent, ref, computed, PropType, onMounted, watch } from 'vue';
 import { avatarCache } from '@/services/avatarCache';
 
-// 定义用于throttling的辅助函数
+// Helper function for throttling
 function throttle(fn: Function, delay: number): (...args: any[]) => void {
     let lastCall = 0;
     let timeoutId: number | null = null;
@@ -29,18 +29,16 @@ function throttle(fn: Function, delay: number): (...args: any[]) => void {
             lastCall = now;
             fn(...args);
         } else if (!timeoutId) {
-            // 设置一个延迟执行，确保函数最终被调用
+            // Set a delayed execution to ensure the function eventually gets called
             timeoutId = window.setTimeout(() => {
-                lastCall = Date.now();
-                timeoutId = null;
                 fn(...args);
             }, delay - timeSinceLastCall);
         }
     };
 }
 
-// 环境变量检测
-const isDevelopment = process.env.NODE_ENV === 'development';
+// Environment detection
+// const isDevelopment = process.env.NODE_ENV === 'development';
 
 export default defineComponent({
     name: 'CachedAvatar',
@@ -92,12 +90,12 @@ export default defineComponent({
         }
     },
     setup(props) {
-        // 状态
+        // State
         const avatarSrc = ref<string | null>(null);
         const loading = ref(true);
         const loadFailed = ref(false);
 
-        // 计算样式
+        // Computed styles
         const containerStyle = computed(() => ({
             width: typeof props.size === 'number' ? `${props.size}px` : props.size,
             height: typeof props.size === 'number' ? `${props.size}px` : props.size
@@ -105,187 +103,153 @@ export default defineComponent({
 
         const fallbackStyle = computed(() => {
             const style: Record<string, string> = {
-                width: typeof props.size === 'number' ? `${props.size}px` : props.size,
-                height: typeof props.size === 'number' ? `${props.size}px` : props.size,
-                fontSize: typeof props.size === 'number' ? `${Math.floor(Number(props.size) / 2.5)}px` : '16px'
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: typeof props.size === 'number' ? `${Math.max(props.size / 2.5, 12)}px` : '16px',
+                fontWeight: 'bold',
+                textTransform: 'uppercase'
             };
 
             if (props.bgColor) {
                 style.backgroundColor = props.bgColor;
             } else {
-                // 根据用户ID生成颜色
-                const hash = Math.abs(hashCode(props.userId));
+                // Generate background color based on user ID for consistency
+                const hash = hashCode(props.userId);
                 const hue = hash % 360;
-                style.backgroundColor = `hsl(${hue}, 70%, 60%)`;
+                style.backgroundColor = `hsl(${hue}, 70%, 75%)`;
+                style.color = hue > 210 && hue < 330 ? '#fff' : '#333';
             }
 
             return style;
         });
 
-        // 优化的首字母生成逻辑，优先使用firstName和lastName
+        // Optimized initials generation logic, prioritizing firstName and lastName
         const initials = computed(() => {
-            // 如果有firstName和lastName，使用两者首字母
+            // First try using firstName and lastName
             if (props.firstName && props.lastName) {
-                return (props.firstName.charAt(0) + props.lastName.charAt(0)).toUpperCase();
+                return `${props.firstName[0]}${props.lastName[0]}`.toUpperCase();
             }
             
-            // 如果只有displayName，尝试拆分并使用首尾词的首字母
+            // Then try using displayName, possibly splitting on whitespace
             if (props.displayName) {
                 const parts = props.displayName.trim().split(/\s+/);
                 if (parts.length >= 2) {
-                    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+                    return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
                 }
                 return props.displayName.substring(0, 2).toUpperCase();
             }
             
-            // 如果有name属性，使用name的前两个字母
+            // Fall back to name if available
             if (props.name) {
                 const parts = props.name.trim().split(/\s+/);
                 if (parts.length >= 2) {
-                    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+                    return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
                 }
                 return props.name.substring(0, 2).toUpperCase();
             }
-
-            // 如果都没有，使用用户ID前两个字符（降级方案）
+            
+            // Last resort: use userId
             return props.userId.substring(0, 2).toUpperCase();
         });
 
-        // 加载头像
+        // Load avatar
         const loadAvatarImpl = async () => {
             loading.value = true;
             loadFailed.value = false;
-
-            if (!props.userId) {
-                loading.value = false;
-                return;
-            }
-
+            
             try {
-                // 构建用户信息对象，用于生成默认头像
-                const userInfo = {
-                    firstName: props.firstName,
-                    lastName: props.lastName,
-                    displayName: props.displayName,
-                    name: props.name
-                };
-
-                if (isDevelopment) {
-                    console.log(`Loading avatar for ${props.userId} with src: ${props.src || 'none'}`);
+                // Always use userId for cache key
+                const url = props.src;
+                
+                // If no src provided or previous load failed, use default
+                if (!url || loadFailed.value) {
+                    // Use avatar cache to either get cached image or generate default
+                    const cachedAvatar = await avatarCache.getAvatar(
+                        props.userId, 
+                        undefined,
+                        {
+                            firstName: props.firstName,
+                            lastName: props.lastName,
+                            displayName: props.displayName,
+                            name: props.name
+                        },
+                        true // Cache only mode - don't fetch new images
+                    );
+                    
+                    avatarSrc.value = cachedAvatar;
+                    loading.value = false;
+                    return;
                 }
                 
-                // 如果提供了src，优先使用
-                if (props.src) {
-                    // 显示日志以便调试
-                    if (isDevelopment) {
-                        console.log(`Avatar URL provided: ${props.src}`);
+                // Try to get from cache first, passing user info for better default avatar
+                const cachedAvatar = await avatarCache.getAvatar(
+                    props.userId, 
+                    url,
+                    {
+                        firstName: props.firstName,
+                        lastName: props.lastName,
+                        displayName: props.displayName,
+                        name: props.name
                     }
-                    
-                    try {
-                        // 将用户信息传递给getAvatar以便生成默认头像
-                        const cachedSrc = await avatarCache.getAvatar(props.userId, props.src, userInfo);
-                        avatarSrc.value = cachedSrc;
-                        loading.value = false;
-                        if (isDevelopment) {
-                            console.log(`Avatar loaded from source: ${props.src.substring(0, 30)}...`);
-                        }
-                    } catch (error) {
-                        if (isDevelopment) {
-                            console.error('Failed to load avatar from source:', error);
-                        }
-                        loadFailed.value = true;
-                        // 如果从源加载失败，尝试使用默认头像
-                        const cachedFallback = await avatarCache.getAvatar(props.userId, undefined, userInfo);
-                        avatarSrc.value = cachedFallback;
-                        loading.value = false;
-                    }
-                } else {
-                    // 没有提供URL，使用用户信息生成默认头像
-                    if (isDevelopment) {
-                        console.log(`No avatar URL provided, generating default for ${props.userId}`);
-                    }
-                    const defaultSrc = await avatarCache.getAvatar(props.userId, undefined, userInfo);
-                    avatarSrc.value = defaultSrc;
-                    loading.value = false;
-                }
+                );
+                
+                avatarSrc.value = cachedAvatar;
             } catch (error) {
-                if (isDevelopment) {
-                    console.error('Failed to load avatar:', error);
-                }
+                console.error('Error loading avatar:', error);
                 loadFailed.value = true;
+                // On error, use fallback
                 avatarSrc.value = null;
+            } finally {
                 loading.value = false;
             }
         };
 
-        // 使用throttle包装加载函数，限制300ms内最多执行一次
+        // Use throttle wrapper for loading function, limiting to once per 300ms
         const loadAvatar = throttle(loadAvatarImpl, 300);
 
-        // 处理图片加载错误
+        // Handle image loading error
         const handleImageError = () => {
-            if (isDevelopment) {
-                console.warn(`Avatar image failed to load for user: ${props.userId}`);
-            }
+            console.warn(`Avatar load failed for ${props.userId}`);
             loadFailed.value = true;
             avatarSrc.value = null;
-            
-            // 当图片加载失败时，使用默认头像
-            const userInfo = {
-                firstName: props.firstName,
-                lastName: props.lastName,
-                displayName: props.displayName,
-                name: props.name
-            };
-            
-            // 获取默认头像并显示
-            avatarCache.getAvatar(props.userId, undefined, userInfo).then(defaultSrc => {
-                avatarSrc.value = defaultSrc;
-                loading.value = false;
-            }).catch(error => {
-                if (isDevelopment) {
-                    console.error('Failed to generate default avatar:', error);
-                }
-                loading.value = false;
-            });
         };
 
-        // 处理图片加载完成
+        // Handle image loaded successfully
         const handleImageLoaded = () => {
             loading.value = false;
         };
 
-        // 辅助函数：计算字符串的哈希值
+        // Helper function: compute hash code for a string
         const hashCode = (str: string): number => {
             let hash = 0;
             for (let i = 0; i < str.length; i++) {
                 hash = ((hash << 5) - hash) + str.charCodeAt(i);
-                hash |= 0;
+                hash = hash & hash; // Convert to 32-bit integer
             }
-            return hash;
+            return Math.abs(hash);
         };
 
-        // 监听属性变化，包括所有可能影响头像的属性
+        // Watch for property changes, including all props that might affect the avatar
         watch(
-            () => [props.userId, props.src, props.firstName, props.lastName, props.displayName, props.name],
+            [
+                () => props.userId,
+                () => props.src,
+                () => props.firstName,
+                () => props.lastName,
+                () => props.displayName,
+                () => props.name
+            ],
             () => {
-                if (isDevelopment) {
-                    console.log(`Avatar props changed for ${props.userId}`);
-                }
                 loadAvatar();
-            }
+            },
+            { immediate: false }
         );
 
-        // 组件挂载时初始化
+        // Initialize on component mount
         onMounted(() => {
-            if (isDevelopment) {
-                console.log(`CachedAvatar mounted for ${props.userId}`);
-            }
-            
-            // 确保缓存服务已初始化
-            if (!avatarCache.isInitialized()) {
-                avatarCache.init();
-            }
-            
             loadAvatar();
         });
 
@@ -296,7 +260,8 @@ export default defineComponent({
             fallbackStyle,
             initials,
             handleImageError,
-            handleImageLoaded
+            handleImageLoaded,
+            hashCode
         };
     }
 });

@@ -1,16 +1,16 @@
 /**
- * 环境敏感的日志工具
- * 在开发环境显示详细日志，在生产环境只显示重要日志
- * 并提供美化的日志输出格式
+ * Environment-sensitive logging utility
+ * Displays detailed logs in development environment, only important logs in production
+ * Provides beautified log output format with source tracking
  */
 
-// 判断当前是否为开发环境
+// Determine if we're in development environment
 const isDev = process.env.NODE_ENV === 'development' ||
     window.location.hostname === 'localhost' ||
     window.location.hostname.includes('192.168.') ||
     window.location.hostname.includes('127.0.0.');
 
-// 日志级别
+// Log levels
 export enum LogLevel {
     DEBUG = 0,
     INFO = 1,
@@ -18,135 +18,217 @@ export enum LogLevel {
     ERROR = 3
 }
 
-// 基于环境设置日志级别
+// Set log level based on environment
 const currentLevel = isDev ? LogLevel.DEBUG : LogLevel.WARN;
 
-// 日志样式配置
+// Log style configuration
 const styles = {
-    debug: 'color: #6c757d; font-weight: bold;', // 灰色
-    info: 'color: #0d6efd; font-weight: bold;',  // 蓝色
-    warn: 'color: #fd7e14; font-weight: bold;',  // 橙色
-    error: 'color: #dc3545; font-weight: bold;', // 红色
-    important: 'color: #198754; font-weight: bold; font-size: 1.05em;', // 绿色，稍大
-    reset: ''
+    debug: 'color: #6c757d; font-weight: bold;', // Gray
+    info: 'color: #0d6efd; font-weight: bold;',  // Blue
+    warn: 'color: #ffc107; font-weight: bold;',  // Yellow
+    error: 'color: #dc3545; font-weight: bold;', // Red
+    important: 'color: #6f42c1; font-weight: bold;', // Purple
+    success: 'color: #198754; font-weight: bold;',   // Green
+    system: 'color: #20c997; font-weight: bold;',    // Teal
+    primary: 'color: #0dcaf0; font-weight: bold;',   // Cyan
+    secondary: 'color: #6c757d; font-weight: bold;', // Gray
 };
 
-// 卡片样式的颜色映射
-const cardColors = {
-    debug: '#6c757d',    // 灰色
-    info: '#0d6efd',     // 蓝色
-    warn: '#fd7e14',     // 橙色
-    error: '#dc3545',    // 红色
-    success: '#198754',  // 绿色
-    primary: '#0d6efd',  // 主色调(蓝)
-    secondary: '#6c757d', // 次要色调(灰)
-    important: '#7209b7', // 紫色(重要)
-    system: '#3a0ca3',   // 深紫色(系统)
-};
-
-// 获取时间戳字符串
+// Helper function to get a formatted timestamp
 const getTimeString = (): string => {
     const now = new Date();
-    const time = now.toTimeString().split(' ')[0]; // 仅获取时:分:秒部分
-    const ms = now.getMilliseconds().toString().padStart(3, '0');
-    return `${time}.${ms}`;
+    return now.toLocaleTimeString('en-US', { 
+        hour12: false, 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit'
+    }) + '.' + String(now.getMilliseconds()).padStart(3, '0');
 };
 
-// 获取样式颜色
+// Helper function to get color based on type
 const getTypeColor = (type: string): string => {
-    if (type in cardColors) {
-        return cardColors[type as keyof typeof cardColors];
+    switch (type.toLowerCase()) {
+        case 'success': return '#198754'; // Green
+        case 'error': return '#dc3545';   // Red
+        case 'warn': case 'warning': return '#ffc107'; // Yellow
+        case 'info': return '#0d6efd';    // Blue
+        case 'debug': return '#6c757d';   // Gray
+        case 'important': return '#6f42c1'; // Purple
+        case 'system': return '#20c997';    // Teal
+        case 'primary': return '#0dcaf0';   // Cyan
+        case 'secondary': return '#6c757d'; // Gray
+        default: 
+            // If type is a color value, use it directly
+            if (type.startsWith('#') || type.startsWith('rgb')) {
+                return type;
+            }
+            return '#0d6efd'; // Default to blue
     }
-    // 如果提供的是自定义颜色值，直接返回
-    if (type.startsWith('#') || type.startsWith('rgb') || type.startsWith('hsl')) {
-        return type;
-    }
-    // 默认返回主色调
-    return cardColors.primary;
 };
 
-// 创建日志记录对象
+// Create stack trace extraction helper
+const getCallerInfo = (): {file: string, line: number, column: number} => {
+    const stackLines = new Error().stack?.split('\n') || [];
+    // Skip first two lines (Error and getCallerInfo function)
+    // Get the third line which should be the caller
+    // We need to skip more lines because of how our wrapper functions work
+    // Find the first line that isn't referencing logger.ts
+    let callerLine = '';
+    for (let i = 2; i < stackLines.length; i++) {
+        if (!stackLines[i].includes('logger.ts')) {
+            callerLine = stackLines[i];
+            break;
+        }
+    }
+
+    // Extract file path, line, and column
+    const match = callerLine.match(/at\s+(.*)\s+\((.*):(\d+):(\d+)\)/) ||
+                  callerLine.match(/at\s+(.*):(\d+):(\d+)/);
+    
+    if (match) {
+        const isSimpleCall = match.length === 4;
+        const file = isSimpleCall ? match[1] : match[2];
+        const line = parseInt(isSimpleCall ? match[2] : match[3], 10);
+        const column = parseInt(isSimpleCall ? match[3] : match[4], 10);
+        
+        // Extract just the filename without the path
+        const filenameParts = file.split('/');
+        const filename = filenameParts[filenameParts.length - 1];
+        
+        return { file: filename, line, column };
+    }
+    
+    return { file: 'unknown', line: 0, column: 0 };
+};
+
+// Track group depth for proper group closing
+let groupDepth = 0;
+
+// Create the logger object
 export const logger = {
     debug: (message: string, ...args: any[]) => {
         if (currentLevel <= LogLevel.DEBUG) {
             const timeStr = getTimeString();
-            console.debug(`%c[DEBUG]%c ${timeStr} %c${message}`, styles.debug, '', styles.debug, ...args);
+            const caller = getCallerInfo();
+            const callerInfo = `${caller.file}:${caller.line}`;
+            console.debug(
+                `%c[DEBUG]%c ${timeStr} %c${message}%c ${callerInfo}`, 
+                styles.debug, '', styles.debug, 'color: #888; font-size: 0.85em;', 
+                ...args
+            );
         }
     },
 
     info: (message: string, ...args: any[]) => {
         if (currentLevel <= LogLevel.INFO) {
             const timeStr = getTimeString();
-            console.log(`%c[INFO]%c ${timeStr} %c${message}`, styles.info, '', styles.info, ...args);
+            const caller = getCallerInfo();
+            const callerInfo = `${caller.file}:${caller.line}`;
+            console.log(
+                `%c[INFO]%c ${timeStr} %c${message}%c ${callerInfo}`, 
+                styles.info, '', styles.info, 'color: #888; font-size: 0.85em;', 
+                ...args
+            );
         }
     },
 
     warn: (message: string, ...args: any[]) => {
         if (currentLevel <= LogLevel.WARN) {
             const timeStr = getTimeString();
-            console.warn(`%c[WARN]%c ${timeStr} %c${message}`, styles.warn, '', styles.warn, ...args);
+            const caller = getCallerInfo();
+            const callerInfo = `${caller.file}:${caller.line}`;
+            console.warn(
+                `%c[WARN]%c ${timeStr} %c${message}%c ${callerInfo}`, 
+                styles.warn, '', styles.warn, 'color: #888; font-size: 0.85em;', 
+                ...args
+            );
         }
     },
 
     error: (message: string, ...args: any[]) => {
         if (currentLevel <= LogLevel.ERROR) {
             const timeStr = getTimeString();
-            console.error(`%c[ERROR]%c ${timeStr} %c${message}`, styles.error, '', styles.error, ...args);
+            const caller = getCallerInfo();
+            const callerInfo = `${caller.file}:${caller.line}`;
+            console.error(
+                `%c[ERROR]%c ${timeStr} %c${message}%c ${callerInfo}`, 
+                styles.error, '', styles.error, 'color: #888; font-size: 0.85em;', 
+                ...args
+            );
         }
     },
 
-    // 强制显示的日志，无论在什么环境
+    // Force display log regardless of environment
     important: (message: string, ...args: any[]) => {
         const timeStr = getTimeString();
-        console.log(`%c[IMPORTANT]%c ${timeStr} %c${message}`, styles.important, '', styles.important, ...args);
+        const caller = getCallerInfo();
+        const callerInfo = `${caller.file}:${caller.line}`;
+        console.log(
+            `%c[IMPORTANT]%c ${timeStr} %c${message}%c ${callerInfo}`, 
+            styles.important, '', styles.important, 'color: #888; font-size: 0.85em;', 
+            ...args
+        );
     },
 
-    // 分组日志 - 创建一个折叠的组
+    // Group logs - create a collapsed group
     group: (title: string, collapsed: boolean = true) => {
         if (currentLevel <= LogLevel.DEBUG) {
+            groupDepth++;
+            const caller = getCallerInfo();
+            const callerInfo = `${caller.file}:${caller.line}`;
+            const groupTitle = `[GROUP] ${title} ${callerInfo}`;
+            
             if (collapsed) {
-                console.groupCollapsed(`%c[GROUP] %c${title}`, styles.info, styles.info);
+                console.groupCollapsed(groupTitle);
             } else {
-                console.group(`%c[GROUP] %c${title}`, styles.info, styles.info);
+                console.group(groupTitle);
             }
         }
     },
 
-    // 结束分组
+    // End group
     groupEnd: () => {
-        if (currentLevel <= LogLevel.DEBUG) {
+        if (currentLevel <= LogLevel.DEBUG && groupDepth > 0) {
             console.groupEnd();
+            groupDepth--;
         }
+    },
+    
+    // Check if any group is open
+    isGroupOpen: (): boolean => {
+        return groupDepth > 0;
     },
 
     /**
-     * 漂亮的卡片式日志输出
-     * @param title 左侧标题
-     * @param content 右侧内容
-     * @param type 样式类型，可以是预设值或自定义颜色
-     * @param showTime 是否显示时间戳
+     * Card-style pretty logging
+     * @param title Left-side title
+     * @param content Right-side content
+     * @param type Style type, can be preset value or custom color
+     * @param showTime Display timestamp
      */
     pretty: (title: string, content: string, type: string = 'primary', showTime: boolean = false) => {
-        // 由于卡片式输出更醒目，所以在生产环境仅过滤DEBUG级别的输出
+        // Since pretty outputs are more eye-catching, only filter debug level ones in production
         if (type === 'debug' && currentLevel > LogLevel.DEBUG) return;
         
         const color = getTypeColor(type);
         const timeStr = showTime ? getTimeString() : '';
         const timeLabel = showTime ? `[${timeStr}] ` : '';
+        const caller = getCallerInfo();
+        const callerInfo = `${caller.file}:${caller.line}`;
         
         console.log(
-            `%c ${title} %c ${timeLabel}${content} %c`,
+            `%c ${title} %c ${timeLabel}${content} %c ${callerInfo}`,
             `background:${color};border:1px solid ${color}; padding: 2px 5px; border-radius: 4px 0 0 4px; color: white; font-weight: bold;`,
             `border:1px solid ${color}; padding: 2px 5px; border-radius: 0 4px 4px 0; color: ${color}; font-weight: normal;`,
-            'background:transparent'
+            'color: #888; font-size: 0.85em; padding-left: 4px;'
         );
     },
 
     /**
-     * 带有大标题的分组日志 - 适合重要信息分组展示
-     * @param title 标题文本
-     * @param type 样式类型
-     * @param collapsed 是否默认折叠
+     * Beautified group logs with title
+     * @param title Title text
+     * @param type Style type
+     * @param collapsed Whether the group is collapsed by default
      */
     prettyGroup: (title: string, type: string = 'primary', collapsed: boolean = false) => {
         const color = getTypeColor(type);
@@ -160,52 +242,63 @@ export const logger = {
             text-transform: uppercase;
         `;
         
+        const caller = getCallerInfo();
+        const callerInfo = `${caller.file}:${caller.line}`;
+        const groupTitle = `${title} ${callerInfo}`;
+        
+        groupDepth++;
         if (collapsed) {
-            console.groupCollapsed(`%c${title}`, logStyle);
+            console.groupCollapsed(`%c${groupTitle}`, logStyle);
         } else {
-            console.group(`%c${title}`, logStyle);
+            console.group(`%c${groupTitle}`, logStyle);
         }
     },
     
     /**
-     * 带有表格样式的日志，用于展示结构化数据
-     * @param data 要展示的数据对象或数组
-     * @param title 可选的标题
+     * Table-style logs for structured data
+     * @param data Object or array to display
+     * @param title Optional title
      */
     table: (data: any, title?: string) => {
         if (title) {
             const timeStr = getTimeString();
-            console.log(`%c[TABLE]%c ${timeStr} %c${title}`, styles.info, '', styles.info);
+            const caller = getCallerInfo();
+            const callerInfo = `${caller.file}:${caller.line}`;
+            console.log(
+                `%c[TABLE]%c ${timeStr} %c${title}%c ${callerInfo}`, 
+                styles.info, '', styles.info, 'color: #888; font-size: 0.85em;'
+            );
         }
         console.table(data);
     },
     
     /**
-     * 显示HTTP请求日志(美化版)
-     * @param method 请求方法
-     * @param url 请求URL
-     * @param status 状态码
-     * @param time 耗时(ms)
+     * Display HTTP request log (beautified version)
+     * @param method Request method
+     * @param url Request URL
+     * @param status Status code
+     * @param time Time taken (ms)
      */
     http: (method: string, url: string, status: number = 200, time: number = 0) => {
-        // 根据状态码选择颜色
+        // Select color based on status code
         let type = 'info';
         if (status >= 500) type = 'error';
         else if (status >= 400) type = 'warn';
         else if (status >= 300) type = 'secondary';
         else if (status >= 200) type = 'success';
         
-        // 仅展示URL的路径部分
+        // Only show path part of URL
         let urlPath = url;
         try {
             const urlObj = new URL(url);
             urlPath = urlObj.pathname + urlObj.search;
-        } catch (e) { /* 如果不是有效的URL，使用原始值 */ }
+        } catch (e) { /* Use original value if not a valid URL */ }
         
-        // 格式化状态码和耗时
+        // Format status code and time
         const statusText = `${status}`;
         const timeText = time > 0 ? `${time}ms` : '';
         
+        // Use pretty method directly to get caller info
         logger.pretty(
             method.toUpperCase(),
             `${urlPath} ${statusText} ${timeText}`, 
@@ -215,10 +308,10 @@ export const logger = {
     },
     
     /**
-     * 自定义级别的控制台输出
-     * @param level 日志级别
-     * @param message 消息内容
-     * @param args 附加参数
+     * Custom level console output
+     * @param level Log level
+     * @param message Message content
+     * @param args Additional parameters
      */
     log: (level: LogLevel, message: string, ...args: any[]) => {
         if (level < currentLevel) return;
@@ -232,9 +325,15 @@ export const logger = {
         
         const { method, style, label } = levelMap[level];
         const timeStr = getTimeString();
-        method(`%c[${label}]%c ${timeStr} %c${message}`, style, '', style, ...args);
+        const caller = getCallerInfo();
+        const callerInfo = `${caller.file}:${caller.line}`;
+        method(
+            `%c[${label}]%c ${timeStr} %c${message}%c ${callerInfo}`, 
+            style, '', style, 'color: #888; font-size: 0.85em;', 
+            ...args
+        );
     }
 };
 
-// 导出环境判断值
+// Export environment detection value
 export { isDev };

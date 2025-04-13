@@ -1,21 +1,22 @@
 /**
- * 头像缓存调试工具
- * 用于在控制台中查看和管理头像缓存状态
+ * Avatar Cache Debug Tool
+ * For viewing and managing avatar cache status in the console
  * 
- * 使用方法:
- * 1. 在浏览器控制台中输入: window.avatarDebug.showCache()
- * 2. 查看所有缓存的头像: window.avatarDebug.dumpAllCache()
- * 3. 清除所有缓存: window.avatarDebug.clearAllCache()
+ * Usage:
+ * 1. In browser console, enter: window.avatarDebug.showCache()
+ * 2. View all cached avatars: window.avatarDebug.dumpAllCache()
+ * 3. Clear all caches: window.avatarDebug.clearAllCache()
  */
 import { avatarCache } from '@/services/avatarCache';
+import { logger } from '@/utils/logger';
 
-// 缓存调试工具
+// Cache debugging tool
 const AvatarDebugTools = {
-    // 显示缓存状态
+    // Display cache status
     showCache: () => {
-        console.group('Avatar Cache Status');
+        logger.prettyGroup('Avatar Cache Status', 'primary', false);
         
-        // 显示缓存信息
+        // Show cache information
         let count = 0;
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
@@ -24,10 +25,10 @@ const AvatarDebugTools = {
             }
         }
         
-        console.log(`Avatar cache entries: ${count}`);
-        console.log('Sample entries:');
+        logger.pretty('Total', `${count} avatar cache entries`, 'info');
+        logger.info('Example cache items:');
         
-        // 显示最多5个示例
+        // Show up to 5 examples
         let shown = 0;
         for (let i = 0; i < localStorage.length && shown < 5; i++) {
             const key = localStorage.key(i);
@@ -36,25 +37,27 @@ const AvatarDebugTools = {
                 if (value) {
                     try {
                         const entry = JSON.parse(value);
-                        console.log(`${key}:`, {
-                            userId: key.substring('avatar_cache_'.length),
-                            originalUrl: entry.originalUrl,
-                            timestamp: new Date(entry.timestamp).toLocaleString(),
-                            expired: Date.now() - entry.timestamp > 7 * 24 * 60 * 60 * 1000,
-                            dataUrl: entry.dataUrl.substring(0, 50) + '...'
-                        });
+                        const userId = key.substring('avatar_cache_'.length);
+                        const expireDays = Math.round((Date.now() - entry.timestamp) / (24 * 60 * 60 * 1000) * 10) / 10;
+                        const expired = expireDays > 7;
+                        
+                        logger.pretty(
+                            userId, 
+                            `${new Date(entry.timestamp).toLocaleString()} (${expireDays} days)`, 
+                            expired ? 'warn' : 'info'
+                        );
                         shown++;
                     } catch (e) {
-                        console.log(`${key}: [Invalid JSON]`);
+                        logger.pretty(key, '[Invalid JSON data]', 'error');
                     }
                 }
             }
         }
         
-        console.groupEnd();
+        logger.groupEnd();
     },
     
-    // 转储所有缓存
+    // Dump all caches
     dumpAllCache: () => {
         const entries: Record<string, any> = {};
         
@@ -65,11 +68,13 @@ const AvatarDebugTools = {
                 if (value) {
                     try {
                         const entry = JSON.parse(value);
+                        const expired = Date.now() - entry.timestamp > 7 * 24 * 60 * 60 * 1000;
                         entries[key] = {
                             userId: key.substring('avatar_cache_'.length),
                             originalUrl: entry.originalUrl,
                             timestamp: new Date(entry.timestamp).toLocaleString(),
-                            expired: Date.now() - entry.timestamp > 7 * 24 * 60 * 60 * 1000
+                            expired: expired ? 'Yes' : 'No',
+                            age: Math.round((Date.now() - entry.timestamp) / (24 * 60 * 60 * 1000) * 10) / 10 + ' days'
                         };
                     } catch (e) {
                         entries[key] = '[Invalid JSON]';
@@ -78,37 +83,63 @@ const AvatarDebugTools = {
             }
         }
         
-        console.table(entries);
+        logger.prettyGroup('All Avatar Caches', 'system', false);
+        logger.table(entries);
+        logger.groupEnd();
+        
         return entries;
     },
     
-    // 清除所有缓存
+    // Clear all caches
     clearAllCache: () => {
+        logger.prettyGroup('Clear Avatar Cache', 'warn', false);
+        
+        let beforeCount = 0;
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key?.startsWith('avatar_cache_')) {
+                beforeCount++;
+            }
+        }
+        
+        logger.info(`Starting clearance, current cache count: ${beforeCount}`);
         avatarCache.clearAllCache();
-        console.log('All avatar caches cleared');
+        logger.pretty('Status', 'All avatar caches cleared', 'success');
+        logger.groupEnd();
     },
     
-    // 刷新特定用户的头像缓存
+    // Refresh a specific user's avatar cache
     refreshCache: async (userId: string, avatarUrl: string) => {
+        logger.prettyGroup(`Refresh Avatar Cache: ${userId}`, 'info', false);
+        logger.pretty('URL', avatarUrl, 'info', true);
+        
         try {
             const result = await avatarCache.cacheAvatar(userId, avatarUrl);
-            console.log(`Cache refresh for ${userId}: ${result ? 'Success' : 'Failed'}`);
+            const success = result !== null;
+            logger.pretty('Result', success ? 'Success' : 'Failed', success ? 'success' : 'error');
+            logger.groupEnd();
             return result;
         } catch (e) {
-            console.error(`Failed to refresh cache for ${userId}:`, e);
+            const errorMsg = e instanceof Error ? e.message : String(e);
+            logger.pretty('Error', errorMsg, 'error');
+            logger.groupEnd();
             return null;
         }
     },
     
-    // 手动强制缓存所有当前页面上显示的头像
+    // Manually force cache all avatars currently visible on the page
     cacheAllVisible: async () => {
-        const avatarImgs = document.querySelectorAll('img[alt*="avatar" i], img[alt*="头像" i]');
-        console.log(`Found ${avatarImgs.length} avatar images on page`);
+        const avatarImgs = document.querySelectorAll('img[alt*="avatar" i], img[alt*="avatar" i]');
+        
+        logger.prettyGroup('Cache Visible Avatars', 'system', false);
+        logger.pretty('Found', `${avatarImgs.length} avatar images`, 'info');
         
         const results: Record<string, any> = {};
         let i = 0;
+        let successCount = 0;
+        let failCount = 0;
         
-        // 使用 Promise.all 等待所有异步操作完成
+        // Use Promise.all to wait for all async operations to complete
         await Promise.all(
             Array.from(avatarImgs).map(async (img) => {
                 const src = img.getAttribute('src');
@@ -118,21 +149,28 @@ const AvatarDebugTools = {
                     try {
                         const result = await avatarCache.cacheAvatar(userId, src);
                         results[src] = { success: !!result, userId };
+                        if (result) successCount++;
+                        else failCount++;
                     } catch (e) {
                         results[src] = { success: false, error: String(e) };
+                        failCount++;
                     }
                 }
             })
         );
         
-        console.table(results);
+        logger.pretty('Results', `Success: ${successCount}, Failed: ${failCount}`, successCount > 0 ? 'success' : 'warn');
+        logger.table(results);
+        logger.groupEnd();
+        
         return results;
     }
 };
 
-// 添加到全局对象，以便在控制台中使用
+// Add to global object for console use
 if (typeof window !== 'undefined') {
     (window as any).avatarDebug = AvatarDebugTools;
+    logger.pretty('Debug Tools', 'Avatar debug tools loaded (window.avatarDebug)', 'important');
 }
 
 export default AvatarDebugTools;

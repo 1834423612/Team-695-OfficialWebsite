@@ -3,10 +3,10 @@ import { casdoorService, isInvalidAuthResponse, AUTH_LOCKS } from '@/services/au
 import { setAuthLock, releaseAuthLock, isLockActive } from '@/utils/authUtils';
 import { logger } from '@/utils/logger';
 
-// 用户信息自动刷新间隔 (2小时)
+// User info refresh interval (2 hours)
 const USER_INFO_REFRESH_INTERVAL = 2 * 60 * 60 * 1000;
 
-// 定义存储状态接口
+// Define store state interface
 export interface UserStoreState {
     userInfo: any;
     orgData: any;
@@ -14,7 +14,7 @@ export interface UserStoreState {
     error: string | null;
     lastFetchTime: number | null;
     isInitialized: boolean;
-    refreshTimer: number | null; // 添加定期刷新计时器
+    refreshTimer: number | null; // Auto-refresh timer
 }
 
 export const useUserStore = defineStore('user', {
@@ -25,7 +25,7 @@ export const useUserStore = defineStore('user', {
         error: null,
         lastFetchTime: null,
         isInitialized: false,
-        refreshTimer: null // 添加定期刷新计时器
+        refreshTimer: null
     }),
 
     getters: {
@@ -33,306 +33,394 @@ export const useUserStore = defineStore('user', {
             return casdoorService.isLoggedIn();
         },
 
-        // 获取当前用户名，兼容多种情况
+        // Get current username, handling multiple scenarios
         userName(): string {
             if (!this.userInfo) return 'User';
             return this.userInfo.displayName ||
                 (this.userInfo.name ? this.userInfo.name.split('@')[0] : 'User');
         },
 
-        // 检查是否为管理员
+        // Check if user is admin
         isAdmin(): boolean {
             if (!this.userInfo) return false;
             return !!this.userInfo.isAdmin;
         },
 
-        // 返回头像URL或null
+        // Return avatar URL or null
         avatarUrl(): string | null {
             return this.userInfo?.avatar || null;
         }
     },
 
     actions: {
-        // 初始化存储
+        // Initialize store
         async initializeStore(skipValidation = false) {
-            logger.debug('Initializing user store...' + (skipValidation ? ' (skipping validation)' : ''));
+            logger.prettyGroup('User Store Initialization', 'primary', skipValidation ? true : false);
+            logger.pretty('Validation Strategy', skipValidation ? 'Skip validation' : 'Requires validation', skipValidation ? 'warn' : 'info');
 
-            // 首先检查绝对信任标记，如果存在，强制跳过验证
+            // First check absolute trust flag, if exists, force skip validation
             if (localStorage.getItem('token_absolute_trust') === 'true' || 
                 localStorage.getItem('skip_all_token_validation') === 'true') {
-                logger.debug('UserStore: Absolute trust flag detected, forcing skipValidation to true');
+                logger.pretty('Trust Flag', 'Absolute trust flag detected, forcing skip validation', 'important');
                 skipValidation = true;
             }
             
-            // 检查登录时间，如果在最近10分钟内登录，强制跳过验证
+            // Check login time, if logged in within last 10 minutes, force skip validation
             const authCallbackTime = localStorage.getItem('auth_callback_completed_time');
             if (authCallbackTime && Date.now() - parseInt(authCallbackTime) < 10 * 60 * 1000) {
-                logger.debug('UserStore: Recent login detected (<10min), forcing skipValidation to true');
+                const minutesAgo = Math.round((Date.now() - parseInt(authCallbackTime)) / (60 * 1000));
+                logger.pretty('Recent Login', `Logged in ${minutesAgo} minutes ago, skipping validation`, 'info');
                 skipValidation = true;
             }
 
-            // 如果已初始化且有数据，则不重复初始化
+            // If already initialized and has data, avoid re-initializing
             if (this.isInitialized && this.userInfo) {
-                logger.debug('UserStore: Already initialized with data');
+                logger.pretty('Status', 'Already initialized with user data', 'success');
                 
-                // 如果设置了跳过验证，直接返回不做验证
+                // If skip validation is set, return without validating
                 if (skipValidation) {
+                    logger.pretty('Action', 'Skipping duplicate initialization', 'info');
+                    logger.groupEnd();
                     return this.userInfo;
                 }
                 
-                // 10分钟后使用Team API验证令牌状态
+                // After 10 minutes, use Team API to validate token
                 if (authCallbackTime && Date.now() - parseInt(authCallbackTime) >= 10 * 60 * 1000) {
-                    logger.info('UserStore: Trust period elapsed, validating against Team API');
+                    logger.pretty('Validation', 'Trust period expired, using Team API to validate token', 'info');
                     try {
                         const validationResult = await casdoorService.validateWithTeamApi();
                         if (!validationResult.valid) {
-                            logger.warn('UserStore: Team API validation failed, clearing user info');
+                            logger.pretty('Validation Failed', 'Team API validation failed, clearing user info', 'error');
                             this.clearUserInfo();
+                            logger.groupEnd();
                             return null;
+                        } else {
+                            logger.pretty('Validation Success', 'Team API validation passed', 'success');
                         }
                     } catch (error) {
-                        logger.error('UserStore: Team API validation error:', error);
-                        // 如果API验证出错，回退到本地验证
+                        logger.pretty('Validation Error', 'Using local validation as fallback', 'warn');
+                        logger.error('Team API validation error:', error);
+                        // If API validation fails, fall back to local validation
                         const isValid = await casdoorService.isTokenValidWithoutRefresh();
                         if (!isValid) {
+                            logger.pretty('Local Validation', 'Failed, clearing user info', 'error');
                             this.clearUserInfo();
+                            logger.groupEnd();
                             return null;
+                        } else {
+                            logger.pretty('Local Validation', 'Passed', 'success');
                         }
                     }
                 } else {
-                    // 信任期内使用本地验证
+                    // Within trust period, use local validation
                     const isValid = await casdoorService.isTokenValidWithoutRefresh();
                     if (!isValid) {
-                        logger.warn('UserStore: Stored token is invalid, clearing user info');
+                        logger.pretty('Local Validation', 'Stored token invalid, clearing user info', 'error');
                         this.clearUserInfo();
+                        logger.groupEnd();
                         return null;
+                    } else {
+                        logger.pretty('Local Validation', 'Token valid', 'success');
                     }
                 }
                 
                 this.setupAutoRefresh();
+                logger.groupEnd();
                 return this.userInfo;
             }
 
-            // 如果未登录，则不初始化
+            // If not logged in, don't initialize
             if (!casdoorService.isLoggedIn()) {
-                console.log('UserStore: Not logged in, skipping initialization');
+                logger.pretty('Status', 'User not logged in, skipping initialization', 'warn');
+                logger.groupEnd();
                 return null;
             }
 
-            // 如果最近已获取数据，则不重复获取
+            // If data fetched recently, don't refetch
             const now = Date.now();
             if (this.lastFetchTime && now - this.lastFetchTime < 5 * 60 * 1000) {
-                console.log('UserStore: Using cached user data (<5min)');
+                const minutesAgo = Math.round((now - this.lastFetchTime) / (60 * 1000));
+                logger.pretty('Using Cache', `Using data from ${minutesAgo} minutes ago (<5min)`, 'info');
                 this.isInitialized = true;
                 
-                // 如果设置了跳过验证，无需验证直接返回
+                // If skip validation is set, return without validating
                 if (skipValidation) {
                     this.setupAutoRefresh();
+                    logger.groupEnd();
                     return this.userInfo;
                 }
                 
-                // 使用不请求新token的验证方法
+                // Use validation method that doesn't request new token
                 const isValid = await casdoorService.isTokenValidWithoutRefresh();
                 if (isValid) {
+                    logger.pretty('Local Validation', 'Token valid', 'success');
                     this.setupAutoRefresh();
+                    logger.groupEnd();
                     return this.userInfo;
+                } else {
+                    logger.pretty('Local Validation', 'Token invalid', 'error');
                 }
             }
 
-            // 刷新用户信息，传递skipValidation参数
+            // Refresh user info, passing skipValidation parameter
+            logger.pretty('Action', 'Refreshing user info', 'info');
             const result = await this.refreshUserInfo(false, skipValidation);
             if (result) {
+                logger.pretty('Result', 'Refresh successful and auto-refresh set up', 'success');
                 this.setupAutoRefresh();
+            } else {
+                logger.pretty('Result', 'Refresh failed', 'error');
             }
+            
+            logger.groupEnd();
             return result;
         },
 
-        // 设置自动刷新用户信息
+        // Set up automatic user info refresh
         setupAutoRefresh() {
-            // 清除现有定时器
+            // Clear existing timer
             if (this.refreshTimer) {
                 clearInterval(this.refreshTimer);
             }
 
-            // 设置新的定时器，每2小时刷新一次用户信息
+            // Set new timer, refresh user info every 2 hours
             this.refreshTimer = window.setInterval(() => {
-                console.log('Auto refreshing user info');
+                logger.pretty('User Info Auto Refresh', 'Refreshing user info', 'info', true);
                 this.refreshUserInfo(false).catch(error => {
-                    console.error('Auto refresh user info failed:', error);
+                    logger.pretty('User Info Auto Refresh', 'Failed', 'error', true);
+                    logger.error('Auto refresh user info failed:', error);
                 });
             }, USER_INFO_REFRESH_INTERVAL);
+            
+            logger.pretty('Timer', `User Info Auto refresh set for every ${USER_INFO_REFRESH_INTERVAL/(60*60*1000)} hours`, 'info');
         },
 
-        // 增强的刷新用户信息方法
+        // Enhanced user info refresh method
         async refreshUserInfo(showLoading = true, skipValidation = false): Promise<any> {
-            console.log('Refreshing user info...' + (skipValidation ? ' (skipping validation)' : ''));
+            logger.prettyGroup('Refresh User Info', 'primary', true);
+            logger.info(`Parameters: showLoading=${showLoading}, skipValidation=${skipValidation}`);
             
-            // 检查绝对信任标记，如果存在，强制跳过验证
+            // Check absolute trust flag, if exists, force skip validation
             if (localStorage.getItem('token_absolute_trust') === 'true' || 
                 localStorage.getItem('skip_all_token_validation') === 'true') {
-                console.log('UserStore: Absolute trust flag detected, forcing skipValidation to true');
+                logger.pretty('Trust Flag', 'Absolute trust flag detected, forcing skip validation', 'important');
                 skipValidation = true;
             }
             
-            // 检查登录时间，如果在最近10分钟内登录，强制跳过验证
+            // Check login time, if within last 10 minutes, force skip validation
             const authCallbackTime = localStorage.getItem('auth_callback_completed_time');
             if (authCallbackTime && Date.now() - parseInt(authCallbackTime) < 10 * 60 * 1000) {
-                console.log('UserStore: Recent login detected (<10min), forcing skipValidation to true');
+                const minutesAgo = Math.round((Date.now() - parseInt(authCallbackTime)) / (60 * 1000));
+                logger.pretty('Recent Login', `Logged in ${minutesAgo} minutes ago, skipping validation`, 'info');
                 skipValidation = true;
             }
             
-            // 如果要跳过验证，直接获取用户信息
+            // If skipping validation, get user info directly
             if (skipValidation) {
-                console.log('UserStore: Skipping validation for user info refresh');
+                logger.pretty('Strategy', 'Skipping validation, getting user info directly', 'info');
                 
                 try {
-                    // 直接获取用户信息，不进行令牌验证
+                    // Get user info directly without token validation
                     const userInfo = await casdoorService.getUserInfo(showLoading);
                     this.userInfo = userInfo;
                     this.orgData = userInfo.data2;
                     this.lastFetchTime = Date.now();
                     this.isInitialized = true;
+                    
+                    logger.pretty('Result', 'Successfully retrieved user info', 'success');
+                    logger.groupEnd();
                     return userInfo;
                 } catch (error) {
-                    console.error('UserStore: Failed to fetch user info with skipped validation:', error);
+                    logger.pretty('Error', 'Failed to get user info', 'error');
+                    logger.error('Get user info detailed error:', error);
                     this.error = error instanceof Error ? error.message : String(error);
+                    logger.groupEnd();
                     return null;
                 }
             }
             
-            // 添加防重入机制
+            // Add re-entrancy protection
             const REFRESH_INFO_LOCK = AUTH_LOCKS.USER_REFRESH;
             
-            // 如果锁存在且不超过10秒，则返回缓存的数据
+            // If lock exists and not older than 10 seconds, return cached data
             if (isLockActive(REFRESH_INFO_LOCK, 10000)) {
-                console.log('User info refresh already in progress, returning cached info');
+                logger.pretty('Re-entrancy', 'User info refresh already in progress, returning cached info', 'warn');
+                logger.groupEnd();
                 return this.userInfo;
             }
             
             try {
-                setAuthLock(REFRESH_INFO_LOCK);
+                const lockResult = setAuthLock(REFRESH_INFO_LOCK);
+                logger.info(`Acquired refresh lock: ${lockResult.success ? 'success' : 'failed'}`);
                 
-                // 如果显示加载中且当前无数据，则设置加载状态
+                // If showing loading and no current data, set loading state
                 if (showLoading && !this.userInfo) {
                     this.isLoading = true;
+                    logger.info('Setting loading state: true');
                 }
 
                 this.error = null;
                 
-                // 检查缓存是否足够新，避免频繁刷新
-                const minRefreshInterval = 2000; // 最小刷新间隔为2秒
+                // Check if cache is fresh enough to avoid frequent refreshes
+                const minRefreshInterval = 2000; // Minimum refresh interval of 2 seconds
                 if (this.lastFetchTime && Date.now() - this.lastFetchTime < minRefreshInterval) {
-                    console.log('Using recently fetched user info (less than 2 seconds old)');
+                    logger.pretty('Using Cache', 'Using recently fetched user info (<2sec)', 'info');
+                    logger.groupEnd();
                     return this.userInfo;
                 }
 
                 try {
-                    // 1. 先使用团队API验证token有效性
+                    logger.prettyGroup('API Validation Flow', 'secondary', true);
+                    
+                    // 1. First validate token with Team API
+                    logger.info('Step 1: Validating token with Team API');
                     const validationResult = await casdoorService.validateWithTeamApi();
+                    
                     if (!validationResult.valid) {
-                        // 尝试刷新令牌
+                        logger.pretty('Validation Failed', 'Attempting to refresh token', 'warn');
+                        
+                        // Try to refresh token
                         try {
+                            logger.info('Refreshing token...');
                             await casdoorService.refreshAccessToken();
                             
-                            // 再次验证
+                            // Validate again
+                            logger.info('Validating with new token');
                             const refreshedResult = await casdoorService.validateWithTeamApi();
+                            
                             if (!refreshedResult.valid) {
+                                logger.pretty('Validation Failed', 'Token still invalid after refresh', 'error');
                                 throw new Error('Authentication token remains invalid after refresh');
+                            } else {
+                                logger.pretty('Validation Success', 'Refreshed token is valid', 'success');
                             }
                         } catch (refreshError) {
+                            logger.pretty('Refresh Failed', 'Unable to refresh authentication token', 'error');
+                            logger.error('Token refresh detailed error:', refreshError);
                             throw new Error('Authentication token is invalid');
                         }
+                    } else {
+                        logger.pretty('Validation Success', 'Token valid', 'success');
                     }
                     
-                    // 2. 验证通过后再获取用户信息
+                    // 2. After validation, get user info
+                    logger.info('Step 2: Getting user info');
                     const userInfo = await casdoorService.getUserInfo(showLoading);
-                    console.log('User info received:', userInfo ? 'yes' : 'no');
                     
-                    // 检测是否为无效响应
+                    // Check for invalid response
                     if (isInvalidAuthResponse(userInfo)) {
-                        console.warn('Invalid user info response detected');
-                        // 尝试处理无效认证
+                        logger.pretty('Response Error', 'Invalid user info response detected', 'error');
+                        
+                        // Try to handle invalid auth
+                        logger.info('Attempting to handle invalid auth...');
                         if (await casdoorService.handleInvalidAuthResponse()) {
-                            // 如果处理成功，重新获取用户信息
+                            // If successful, try to get user info again
+                            logger.pretty('Handle Success', 'Retrying to get user info', 'info');
+                            logger.groupEnd(); // Close validation flow group
+                            logger.groupEnd(); // Close main group
                             return this.refreshUserInfo(showLoading);
                         } else {
+                            logger.pretty('Handle Failed', 'Authentication session expired', 'error');
                             throw new Error('Authentication session expired');
                         }
                     }
 
+                    logger.pretty('User Info', 'Retrieved successfully', 'success');
+                    logger.groupEnd(); // Close validation flow group
+                    
                     this.userInfo = userInfo;
                     this.orgData = userInfo.data2;
                     this.lastFetchTime = Date.now();
                     this.isInitialized = true;
                     
-                    // 3. 根据验证结果更新用户的管理员状态
+                    // 3. Update user's admin status based on validation result
                     if (validationResult.isAdmin && !userInfo.isAdmin) {
-                        console.log('Updating user admin status based on token validation');
+                        logger.pretty('Update Permissions', 'Updating admin status based on token validation result', 'important');
                         userInfo.isAdmin = true;
                         this.userInfo.isAdmin = true;
                     }
                     
+                    logger.pretty('Result', 'User info refresh successful', 'success');
+                    logger.groupEnd(); // Close main group
                     return userInfo;
                 } catch (error) {
-                    console.error('Failed to fetch user info:', error);
+                    logger.pretty('Error', 'Failed to get user info', 'error');
+                    logger.error('Detailed error:', error);
                     this.error = error instanceof Error ? error.message : String(error);
                     
-                    // 如果是认证错误，清除用户信息
+                    // If auth error, clear user info
                     if (error instanceof Error && 
                         (error.message.includes('Authentication') || 
                          error.message.includes('Unauthorized') || 
                          error.message.includes('token'))) {
+                        logger.pretty('Auth Error', 'Clearing user info', 'error');
                         this.clearUserInfo();
                     }
                     
+                    if (logger.isGroupOpen()) {
+                        logger.groupEnd(); // Close possible unclosed validation flow group
+                    }
+                    logger.groupEnd(); // Close main group
                     throw error;
                 }
             } finally {
-                // 清除加载状态和锁
+                // Clear loading state and lock
                 this.isLoading = false;
                 releaseAuthLock(REFRESH_INFO_LOCK);
             }
         },
 
-        // 清除用户信息
+        // Clear user info
         clearUserInfo() {
-            console.log('Clearing user info');
+            logger.prettyGroup('Clear User Info', 'warn', true);
             
-            // 清除刷新定时器
+            // Clear refresh timer
             if (this.refreshTimer) {
                 clearInterval(this.refreshTimer);
                 this.refreshTimer = null;
+                logger.info('Cleared user info auto-refresh timer');
             }
             
             this.userInfo = null;
             this.orgData = null;
             this.lastFetchTime = null;
             this.isInitialized = false;
+            
+            logger.pretty('Status', 'User info cleared', 'info');
+            logger.groupEnd();
         },
 
-        // 检查并确保用户登录状态
+        // Check and ensure user is authenticated
         async ensureAuthenticated() {
             if (!casdoorService.isLoggedIn()) {
+                logger.pretty('Auth Check', 'User not logged in', 'warn');
                 return false;
             }
 
             if (!this.userInfo) {
+                logger.pretty('Auth Check', 'User logged in but missing info, initializing store', 'info');
                 try {
                     await this.initializeStore();
+                    return !!this.userInfo;
                 } catch (e) {
-                    console.error('Failed to initialize store during auth check:', e);
+                    logger.pretty('Auth Check', 'Failed to initialize store', 'error');
+                    logger.error('Initialization error:', e);
                     return false;
                 }
             }
 
+            logger.pretty('Auth Check', 'User logged in and has valid info', 'success');
             return true;
         },
 
-        // Add this method to update user info with new data
+        // Update user info with new data
         updateUserInfo(userData: any) {
+            logger.prettyGroup('Update User Info', 'info', true);
             this.userInfo = userData;
             // Store in localStorage for persistence
             localStorage.setItem('userInfo', JSON.stringify(userData));
+            logger.pretty('Status', 'User info updated', 'success');
+            logger.groupEnd();
             return Promise.resolve();
         }
     }

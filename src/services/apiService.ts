@@ -1,8 +1,9 @@
 import { casdoorService } from './auth';
 import { checkAuthInResponse } from './apiInterceptor';
+import { logger } from '@/utils/logger';
 
 /**
- * 统一的API调用函数，包含自动的认证和错误处理
+ * Unified API call function with automatic authentication and error handling
  */
 export async function callApi<T = any>(
     url: string,
@@ -10,8 +11,9 @@ export async function callApi<T = any>(
     data?: any,
     options: RequestInit = {}
 ): Promise<T> {
+    const startTime = Date.now();
     try {
-        // 准备请求选项
+        // Prepare request options
         const requestOptions: RequestInit = {
             method,
             headers: {
@@ -22,29 +24,36 @@ export async function callApi<T = any>(
             ...options
         };
 
-        // 添加请求体
+        // Add request body
         if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
             requestOptions.body = JSON.stringify(data);
         }
 
-        // 添加认证令牌
+        // Add auth token
         const token = casdoorService.getToken();
         if (token) {
             (requestOptions.headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
         }
 
-        // 发送请求
-        const response = await fetch(url, requestOptions);
+        logger.prettyGroup(`API Request: ${method} ${getDisplayUrl(url)}`, 'info', true);
+        if (data) {
+            logger.info('Request data:', data);
+        }
 
-        // 处理非200响应
+        // Send request
+        const response = await fetch(url, requestOptions);
+        const endTime = Date.now();
+        const duration = endTime - startTime;
+
+        // Handle non-200 responses
         if (!response.ok) {
             if (response.status === 401 || response.status === 403) {
-                console.warn(`Auth error ${response.status} detected in API response`);
+                logger.pretty('Auth Error', `Request returned status code ${response.status}`, 'error');
                 await casdoorService.handleInvalidAuthResponse();
                 throw new Error(`Authentication error: ${response.status}`);
             }
 
-            // 尝试读取错误详情
+            // Try to read error details
             let errorText;
             try {
                 const errorResponse = await response.json();
@@ -53,48 +62,134 @@ export async function callApi<T = any>(
                 errorText = response.statusText;
             }
 
+            logger.http(method, url, response.status, duration);
+            logger.pretty('Request Failed', errorText, 'error');
+            logger.groupEnd();
             throw new Error(`API error (${response.status}): ${errorText}`);
         }
 
-        // 解析JSON响应
+        // Parse JSON response
         const responseData = await response.json();
+        logger.http(method, url, response.status, duration);
+        
+        // Show brief response summary
+        const responsePreview = getResponsePreview(responseData);
+        logger.info('Response data:', responsePreview);
 
-        // 检查认证错误
+        // Check for auth errors
         if (!checkAuthInResponse(responseData)) {
+            logger.pretty('Auth Error', 'Authentication issue detected in API response', 'error');
+            logger.groupEnd();
             throw new Error('Authentication error detected in API response');
         }
 
+        logger.groupEnd();
         return responseData as T;
     } catch (error) {
-        console.error(`API call to ${url} failed:`, error);
+        const duration = Date.now() - startTime;
+        logger.http(method, url, 500, duration); // Use 500 to indicate request failure
+        logger.pretty('Request Exception', error instanceof Error ? error.message : String(error), 'error');
+        if (logger.isGroupOpen()) {
+            logger.groupEnd();
+        }
         throw error;
     }
 }
 
 /**
- * 便捷的GET请求
+ * Convenient GET request
  */
 export function get<T = any>(url: string, options: RequestInit = {}): Promise<T> {
     return callApi<T>(url, 'GET', undefined, options);
 }
 
 /**
- * 便捷的POST请求
+ * Convenient POST request
  */
 export function post<T = any>(url: string, data: any, options: RequestInit = {}): Promise<T> {
     return callApi<T>(url, 'POST', data, options);
 }
 
 /**
- * 便捷的PUT请求
+ * Convenient PUT request
  */
 export function put<T = any>(url: string, data: any, options: RequestInit = {}): Promise<T> {
     return callApi<T>(url, 'PUT', data, options);
 }
 
 /**
- * 便捷的DELETE请求
+ * Convenient DELETE request
  */
 export function del<T = any>(url: string, options: RequestInit = {}): Promise<T> {
     return callApi<T>(url, 'DELETE', undefined, options);
+}
+
+/**
+ * Helper function: Get URL for display (removes domain)
+ */
+function getDisplayUrl(url: string): string {
+    try {
+        const urlObj = new URL(url);
+        return urlObj.pathname + urlObj.search;
+    } catch (e) {
+        return url;
+    }
+}
+
+/**
+ * Helper function: Get preview of response data
+ */
+function getResponsePreview(data: any): any {
+    if (!data) return data;
+    
+    // If array, return length and first few items
+    if (Array.isArray(data)) {
+        return {
+            length: data.length,
+            preview: data.slice(0, 3),
+            ...(data.length > 3 ? { more: `...and ${data.length - 3} more items` } : {})
+        };
+    }
+    
+    // If object, return summary version
+    if (typeof data === 'object') {
+        // Create a summary version to avoid console lag with large objects
+        const keys = Object.keys(data);
+        if (keys.length > 10) {
+            const preview: Record<string, any> = {};
+            keys.slice(0, 10).forEach(key => {
+                preview[key] = data[key];
+            });
+            return {
+                ...preview,
+                _summary: `[Object with ${keys.length} keys]`
+            };
+        }
+    }
+    
+    return data;
+}
+
+// Add to logger to check if groups are open
+if (typeof logger.isGroupOpen !== 'function') {
+    let groupDepth = 0;
+    
+    const originalGroup = logger.prettyGroup;
+    const originalGroupEnd = logger.groupEnd;
+    
+    logger.prettyGroup = function(...args) {
+        groupDepth++;
+        return originalGroup.apply(this, args);
+    };
+    
+    logger.groupEnd = function() {
+        if (groupDepth > 0) {
+            groupDepth--;
+        }
+        return originalGroupEnd.apply(this);
+    };
+    
+    logger.isGroupOpen = function() {
+        return groupDepth > 0;
+    };
 }
