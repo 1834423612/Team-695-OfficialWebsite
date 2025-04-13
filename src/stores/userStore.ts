@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
-import { casdoorService, isInvalidAuthResponse } from '@/services/auth';
+import { casdoorService, isInvalidAuthResponse, AUTH_LOCKS } from '@/services/auth';
+import { setAuthLock, releaseAuthLock, isLockActive } from '@/utils/authUtils';
 
 // 用户信息自动刷新间隔 (2小时)
 const USER_INFO_REFRESH_INTERVAL = 2 * 60 * 60 * 1000;
@@ -115,78 +116,98 @@ export const useUserStore = defineStore('user', {
         // 增强的刷新用户信息方法
         async refreshUserInfo(showLoading = true): Promise<any> {
             console.log('Refreshing user info...');
-
-            // 如果显示加载中且当前无数据，则设置加载状态
-            if (showLoading && !this.userInfo) {
-                this.isLoading = true;
+            
+            // 添加防重入机制
+            const REFRESH_INFO_LOCK = AUTH_LOCKS.USER_REFRESH;
+            
+            // 如果锁存在且不超过10秒，则返回缓存的数据
+            if (isLockActive(REFRESH_INFO_LOCK, 10000)) {
+                console.log('User info refresh already in progress, returning cached info');
+                return this.userInfo;
             }
-
-            this.error = null;
-
+            
             try {
-                // 1. 先使用团队API验证token有效性
-                const validationResult = await casdoorService.validateWithTeamApi();
-                if (!validationResult.valid) {
-                    console.warn('Token validation failed before fetching user info');
-                    
-                    // 尝试刷新令牌
-                    try {
-                        await casdoorService.refreshAccessToken();
-                        
-                        // 再次验证
-                        const refreshedResult = await casdoorService.validateWithTeamApi();
-                        if (!refreshedResult.valid) {
-                            throw new Error('Authentication token remains invalid after refresh');
-                        }
-                    } catch (refreshError) {
-                        throw new Error('Authentication token is invalid');
-                    }
-                }
+                setAuthLock(REFRESH_INFO_LOCK);
                 
-                // 2. 验证通过后再获取用户信息
-                const userInfo = await casdoorService.getUserInfo(showLoading);
-                console.log('User info received:', userInfo ? 'yes' : 'no');
-                
-                // 检测是否为无效响应
-                if (isInvalidAuthResponse(userInfo)) {
-                    console.warn('Invalid user info response detected');
-                    // 尝试处理无效认证
-                    if (await casdoorService.handleInvalidAuthResponse()) {
-                        // 如果处理成功，重新获取用户信息
-                        return this.refreshUserInfo(showLoading);
-                    } else {
-                        throw new Error('Authentication session expired');
-                    }
+                // 如果显示加载中且当前无数据，则设置加载状态
+                if (showLoading && !this.userInfo) {
+                    this.isLoading = true;
                 }
 
-                this.userInfo = userInfo;
-                this.orgData = userInfo.data2;
-                this.lastFetchTime = Date.now();
-                this.isInitialized = true;
+                this.error = null;
                 
-                // 3. 根据验证结果更新用户的管理员状态
-                if (validationResult.isAdmin && !userInfo.isAdmin) {
-                    console.log('Updating user admin status based on token validation');
-                    userInfo.isAdmin = true;
-                    this.userInfo.isAdmin = true;
+                // 检查缓存是否足够新，避免频繁刷新
+                const minRefreshInterval = 2000; // 最小刷新间隔为2秒
+                if (this.lastFetchTime && Date.now() - this.lastFetchTime < minRefreshInterval) {
+                    console.log('Using recently fetched user info (less than 2 seconds old)');
+                    return this.userInfo;
                 }
-                
-                return userInfo;
-            } catch (error) {
-                console.error('Failed to fetch user info:', error);
-                this.error = error instanceof Error ? error.message : String(error);
-                
-                // 如果是认证错误，清除用户信息
-                if (error instanceof Error && 
-                    (error.message.includes('Authentication') || 
-                     error.message.includes('Unauthorized') || 
-                     error.message.includes('token'))) {
-                    this.clearUserInfo();
+
+                try {
+                    // 1. 先使用团队API验证token有效性
+                    const validationResult = await casdoorService.validateWithTeamApi();
+                    if (!validationResult.valid) {
+                        // 尝试刷新令牌
+                        try {
+                            await casdoorService.refreshAccessToken();
+                            
+                            // 再次验证
+                            const refreshedResult = await casdoorService.validateWithTeamApi();
+                            if (!refreshedResult.valid) {
+                                throw new Error('Authentication token remains invalid after refresh');
+                            }
+                        } catch (refreshError) {
+                            throw new Error('Authentication token is invalid');
+                        }
+                    }
+                    
+                    // 2. 验证通过后再获取用户信息
+                    const userInfo = await casdoorService.getUserInfo(showLoading);
+                    console.log('User info received:', userInfo ? 'yes' : 'no');
+                    
+                    // 检测是否为无效响应
+                    if (isInvalidAuthResponse(userInfo)) {
+                        console.warn('Invalid user info response detected');
+                        // 尝试处理无效认证
+                        if (await casdoorService.handleInvalidAuthResponse()) {
+                            // 如果处理成功，重新获取用户信息
+                            return this.refreshUserInfo(showLoading);
+                        } else {
+                            throw new Error('Authentication session expired');
+                        }
+                    }
+
+                    this.userInfo = userInfo;
+                    this.orgData = userInfo.data2;
+                    this.lastFetchTime = Date.now();
+                    this.isInitialized = true;
+                    
+                    // 3. 根据验证结果更新用户的管理员状态
+                    if (validationResult.isAdmin && !userInfo.isAdmin) {
+                        console.log('Updating user admin status based on token validation');
+                        userInfo.isAdmin = true;
+                        this.userInfo.isAdmin = true;
+                    }
+                    
+                    return userInfo;
+                } catch (error) {
+                    console.error('Failed to fetch user info:', error);
+                    this.error = error instanceof Error ? error.message : String(error);
+                    
+                    // 如果是认证错误，清除用户信息
+                    if (error instanceof Error && 
+                        (error.message.includes('Authentication') || 
+                         error.message.includes('Unauthorized') || 
+                         error.message.includes('token'))) {
+                        this.clearUserInfo();
+                    }
+                    
+                    throw error;
                 }
-                
-                throw error;
             } finally {
+                // 清除加载状态和锁
                 this.isLoading = false;
+                releaseAuthLock(REFRESH_INFO_LOCK);
             }
         },
 
