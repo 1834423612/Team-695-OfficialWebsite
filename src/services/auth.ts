@@ -1196,51 +1196,56 @@ class CasdoorService {
         this.storeTokensInCookies(tokenResponse);
     }
 
-    // 使用团队API验证令牌
+    // 使用团队API验证令牌 - 确保始终向服务器发送请求
     async validateWithTeamApi(token: string | null = null): Promise<{valid: boolean, isAdmin: boolean}> {
-        // 首先检查绝对信任标记，如果存在，不进行API验证
-        if (localStorage.getItem('token_absolute_trust') === 'true' || 
-            localStorage.getItem('skip_all_token_validation') === 'true') {
-            logger.debug('Team API validation: Absolute trust flag detected, returning true without validation');
-            return { valid: true, isAdmin: localStorage.getItem('is_admin_validated') === 'true' };
+        // 确保一定会访问API验证端点 - 在关键认证流程中不使用缓存
+        // 但保留了对绝对信任标记的检查，仅用于登录流程的特殊场景
+        if (localStorage.getItem('token_absolute_trust') === 'true' && 
+            localStorage.getItem('auth_callback_completed_time') !== null) {
+            
+            const authTime = parseInt(localStorage.getItem('auth_callback_completed_time') || '0');
+            // 仅在登录后的10分钟内有效，且不用于定期验证
+            if (Date.now() - authTime < 10 * 60 * 1000) {
+                logger.debug('Team API validation: Absolute trust flag detected during auth callback flow');
+                return { valid: true, isAdmin: localStorage.getItem('is_admin_validated') === 'true' };
+            } else {
+                // 10分钟后自动清除信任标记
+                localStorage.removeItem('token_absolute_trust');
+            }
         }
         
-        // 检查标准信任标记
-        if (localStorage.getItem('token_trusted') === 'true') {
-            logger.debug('Team API validation: Trust flag detected, returning true without validation');
-            return { valid: true, isAdmin: localStorage.getItem('is_admin_validated') === 'true' };
-        }
+        // 无论其他条件如何，确保在定期验证中始终请求API
+        const isPeriodicCheck = localStorage.getItem('is_periodic_validation') === 'true';
         
-        // 检查登录后时间，10分钟内跳过API验证
-        const authCallbackTime = localStorage.getItem('auth_callback_completed_time');
-        if (authCallbackTime && Date.now() - parseInt(authCallbackTime) < 10 * 60 * 1000) {
-            logger.debug('Team API validation: Recent auth callback detected, returning true without validation');
-            return { valid: true, isAdmin: localStorage.getItem('is_admin_validated') === 'true' };
-        }
+        // 确定是否应该使用缓存
+        const shouldUseCache = !isPeriodicCheck && 
+                              isRecentLogin(10) && 
+                              localStorage.getItem('token_trusted') === 'true';
         
-        // 添加缓存机制，避免短时间内频繁调用
-        const CACHE_KEY = 'team_api_validation_result';
-        const CACHE_TIME = 60000; // 60秒缓存时间
-        
-        // 检查缓存
-        const cachedResult = localStorage.getItem(CACHE_KEY);
-        if (cachedResult) {
-            try {
-                const parsed = JSON.parse(cachedResult);
-                if (Date.now() - parsed.timestamp < CACHE_TIME) {
-                    // 如果提供了特定令牌且与缓存时的令牌不同，则不使用缓存
-                    if (token && parsed.tokenHash && parsed.tokenHash !== this.simpleTokenHash(token)) {
-                        logger.debug('Token changed, not using cached validation result');
-                    } else {
-                        logger.debug('Using cached team API validation result');
-                        return {
-                            valid: parsed.valid,
-                            isAdmin: parsed.isAdmin
-                        };
+        // 对于定期验证始终跳过缓存，但对于其他场景可以考虑使用缓存
+        if (!isPeriodicCheck && shouldUseCache) {
+            logger.debug('Team API validation: Recent login with trust flag, but will still validate with API');
+            // 即使在信任期内，我们仍然进行API验证，但降低频率
+            
+            const cachedResult = localStorage.getItem('team_api_validation_result');
+            if (cachedResult) {
+                try {
+                    const parsed = JSON.parse(cachedResult);
+                    if (Date.now() - parsed.timestamp < 60000) { // 只有在1分钟内的结果才使用缓存
+                        // 如果提供了特定令牌且与缓存时的令牌不同，则不使用缓存
+                        if (token && parsed.tokenHash && parsed.tokenHash !== this.simpleTokenHash(token)) {
+                            logger.debug('Token changed, not using cached validation result');
+                        } else {
+                            logger.debug('Using cached team API validation result');
+                            return {
+                                valid: parsed.valid,
+                                isAdmin: parsed.isAdmin
+                            };
+                        }
                     }
+                } catch (e) {
+                    // 忽略缓存解析错误
                 }
-            } catch (e) {
-                // 忽略缓存解析错误
             }
         }
         
@@ -1284,13 +1289,15 @@ class CasdoorService {
                     if (result.success && result.data && typeof result.data.valid === 'boolean') {
                         logger.info('Team API validation result:', result.data);
                         
-                        // 缓存结果
-                        localStorage.setItem(CACHE_KEY, JSON.stringify({
-                            valid: result.data.valid,
-                            isAdmin: !!result.data.isAdmin,
-                            timestamp: Date.now(),
-                            tokenHash: token ? this.simpleTokenHash(token) : null
-                        }));
+                        // 仅对非周期性验证进行短期缓存
+                        if (!isPeriodicCheck) {
+                            localStorage.setItem('team_api_validation_result', JSON.stringify({
+                                valid: result.data.valid,
+                                isAdmin: !!result.data.isAdmin,
+                                timestamp: Date.now(),
+                                tokenHash: token ? this.simpleTokenHash(token) : null
+                            }));
+                        }
                         
                         // 如果用户是管理员，设置标记
                         if (result.data.valid && result.data.isAdmin) {
@@ -1741,5 +1748,21 @@ export const casdoorService = new CasdoorService();
 // Export the SDK for direct access if needed
 export { sdk };
 
-// Export the helper function to detect invalid auth responses
-export { isInvalidAuthResponse, AUTH_LOCKS };
+// Helper function to determine if the login was recent (within specified minutes)
+function isRecentLogin(minutes: number): boolean {
+    const authCallbackTime = localStorage.getItem('auth_callback_completed_time');
+    if (!authCallbackTime) {
+        return false;
+    }
+    
+    const loginTime = parseInt(authCallbackTime, 10);
+    if (isNaN(loginTime)) {
+        return false;
+    }
+    
+    // Check if login happened within specified minutes
+    return Date.now() - loginTime < minutes * 60 * 1000;
+}
+
+// Export the helper functions
+export { isInvalidAuthResponse, AUTH_LOCKS, isRecentLogin };

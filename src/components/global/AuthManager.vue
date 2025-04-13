@@ -16,7 +16,6 @@ import { casdoorService, AUTH_LOCKS } from '@/services/auth';
 import { useUserStore } from '@/stores/userStore';
 import { isLockActive, setAuthLock, releaseAuthLock } from '@/utils/authUtils';
 import { 
-    AUTH_FLAGS, 
     recordValidationTime, 
     setAbsoluteTrust, 
     isRecentLogin,
@@ -49,34 +48,37 @@ export default defineComponent({
          * 包含防重复请求机制
          */
         const validateAuth = async (): Promise<void> => {
-            // 检查是否在登录10分钟内
-            if (isRecentLogin(10)) {
-                logger.debug('AuthManager: Recent login detected (<10min), skipping validation');
+            // 检查是否在登录10分钟内 - 即使在信任期内也执行验证，但使用不同的策略
+            const isInTrustPeriod = isRecentLogin(10);
+            if (isInTrustPeriod) {
+                logger.debug('AuthManager: In trust period (<10min), using lightweight validation');
                 
-                // 确保用户信息已加载，跳过令牌验证
+                // 标记是否为定期验证
+                localStorage.setItem('is_periodic_validation', 'false');
+
+                // 确保用户信息已加载
                 if (!userStore.userInfo) {
                     try {
-                        await userStore.initializeStore(true); // true = 跳过令牌验证
+                        await userStore.initializeStore(true); // true = 使用轻量级验证
                     } catch (e) {
                         logger.warn('Failed to initialize user store during trust period:', e);
                     }
                 }
                 
-                // 更新验证时间但不执行验证
-                lastValidationTime.value = Date.now();
-                recordValidationTime();
+                // 在信任期内，仍然执行API验证，但不会因为失败而立即登出
+                try {
+                    await casdoorService.validateWithTeamApi();
+                    // 更新验证时间
+                    lastValidationTime.value = Date.now();
+                    recordValidationTime();
+                } catch (e) {
+                    logger.warn('API validation during trust period failed, but continuing:', e);
+                }
                 return;
             }
             
             // 10分钟后清除绝对信任标记
             clearTrustFlags();
-            
-            // 已经验证过最近2分钟，跳过
-            const lastValidated = localStorage.getItem(AUTH_FLAGS.VALIDATION_TIME);
-            if (lastValidated && Date.now() - parseInt(lastValidated) < 2 * 60 * 1000) {
-                logger.debug('AuthManager: Recent validation detected (<2min), skipping');
-                return;
-            }
             
             // 创建验证锁的键
             const AUTH_VALIDATION_LOCK = AUTH_LOCKS.VALIDATION;
@@ -100,6 +102,9 @@ export default defineComponent({
                     localStorage.setItem('auth_validation_start_time', Date.now().toString());
                     
                     logger.info('AuthManager: Validating authentication...');
+                    
+                    // 标记这是定期验证 - 确保API验证时跳过缓存
+                    localStorage.setItem('is_periodic_validation', 'true');
 
                     // 检查是否在Dashboard路径下
                     if (!route.path.startsWith('/Dashboard')) {
@@ -113,8 +118,7 @@ export default defineComponent({
                         return;
                     }
 
-                    // 超过10分钟信任期后，直接使用Team API验证，而不是本地验证
-                    // 这确保我们可以检测到服务器端撤销的令牌
+                    // 直接使用Team API验证，确保检测到服务器端撤销的令牌
                     const validationResult = await casdoorService.validateWithTeamApi();
                     
                     if (!validationResult.valid) {
@@ -143,6 +147,8 @@ export default defineComponent({
                 } catch (error) {
                     logger.error('AuthManager: Authentication validation error:', error);
                 } finally {
+                    // 清除定期验证标记
+                    localStorage.removeItem('is_periodic_validation');
                     // 验证完成后清除锁
                     validationLock.value = null;
                     releaseAuthLock(AUTH_VALIDATION_LOCK);
