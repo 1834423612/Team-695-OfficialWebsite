@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { casdoorService, isInvalidAuthResponse, AUTH_LOCKS } from '@/services/auth';
 import { setAuthLock, releaseAuthLock, isLockActive } from '@/utils/authUtils';
 import { logger } from '@/utils/logger';
+import { AvatarMigrationTool } from '@/utils/avatarMigrationTool';
 
 // User info refresh interval (2 hours)
 const USER_INFO_REFRESH_INTERVAL = 2 * 60 * 60 * 1000;
@@ -227,6 +228,11 @@ export const useUserStore = defineStore('user', {
                     this.lastFetchTime = Date.now();
                     this.isInitialized = true;
                     
+                    // 注册用户ID映射，帮助迁移缓存
+                    if (userInfo && userInfo.id) {
+                        AvatarMigrationTool.registerUserOnLogin(userInfo);
+                    }
+                    
                     logger.pretty('Result', 'Successfully retrieved user info', 'success');
                     logger.groupEnd();
                     return userInfo;
@@ -333,6 +339,11 @@ export const useUserStore = defineStore('user', {
                     this.lastFetchTime = Date.now();
                     this.isInitialized = true;
                     
+                    // 注册用户ID映射，帮助迁移缓存
+                    if (userInfo && userInfo.id) {
+                        AvatarMigrationTool.registerUserOnLogin(userInfo);
+                    }
+                    
                     // 3. Update user's admin status based on validation result
                     if (validationResult.isAdmin && !userInfo.isAdmin) {
                         logger.pretty('Update Permissions', 'Updating admin status based on token validation result', 'important');
@@ -417,6 +428,12 @@ export const useUserStore = defineStore('user', {
         updateUserInfo(userData: any) {
             logger.prettyGroup('Update User Info', 'info', true);
             this.userInfo = userData;
+            
+            // 注册用户ID映射，帮助迁移缓存
+            if (userData && userData.id) {
+                AvatarMigrationTool.registerUserOnLogin(userData);
+            }
+            
             // Store in localStorage for persistence
             localStorage.setItem('userInfo', JSON.stringify(userData));
             logger.pretty('Status', 'User info updated', 'success');

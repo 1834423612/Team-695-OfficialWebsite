@@ -247,13 +247,16 @@
                                                 <div v-for="(assignee, idx) in getAssigneesList(assignment)" :key="idx"
                                                     class="flex items-center">
                                                     <div class="flex-shrink-0">
-                                                        <CachedAvatar v-if="assignee.avatar" :userId="assignee.id" :src="assignee.avatar"
+                                                        <CachedAvatar 
+                                                            :userId="assignee.id" 
+                                                            :initial="getUserInitialsValue(assignee)" 
+                                                            :src="assignee.avatar"
+                                                            :size="32"
+                                                            :firstName="assignee.firstName"
+                                                            :lastName="assignee.lastName"
+                                                            :displayName="assignee.displayName || formatUsername(assignee.name)"
                                                             alt="Assignee Avatar"
                                                             class="h-8 w-8 rounded-full object-cover" />
-                                                        <div v-else
-                                                            class="h-8 w-8 rounded-full bg-teal-100 flex items-center justify-center">
-                                                            <Icon icon="mdi:account" class="h-5 w-5 text-teal-600" />
-                                                        </div>
                                                     </div>
                                                     <div class="ml-3">
                                                         <div class="flex items-center">
@@ -427,24 +430,26 @@
 
                                                 <!-- Selected users display -->
                                                 <div v-if="selectedAssignees.length > 0"
-                                                    class="mt-2 flex flex-wrap gap-2">
+                                                    class="mt-2 flex items-center flex-wrap gap-2">
                                                     <div v-for="(assignee, idx) in selectedAssignees" :key="idx"
                                                         class="inline-flex items-center bg-gray-100 rounded-full pl-2 pr-1 py-1">
-                                                        <div class="flex-shrink-0 mr-1">
-                                                            <CachedAvatar v-if="assignee.avatar" :userId="assignee.id" :src="assignee.avatar"
+                                                        <div class="flex-shrink-0 mr-1 flex items-center">
+                                                            <CachedAvatar
+                                                                :userId="assignee.id" 
+                                                                :initial="getUserInitialsValue(assignee)"
+                                                                :size="24"
+                                                                :src="assignee.avatar"
+                                                                :firstName="assignee.firstName"
+                                                                :lastName="assignee.lastName"
+                                                                :displayName="assignee.displayName || formatUsername(assignee.name)"
                                                                 alt="User Avatar"
                                                                 class="h-6 w-6 rounded-full object-cover" />
-                                                            <div v-else
-                                                                class="h-6 w-6 rounded-full bg-teal-100 flex items-center justify-center">
-                                                                <Icon icon="mdi:account"
-                                                                    class="h-4 w-4 text-teal-600" />
-                                                            </div>
                                                         </div>
-                                                        <span class="text-xs font-medium text-gray-800">
+                                                        <span class="text-xs font-medium text-gray-800 flex items-center">
                                                             {{ assignee.displayName || formatUsername(assignee.name) }}
                                                         </span>
                                                         <button @click="removeSelectedAssignee(assignee)"
-                                                            class="ml-1 rounded-full p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600">
+                                                            class="ml-1 rounded-full p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600 flex items-center justify-center">
                                                             <Icon icon="mdi:close" class="h-3 w-3" />
                                                         </button>
                                                     </div>
@@ -479,14 +484,16 @@
                                                             class="cursor-pointer hover:bg-gray-100 px-4 py-2">
                                                             <div class="flex items-center">
                                                                 <div class="flex-shrink-0">
-                                                                    <CachedAvatar v-if="user.avatar" :userId="user.id" :src="user.avatar"
+                                                                    <CachedAvatar
+                                                                        :userId="user.id" 
+                                                                        :initial="getUserInitialsValue(user)"
+                                                                        :src="user.avatar"
+                                                                        :size="32"
+                                                                        :firstName="user.firstName"
+                                                                        :lastName="user.lastName"
+                                                                        :displayName="user.displayName || formatUsername(user.name)"
                                                                         alt="User Avatar"
                                                                         class="h-8 w-8 rounded-full object-cover" />
-                                                                    <div v-else
-                                                                        class="h-8 w-8 rounded-full bg-teal-100 flex items-center justify-center">
-                                                                        <Icon icon="mdi:account"
-                                                                            class="h-5 w-5 text-teal-600" />
-                                                                    </div>
                                                                 </div>
                                                                 <div class="ml-3">
                                                                     <div class="flex items-center">
@@ -630,6 +637,13 @@ import { storeToRefs } from 'pinia';
 import { casdoorService } from '@/services/auth';
 import Swal from 'sweetalert2';
 import CachedAvatar from '@/components/common/CachedAvatar.vue'; // 导入CachedAvatar组件
+import { avatarPreloader } from '@/utils/avatarPreloader'; // 导入avatarPreloader
+
+// 添加一个工具函数来确保用户ID安全
+function ensureSafeUserId(user: any): string {
+    if (!user) return 'default';
+    return user.id || user.userId || user.userInitials || 'default';
+}
 
 export default defineComponent({
     name: 'ScoutingAssignments',
@@ -801,6 +815,16 @@ export default defineComponent({
                 const data = await response.json();
                 if (data.success) {
                     assignments.value = data.data || [];
+                    
+                    // 收集所有任务中的用户头像并预加载
+                    const allAssignees: any[] = [];
+                    assignments.value.forEach(assignment => {
+                        const assignees = getAssigneesList(assignment);
+                        allAssignees.push(...assignees);
+                    });
+                    
+                    // 预加载所有用户头像
+                    avatarPreloader.preloadFromUsersList(allAssignees);
                 } else {
                     throw new Error(data.message || 'Failed to load assignments');
                 }
@@ -835,6 +859,9 @@ export default defineComponent({
                 const data = await response.json();
                 if (data.success && data.data && data.data.data) {
                     teamMembers.value = data.data.data;
+                    
+                    // 加载团队成员列表后预加载他们的头像
+                    avatarPreloader.preloadFromUsersList(teamMembers.value);
                 } else {
                     throw new Error(data.message || 'Failed to load team members');
                 }
@@ -974,13 +1001,25 @@ export default defineComponent({
 
         // Add a user to selected assignees
         const addSelectedAssignee = (user: any) => {
-            selectedAssignees.value.push(user);
+            // 确保用户对象中有ID和其他必要属性
+            const safeUser = { 
+                ...user,
+                id: ensureSafeUserId(user),
+                // 确保有这些属性
+                firstName: user.firstName || '',
+                lastName: user.lastName || '',
+                displayName: user.displayName || formatUsername(user.name) || ''
+            };
+            
+            selectedAssignees.value.push(safeUser);
             userSearchQuery.value = '';
             
-            // Update form data
+            // Update form data with complete user info
             formData.value.assignees_data = selectedAssignees.value.map(assignee => ({
-                id: assignee.id,
+                id: assignee.id || 'default',
                 name: assignee.name,
+                firstName: assignee.firstName,
+                lastName: assignee.lastName,
                 displayName: assignee.displayName,
                 avatar: assignee.avatar,
                 email: assignee.email,
@@ -1260,7 +1299,40 @@ export default defineComponent({
                     }
                 }
             });
+
+            // 页面加载完成后延迟执行扫描以预加载可见的头像
+            setTimeout(() => {
+                avatarPreloader.scanAndPreload();
+            }, 1000);
         });
+
+        // 添加获取用户初始字母值的函数
+        const getUserInitialsValue = (user: any): string => {
+            if (!user) return '';
+            
+            // 从各种可能的来源生成初始字母
+            if (user.firstName && user.lastName) {
+                return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
+            }
+            
+            if (user.displayName) {
+                const parts = user.displayName.trim().split(/\s+/);
+                if (parts.length >= 2) {
+                    return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+                }
+                return user.displayName.substring(0, 2).toUpperCase();
+            }
+            
+            if (user.name) {
+                const parts = user.name.trim().split(/\s+/);
+                if (parts.length >= 2) {
+                    return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+                }
+                return user.name.substring(0, 2).toUpperCase();
+            }
+            
+            return (user.id || 'XX').substring(0, 2).toUpperCase();
+        };
 
         return {
             userData,
@@ -1301,7 +1373,9 @@ export default defineComponent({
             selectedAssignees,
             filteredUnselectedUsers,
             addSelectedAssignee,
-            removeSelectedAssignee
+            removeSelectedAssignee,
+            ensureSafeUserId,
+            getUserInitialsValue // 导出函数
         };
     }
 });

@@ -9,6 +9,7 @@
  */
 import { avatarCache } from '@/services/avatarCache';
 import { logger } from '@/utils/logger';
+import { AvatarMigrationTool } from '@/utils/avatarMigrationTool';
 
 // Cache debugging tool
 const AvatarDebugTools = {
@@ -300,6 +301,151 @@ const AvatarDebugTools = {
         logger.groupEnd();
         
         return results;
+    },
+
+    /**
+     * 清理错误的缓存项
+     * 检查并清理使用initial而不是用户真实ID作为键的缓存项
+     */
+    cleanupInvalidKeys: async () => {
+        logger.prettyGroup('Cleanup Invalid Avatar Cache Keys', 'warn', false);
+        
+        // 首先扫描IndexedDB中的所有条目
+        try {
+            // 确保服务已初始化
+            if (!(window as any).avatarCacheDebug || !(window as any).avatarCacheDebug.getAllCaches) {
+                logger.pretty('Error', 'Debug API not available', 'error');
+                logger.groupEnd();
+                return;
+            }
+            
+            const allCaches = await (window as any).avatarCacheDebug.getAllCaches();
+            const keys = Object.keys(allCaches);
+            
+            // 检查短键（可能是initial而不是userId）
+            const suspiciousKeys = keys.filter(key => key.length <= 2);
+            logger.pretty('Found', `${suspiciousKeys.length} suspicious keys that might be initials instead of user IDs`, 'warn');
+            
+            if (suspiciousKeys.length > 0) {
+                logger.info('Suspicious keys:');
+                suspiciousKeys.forEach(key => {
+                    const entry = allCaches[key];
+                    logger.pretty(
+                        key, 
+                        `${entry.displayName || 'Unknown'} (${entry.originalUrl})`,
+                        'warn'
+                    );
+                });
+                
+                const confirmClear = confirm(`Found ${suspiciousKeys.length} cache entries with suspicious keys (initials used as IDs). Clear them?`);
+                if (confirmClear) {
+                    let cleared = 0;
+                    for (const key of suspiciousKeys) {
+                        try {
+                            await avatarCache.clearCache(key);
+                            cleared++;
+                        } catch (e) {
+                            logger.warn(`Failed to clear key ${key}:`, e);
+                        }
+                    }
+                    logger.pretty('Cleared', `${cleared} of ${suspiciousKeys.length} suspicious cache entries`, 'success');
+                }
+            } else {
+                logger.pretty('Status', 'No suspicious keys found', 'success');
+            }
+        } catch (e) {
+            logger.pretty('Error', `Failed to scan cache: ${e}`, 'error');
+        }
+        
+        logger.groupEnd();
+    },
+
+    /**
+     * 迁移旧键格式
+     * 尝试找出使用initial作为键的缓存项，并将其迁移到使用用户ID作为键
+     */
+    migrateInvalidKeys: async (userIdMap?: Record<string, string>) => {
+        logger.prettyGroup('Migrate Invalid Avatar Cache Keys', 'system', false);
+        
+        // 使用提供的映射或从AvatarMigrationTool获取已知映射
+        const mappingsToUse = userIdMap || AvatarMigrationTool.getAllMappings();
+        logger.info('User ID map:', mappingsToUse);
+        
+        // 如果没有映射，提示用户
+        if (Object.keys(mappingsToUse).length === 0) {
+            logger.pretty('No Mappings', 'No user ID mappings available', 'warn');
+            logger.groupEnd();
+            return;
+        }
+        
+        try {
+            // 确保服务已初始化
+            if (!(window as any).avatarCacheDebug || !(window as any).avatarCacheDebug.getAllCaches) {
+                logger.pretty('Error', 'Debug API not available', 'error');
+                logger.groupEnd();
+                return;
+            }
+            
+            const allCaches = await (window as any).avatarCacheDebug.getAllCaches();
+            let migratedCount = 0;
+            
+            // 检查每个提供的映射
+            for (const [initial, userId] of Object.entries(mappingsToUse)) {
+                if (allCaches[initial]) {
+                    const entry = allCaches[initial];
+                    logger.info(`Migrating ${initial} -> ${userId} for ${entry.displayName || 'Unknown'}`);
+                    
+                    // 使用原始URL和新的userId重新缓存
+                    if (entry.originalUrl) {
+                        await avatarCache.cacheAvatar(userId, entry.originalUrl, {
+                            displayName: entry.displayName,
+                            name: entry.userName
+                        });
+                        migratedCount++;
+                    }
+                    
+                    // 清除旧键
+                    await avatarCache.clearCache(initial);
+                }
+            }
+            
+            logger.pretty('Migrated', `${migratedCount} cache entries to correct user IDs`, migratedCount > 0 ? 'success' : 'info');
+        } catch (e) {
+            logger.pretty('Error', `Failed to migrate cache: ${e}`, 'error');
+        }
+        
+        logger.groupEnd();
+    },
+
+    // 新增：一键执行缓存迁移
+    runFullMigration: async () => {
+        logger.prettyGroup('Full Avatar Cache Migration', 'important', false);
+        
+        try {
+            // 1. 获取所有已知用户映射
+            const mappings = AvatarMigrationTool.getAllMappings();
+            const mappingCount = Object.keys(mappings).length;
+            
+            if (mappingCount === 0) {
+                logger.pretty('No Mappings', 'No user ID mappings available. Login to register mappings automatically.', 'warn');
+                logger.groupEnd();
+                return;
+            }
+            
+            logger.pretty('Mappings', `Found ${mappingCount} user ID mappings`, 'info');
+            
+            // 2. 清理无效键
+            await AvatarDebugTools.cleanupInvalidKeys();
+            
+            // 3. 迁移已知映射
+            await AvatarDebugTools.migrateInvalidKeys(mappings);
+            
+            logger.pretty('Complete', 'Full migration process completed', 'success');
+        } catch (e) {
+            logger.pretty('Error', `Migration failed: ${e}`, 'error');
+        }
+        
+        logger.groupEnd();
     }
 };
 
