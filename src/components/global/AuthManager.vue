@@ -11,10 +11,17 @@
 
 <script lang="ts">
 import { defineComponent, onMounted, onBeforeUnmount, ref, watch } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { casdoorService, AUTH_LOCKS } from '@/services/auth';
 import { useUserStore } from '@/stores/userStore';
 import { isLockActive, setAuthLock, releaseAuthLock } from '@/utils/authUtils';
+import { 
+    recordValidationTime, 
+    setAbsoluteTrust, 
+    isRecentLogin,
+    clearTrustFlags
+} from '@/utils/authConfig';
+import { logger } from '@/utils/logger';
 
 /**
  * 全局认证管理组件
@@ -24,7 +31,6 @@ import { isLockActive, setAuthLock, releaseAuthLock } from '@/utils/authUtils';
 export default defineComponent({
     name: 'AuthManager',
     setup() {
-        const router = useRouter();
         const route = useRoute();
         const userStore = useUserStore();
 
@@ -42,12 +48,44 @@ export default defineComponent({
          * 包含防重复请求机制
          */
         const validateAuth = async (): Promise<void> => {
+            // 检查是否在登录10分钟内 - 即使在信任期内也执行验证，但使用不同的策略
+            const isInTrustPeriod = isRecentLogin(10);
+            if (isInTrustPeriod) {
+                logger.debug('AuthManager: In trust period (<10min), using lightweight validation');
+                
+                // 标记是否为定期验证
+                localStorage.setItem('is_periodic_validation', 'false');
+
+                // 确保用户信息已加载
+                if (!userStore.userInfo) {
+                    try {
+                        await userStore.initializeStore(true); // true = 使用轻量级验证
+                    } catch (e) {
+                        logger.warn('Failed to initialize user store during trust period:', e);
+                    }
+                }
+                
+                // 在信任期内，仍然执行API验证，但不会因为失败而立即登出
+                try {
+                    await casdoorService.validateWithTeamApi();
+                    // 更新验证时间
+                    lastValidationTime.value = Date.now();
+                    recordValidationTime();
+                } catch (e) {
+                    logger.warn('API validation during trust period failed, but continuing:', e);
+                }
+                return;
+            }
+            
+            // 10分钟后清除绝对信任标记
+            clearTrustFlags();
+            
             // 创建验证锁的键
             const AUTH_VALIDATION_LOCK = AUTH_LOCKS.VALIDATION;
             
             // 如果已经在验证中，避免并发验证
             if (isLockActive(AUTH_VALIDATION_LOCK)) {
-                console.log('AuthManager: Another validation is in progress, skipping');
+                logger.debug('AuthManager: Another validation is in progress, skipping');
                 return;
             }
             
@@ -63,7 +101,10 @@ export default defineComponent({
                     setAuthLock(AUTH_VALIDATION_LOCK);
                     localStorage.setItem('auth_validation_start_time', Date.now().toString());
                     
-                    console.log('AuthManager: Validating authentication...');
+                    logger.info('AuthManager: Validating authentication...');
+                    
+                    // 标记这是定期验证 - 确保API验证时跳过缓存
+                    localStorage.setItem('is_periodic_validation', 'true');
 
                     // 检查是否在Dashboard路径下
                     if (!route.path.startsWith('/Dashboard')) {
@@ -72,89 +113,42 @@ export default defineComponent({
 
                     // 检查用户是否已登录
                     if (!casdoorService.isLoggedIn()) {
-                        console.warn('AuthManager: User not logged in, redirecting to login');
-                        await navigateToLogin();
+                        logger.warn('AuthManager: User not logged in, redirecting to login');
+                        await handleAuthFailure('You need to login to access this page');
                         return;
                     }
 
-                    // 检查上次验证时间，如果小于间隔时间则跳过验证
-                    const now = Date.now();
-                    if (now - lastValidationTime.value < validationInterval / 2) {
-                        console.log('AuthManager: Skipping validation, too soon since last check');
-                        return;
-                    }
-
-                    // 验证令牌有效性
+                    // 直接使用Team API验证，确保检测到服务器端撤销的令牌
                     const validationResult = await casdoorService.validateWithTeamApi();
                     
-                    // 验证完成后记录验证时间，用于与ApiErrorHandler协调
-                    localStorage.setItem('last_auth_check_time', Date.now().toString());
-                    
                     if (!validationResult.valid) {
-                        console.warn('AuthManager: Token validation failed');
-
-                        try {
-                            // 尝试刷新令牌
-                            await casdoorService.refreshAccessToken();
-
-                            // 刷新后再次验证
-                            const refreshedResult = await casdoorService.validateWithTeamApi();
-                            if (!refreshedResult.valid) {
-                                console.error('AuthManager: Token still invalid after refresh');
-                                throw new Error('Invalid authentication token');
-                            }
-
-                            // 缓存验证结果
-                            lastValidationTime.value = now;
-
-                            // 如果是管理员，保存标记
-                            if (refreshedResult.isAdmin) {
-                                localStorage.setItem('is_admin_validated', 'true');
-                            }
-                        } catch (error) {
-                            console.error('AuthManager: Token refresh failed:', error);
-                            await handleAuthFailure('Your session has expired. Please login again.');
-                            return;
-                        }
-                    } else {
-                        // 令牌有效，更新验证时间
-                        lastValidationTime.value = now;
-
-                        // 如果是管理员，保存标记
-                        if (validationResult.isAdmin) {
-                            localStorage.setItem('is_admin_validated', 'true');
-                        }
+                        logger.warn('AuthManager: Team API validation failed');
+                        
+                        // 如果验证失败，直接登出，不尝试刷新
+                        logger.error('AuthManager: Token is invalid or revoked, logging out');
+                        await handleAuthFailure('Your session has expired or been revoked. Please login again.');
+                        return;
                     }
 
-                    // 令牌已验证，确保用户信息已加载
-                    // 作为双重验证，在token验证后再次请求用户信息
-                    if (!userStore.userInfo || now - (userStore.lastFetchTime || 0) > 5 * 60 * 1000) {
-                        console.log('AuthManager: Loading user info after validation as secondary validation');
+                    // 记录验证时间
+                    lastValidationTime.value = Date.now();
+                    recordValidationTime();
+                    
+                    // 令牌已通过API验证，确保用户信息已加载
+                    if (!userStore.userInfo) {
                         try {
-                            await userStore.refreshUserInfo(false);
+                            // 用户信息加载时可以跳过验证，因为我们刚刚验证过了
+                            await userStore.initializeStore(true);
                         } catch (error) {
-                            console.error('AuthManager: Failed to load user info:', error);
-                            await handleAuthFailure('Failed to load user profile. Please try again.');
-                            return;
-                        }
-                    }
-
-                    // 如果访问管理员页面，验证权限
-                    if (route.meta.requiresAdmin) {
-                        // 从验证结果或用户信息中确认管理员状态
-                        const isAdmin = validationResult.isAdmin ||
-                            userStore.isAdmin ||
-                            casdoorService.isUserAdmin();
-
-                        if (!isAdmin) {
-                            console.warn('AuthManager: User is not an admin, redirecting');
-                            router.push({ name: 'DashboardHome' });
+                            logger.error('AuthManager: Failed to load user info after validation:', error);
+                            // 不因用户信息加载失败而登出用户
                         }
                     }
                 } catch (error) {
-                    console.error('AuthManager: Authentication validation error:', error);
-                    await handleAuthFailure();
+                    logger.error('AuthManager: Authentication validation error:', error);
                 } finally {
+                    // 清除定期验证标记
+                    localStorage.removeItem('is_periodic_validation');
                     // 验证完成后清除锁
                     validationLock.value = null;
                     releaseAuthLock(AUTH_VALIDATION_LOCK);
@@ -199,22 +193,10 @@ export default defineComponent({
                     window.location.href = `/login?redirect=${encodeURIComponent(route.fullPath)}`;
                 }
             } catch (error) {
-                console.error('AuthManager: Error during auth failure handling:', error);
+                logger.error('AuthManager: Error during auth failure handling:', error);
                 // 确保重定向到登录页
                 window.location.href = `/login?redirect=${encodeURIComponent(route.fullPath)}`;
             }
-        };
-
-        /**
-         * 重定向到登录页面 - 已不再使用，由handleAuthFailure处理
-         */
-        const navigateToLogin = async () => {
-            // 保存当前路径用于登录后重定向
-            const returnPath = route.fullPath;
-            await router.push({
-                name: 'login',
-                query: { redirect: returnPath }
-            });
         };
 
         /**
@@ -233,10 +215,16 @@ export default defineComponent({
             validationTimer = window.setInterval(() => {
                 // 只有当页面可见且没有正在进行的验证时才执行验证
                 if (pageVisible.value && !validationLock.value) {
-                    console.log('Auth check interval triggered, checking if validation needed');
-                    validateAuth().catch(console.error);
+                    // 如果在10分钟内信任期，跳过验证
+                    if (isRecentLogin(10)) {
+                        logger.debug('AuthManager: Periodic check skipped due to recent login (<10min)');
+                        return;
+                    }
+                    
+                    logger.info('AuthManager: Periodic auth check triggered');
+                    validateAuth().catch(error => logger.error('Periodic validation error:', error));
                 } else {
-                    console.log('Auth check skipped - page invisible or validation in progress');
+                    logger.debug('AuthManager: Periodic check skipped - page invisible or validation in progress');
                 }
             }, validationInterval);
         };
@@ -249,8 +237,8 @@ export default defineComponent({
             
             // 当页面重新可见时，检查验证时间，如果已过期则立即验证
             if (pageVisible.value && Date.now() - lastValidationTime.value >= validationInterval) {
-                console.log('Page became visible, performing authentication check');
-                validateAuth().catch(console.error);
+                logger.info('Page became visible, performing authentication check');
+                validateAuth().catch(error => logger.error('Visibility change validation error:', error));
             }
         };
 
@@ -260,14 +248,14 @@ export default defineComponent({
         const handleAuthInvalid = async (event: Event) => {
             // 将 Event 转换为 CustomEvent 以访问 detail 属性
             const customEvent = event as CustomEvent;
-            console.warn('AuthManager: Auth invalid event detected:', customEvent.detail);
+            logger.warn('AuthManager: Auth invalid event detected:', customEvent.detail);
             await handleAuthFailure(customEvent.detail?.message);
         };
 
         // 监听路由变化
         watch(() => route.path, (newPath, oldPath) => {
             if (newPath !== oldPath && newPath.startsWith('/Dashboard')) {
-                validateAuth().catch(console.error);
+                validateAuth().catch(error => logger.error('Route change validation error:', error));
             }
         });
 
@@ -278,13 +266,30 @@ export default defineComponent({
                 releaseAuthLock(AUTH_LOCKS.VALIDATION);
             }
             
-            // 初始验证之前检查有没有最近的验证记录
-            const lastAuthCheck = window.localStorage.getItem('last_auth_check_time');
-            if (lastAuthCheck && Date.now() - parseInt(lastAuthCheck) < 5000) {
-                console.log('AuthManager: Skipping initial validation, recent verification found');
+            // 检查是否在登录后10分钟内
+            if (isRecentLogin(10)) {
+                logger.debug('AuthManager: Recent login detected on mount (<10min), skipping validation');
+                
+                // 设置绝对信任标记
+                setAbsoluteTrust();
+                
+                // 更新验证时间但不执行验证
+                lastValidationTime.value = Date.now();
+                recordValidationTime();
+                
+                // 确保用户数据已加载，跳过验证
+                if (!userStore.userInfo) {
+                    userStore.initializeStore(true).catch(error => {
+                        logger.warn('Failed to load user info during trust period:', error);
+                    });
+                }
             } else {
-                // 初始验证
-                validateAuth().catch(console.error);
+                // 清除10分钟后的绝对信任标记
+                clearTrustFlags();
+                
+                // 执行验证
+                logger.info('AuthManager: Not in trust period, performing validation');
+                validateAuth().catch(error => logger.error('Initial validation error:', error));
             }
 
             // 设置定期验证

@@ -3,7 +3,6 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 import Home from '../views/Home.vue';
 import { casdoorService } from '@/services/auth';
 // Import the user store
-import { useUserStore } from '@/stores/userStore';
 // import About from '../views/About.vue';
 // import MentorDetail from '../views/MentorDetail.vue';
 // import Members from '../views/Members.vue';
@@ -133,8 +132,45 @@ const router = createRouter({
 });
 
 // Navigation guard
-router.beforeEach(async (to, _from, next) => {
+router.beforeEach(async (to, from, next) => {
   const isLoggedIn = casdoorService.isLoggedIn();
+  
+  // 检查绝对信任标记 - 如果存在，跳过所有验证
+  if (localStorage.getItem('token_absolute_trust') === 'true' || 
+      localStorage.getItem('skip_all_token_validation') === 'true') {
+    console.log('Router guard: Absolute trust flag detected, skipping ALL validation');
+    if (to.matched.some(record => record.meta.requiresAuth) && !isLoggedIn) {
+      next({ name: 'login', query: { redirect: to.fullPath } });
+    } else {
+      next();
+    }
+    return;
+  }
+  
+  // 避免回调循环 - 如果来自callback并前往Dashboard，检查是否有token
+  if (from.path.includes('/callback') && to.path.includes('/Dashboard') && isLoggedIn) {
+    console.log('Router guard: Skipping validation for post-callback navigation');
+    // 设置绝对信任标记，防止后续验证
+    localStorage.setItem('token_absolute_trust', 'true');
+    next();
+    return;
+  }
+  
+  // 特殊处理callback路由
+  if (to.name === 'callback') {
+    // 检查是否有授权码参数
+    const hasCode = to.query.code;
+    
+    // 如果没有授权码但已登录，直接跳转到Dashboard
+    if (!hasCode && isLoggedIn) {
+      next('/Dashboard');
+      return;
+    }
+    
+    // 正常进入回调页面处理
+    next();
+    return;
+  }
   
   // 需要认证的路由
   if (to.matched.some(record => record.meta.requiresAuth)) {
@@ -146,52 +182,39 @@ router.beforeEach(async (to, _from, next) => {
       return;
     }
     
-    // 仅做基本令牌格式检查，详细验证留给 AuthManager 组件处理
-    // 添加超时保护，确保不会无限期等待
     try {
-      // 创建一个带超时的验证Promise
-      const validateWithTimeout = Promise.race([
-        casdoorService.validateLocalToken(),
-        // 添加1秒超时
-        new Promise<boolean>((_, reject) => {
-          setTimeout(() => reject(new Error('Token validation timeout')), 1000);
-        })
-      ]);
-      
-      // 尝试验证令牌，超时或失败都允许继续导航（AuthManager将处理详细验证）
-      const isValid = await validateWithTimeout.catch(error => {
-        console.warn('Router guard: Token validation timed out or failed:', error.message);
-        return true; // 超时时继续导航，让AuthManager处理
-      });
-
-      if (!isValid) {
-        console.warn('Router guard: Basic token validation failed');
-        next({ 
-          name: 'login',
-          query: { redirect: to.fullPath, reason: 'invalid-token' }
-        });
+      // 严格禁止重复验证 - 如果在最近10分钟内完成过认证，完全跳过验证
+      const callbackTime = localStorage.getItem('auth_callback_completed_time');
+      if (callbackTime && Date.now() - parseInt(callbackTime) < 10 * 60 * 1000) {
+        console.log('Router guard: Recent auth detected, setting absolute trust flag');
+        // 设置绝对信任标记，防止所有验证
+        localStorage.setItem('token_absolute_trust', 'true');
+        next();
         return;
       }
-    } catch (error) {
-      console.error('Router guard: Error during token validation:', error);
-      // 出现异常时仍然允许导航，让AuthManager组件处理
-    }
-    
-    // 简单检查 - AuthManager 会负责进一步验证
-    const userStore = useUserStore();
-    
-    // 即使没有用户数据也允许继续到 Dashboard 路由，AuthManager 会处理
-    // 如果能够预加载用户信息就更好
-    if (!userStore.userInfo && userStore.lastFetchTime === null) {
-      try {
-        // 尝试初始化，但不阻塞导航
-        userStore.initializeStore().catch(err => {
-          console.warn('Non-blocking user store initialization failed:', err);
-        });
-      } catch (error) {
-        // 忽略错误，让 AuthManager 处理
-        console.warn('Pre-navigation user store init error:', error);
+
+      // 检查localStorage中是否已有标记表示token有效，避免重复验证
+      const lastValidated = localStorage.getItem('last_token_validated_time');
+      const now = Date.now();
+      
+      // 如果最近2分钟内已经验证过，无需重新验证
+      if (lastValidated && now - parseInt(lastValidated) < 2 * 60 * 1000) {
+        console.log('Router guard: Using recent token validation result (< 2 min)');
+        next();
+        return;
       }
+      
+      // 完全跳过token验证，交给AuthManager在组件加载后处理
+      // 这避免了路由导航过程中的并发token验证
+      console.log('Router guard: Deferring validation to AuthManager component');
+      localStorage.setItem('validation_deferred_to_auth_manager', Date.now().toString());
+      next();
+      return;
+    } catch (error) {
+      console.error('Router guard: Error during navigation handling:', error);
+      // 出现异常时仍然允许导航，让AuthManager组件处理
+      next();
+      return;
     }
   }
   

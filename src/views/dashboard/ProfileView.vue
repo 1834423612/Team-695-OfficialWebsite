@@ -61,8 +61,12 @@
         <div class="bg-white shadow rounded-lg overflow-hidden mb-6">
           <div class="px-6 py-5 sm:px-8 flex flex-wrap justify-between items-center border-b border-gray-200">
             <div class="flex items-center">
-              <div class="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden mr-4 border-2 border-blue-200">
-                <img v-if="userData.avatar" :src="userData.avatar" alt="User Avatar" class="h-full w-full object-cover" />
+              <div
+                class="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden mr-4 border-2 border-blue-200">
+                <!-- <img v-if="userData.avatar" :src="userData.avatar" alt="User Avatar" class="h-full w-full object-cover" /> -->
+                <CachedAvatar v-if="userData.id" :userId="userData.id" :src="userData.avatar" :name="userData.name"
+                  :firstName="userData.firstName" :lastName="userData.lastName" :displayName="userData.displayName"
+                  :size="60" class="h-8 w-8" />
                 <Icon v-else icon="mdi:account" class="h-10 w-10 text-blue-500" />
               </div>
               <div>
@@ -89,7 +93,8 @@
                   <Icon icon="mdi:account-outline" class="h-5 w-5 mr-2 text-blue-500" />
                   Username
                 </dt>
-                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-medium">{{ userData.name || 'Not set' }}</dd>
+                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-medium">{{ userData.name || 'Not set'
+                  }}</dd>
               </div>
               <div class="bg-white px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-8 rounded-md m-2">
                 <dt class="text-sm font-medium text-gray-500 flex items-center">
@@ -103,49 +108,57 @@
                   <Icon icon="mdi:email-outline" class="h-5 w-5 mr-2 text-blue-500" />
                   Email
                 </dt>
-                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-medium">{{ userData.email || 'Not set' }}</dd>
+                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-medium">{{ userData.email || 'Not set'
+                  }}</dd>
               </div>
               <div class="bg-white px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-8 rounded-md m-2">
                 <dt class="text-sm font-medium text-gray-500 flex items-center">
                   <Icon icon="mdi:identifier" class="h-5 w-5 mr-2 text-blue-500" />
                   ID
                 </dt>
-                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-medium">{{ userData.id || 'Not set' }}</dd>
+                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-medium">{{ userData.id || 'Not set' }}
+                </dd>
               </div>
               <div class="bg-gray-50 px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-8 rounded-md m-2">
                 <dt class="text-sm font-medium text-gray-500 flex items-center">
                   <Icon icon="mdi:calendar-plus" class="h-5 w-5 mr-2 text-blue-500" />
                   Created Time
                 </dt>
-                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-medium">{{ formatDate(userData.createdTime) }}</dd>
+                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-medium">{{
+                  formatDate(userData.createdTime) }}</dd>
               </div>
               <div class="bg-white px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-8 rounded-md m-2">
                 <dt class="text-sm font-medium text-gray-500 flex items-center">
                   <Icon icon="mdi:calendar-edit" class="h-5 w-5 mr-2 text-blue-500" />
                   Updated Time
                 </dt>
-                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-medium">{{ formatDate(userData.updatedTime) }}</dd>
+                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-medium">{{
+                  formatDate(userData.updatedTime) }}</dd>
               </div>
               <div class="bg-gray-50 px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-8 rounded-md m-2">
                 <dt class="text-sm font-medium text-gray-500 flex items-center">
                   <Icon icon="mdi:domain" class="h-5 w-5 mr-2 text-blue-500" />
                   Organization
                 </dt>
-                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-medium">{{ userData.owner || 'Not set' }}</dd>
+                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-medium">{{ userData.owner || 'Not set'
+                  }}</dd>
               </div>
-              <div v-if="userData.countryCode" class="bg-white px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-8 rounded-md m-2">
+              <div v-if="userData.countryCode"
+                class="bg-white px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-8 rounded-md m-2">
                 <dt class="text-sm font-medium text-gray-500 flex items-center">
                   <Icon icon="mdi:earth" class="h-5 w-5 mr-2 text-blue-500" />
                   Country
                 </dt>
                 <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-medium">{{ userData.countryCode }}</dd>
               </div>
-              <div v-if="userData.signupApplication" class="bg-gray-50 px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-8 rounded-md m-2">
+              <div v-if="userData.signupApplication"
+                class="bg-gray-50 px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-8 rounded-md m-2">
                 <dt class="text-sm font-medium text-gray-500 flex items-center">
                   <Icon icon="mdi:application" class="h-5 w-5 mr-2 text-blue-500" />
                   Signup Application
                 </dt>
-                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-medium">{{ userData.signupApplication }}</dd>
+                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-medium">{{ userData.signupApplication
+                  }}</dd>
               </div>
             </dl>
           </div>
@@ -164,10 +177,11 @@
                   <p class="text-blue-100">Generate API keys to access Team 695's API services</p>
                 </div>
               </div>
-              
+
               <div class="bg-white bg-opacity-10 rounded-lg p-6 backdrop-filter backdrop-blur-sm">
                 <p class="text-white mb-4">
-                  You don't have any API keys yet. API keys allow your applications to authenticate with Team 695's API services.
+                  You don't have any API keys yet. API keys allow your applications to authenticate with Team 695's API
+                  services.
                   Once created, you'll be able to perform authorized requests to our API endpoints.
                 </p>
                 <div class="flex items-center space-x-2 mb-4 text-blue-100 text-sm">
@@ -175,10 +189,11 @@
                   <span>Your API secret will only be shown once after creation. Make sure to store it securely.</span>
                 </div>
                 <div class="mt-6 flex justify-end">
-                  <button @click="generateApiKeys" 
+                  <button @click="generateApiKeys"
                     class="inline-flex items-center px-5 py-2.5 border border-transparent text-sm font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-md transition-all duration-200 transform hover:-translate-y-0.5"
                     :disabled="isGeneratingKeys">
-                    <Icon :icon="isGeneratingKeys ? 'mdi:loading' : 'mdi:key-plus'" :class="{'animate-spin': isGeneratingKeys}" class="h-5 w-5 mr-2" />
+                    <Icon :icon="isGeneratingKeys ? 'mdi:loading' : 'mdi:key-plus'"
+                      :class="{'animate-spin': isGeneratingKeys}" class="h-5 w-5 mr-2" />
                     {{ isGeneratingKeys ? 'Generating...' : 'Generate New API Keys' }}
                   </button>
                 </div>
@@ -205,28 +220,33 @@
             <div class="border-t border-gray-200 p-6">
               <div class="mb-6">
                 <p class="text-sm text-gray-500 mb-4">
-                  Use these credentials to authenticate with the Team 695 API. Keep your API Secret secure and never share it publicly.
+                  Use these credentials to authenticate with the Team 695 API. Keep your API Secret secure and never
+                  share it publicly.
                 </p>
-                
+
                 <!-- API Endpoint -->
                 <div class="bg-gray-50 rounded-md p-4 mb-4 border border-gray-200 shadow-inner">
                   <div class="flex justify-between items-center mb-2">
                     <label class="block text-sm font-medium text-gray-700">API Endpoint</label>
-                    <button @click="copyToClipboard('https://api.team695.com')" class="text-blue-600 hover:text-blue-500 text-sm flex items-center">
+                    <button @click="copyToClipboard('https://api.team695.com')"
+                      class="text-blue-600 hover:text-blue-500 text-sm flex items-center">
                       <Icon icon="mdi:content-copy" class="h-4 w-4 mr-1" />
                       Copy
                     </button>
                   </div>
                   <div class="relative">
-                    <input type="text" readonly value="https://api.team695.com" class="block w-full pr-10 py-2 px-3 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                    <input type="text" readonly value="https://api.team695.com"
+                      class="block w-full pr-10 py-2 px-3 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
                   </div>
                   <div class="mt-2 flex space-x-2">
-                    <a href="https://api.team695.com/" target="_blank" class="text-xs text-blue-600 hover:text-blue-500 flex items-center">
+                    <a href="https://api.team695.com/" target="_blank"
+                      class="text-xs text-blue-600 hover:text-blue-500 flex items-center">
                       <Icon icon="mdi:web" class="h-3 w-3 mr-1" />
                       Visit API
                     </a>
                     <span class="text-gray-300">|</span>
-                    <a href="https://api.team695.com/api-docs/" target="_blank" class="text-xs text-blue-600 hover:text-blue-500 flex items-center">
+                    <a href="https://api.team695.com/api-docs/" target="_blank"
+                      class="text-xs text-blue-600 hover:text-blue-500 flex items-center">
                       <Icon icon="mdi:book-open-variant" class="h-3 w-3 mr-1" />
                       API Documentation
                     </a>
@@ -239,13 +259,15 @@
                 <div class="bg-gray-50 rounded-md p-4 border border-gray-200 shadow-inner">
                   <div class="flex justify-between items-center mb-2">
                     <label class="block text-sm font-medium text-gray-700">Access Key</label>
-                    <button @click="copyToClipboard(userData.accessKey)" class="text-blue-600 hover:text-blue-500 text-sm flex items-center">
+                    <button @click="copyToClipboard(userData.accessKey)"
+                      class="text-blue-600 hover:text-blue-500 text-sm flex items-center">
                       <Icon icon="mdi:content-copy" class="h-4 w-4 mr-1" />
                       Copy
                     </button>
                   </div>
                   <div class="relative">
-                    <input type="text" readonly :value="userData.accessKey" class="block w-full pr-10 py-2 px-3 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                    <input type="text" readonly :value="userData.accessKey"
+                      class="block w-full pr-10 py-2 px-3 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
                   </div>
                 </div>
 
@@ -254,24 +276,27 @@
                   <div class="flex justify-between items-center mb-2">
                     <label class="block text-sm font-medium text-gray-700">Access Secret</label>
                     <div class="flex items-center space-x-2">
-                      <button @click="toggleSecretVisibility" class="text-blue-600 hover:text-blue-500 text-sm flex items-center">
+                      <button @click="toggleSecretVisibility"
+                        class="text-blue-600 hover:text-blue-500 text-sm flex items-center">
                         <Icon :icon="showSecret ? 'mdi:eye-off' : 'mdi:eye'" class="h-4 w-4 mr-1" />
                         {{ showSecret ? 'Hide' : 'Show' }}
                       </button>
-                      <button @click="copyToClipboard(userData.accessSecret)" class="text-blue-600 hover:text-blue-500 text-sm flex items-center">
+                      <button @click="copyToClipboard(userData.accessSecret)"
+                        class="text-blue-600 hover:text-blue-500 text-sm flex items-center">
                         <Icon icon="mdi:content-copy" class="h-4 w-4 mr-1" />
                         Copy
                       </button>
                     </div>
                   </div>
                   <div class="relative">
-                    <input :type="showSecret ? 'text' : 'password'" readonly :value="userData.accessSecret" class="block w-full pr-10 py-2 px-3 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                    <input :type="showSecret ? 'text' : 'password'" readonly :value="userData.accessSecret"
+                      class="block w-full pr-10 py-2 px-3 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
                   </div>
                 </div>
 
                 <!-- API Management Buttons -->
                 <div class="flex flex-wrap gap-4 mt-6">
-                  <button @click="confirmResetApiKeys" 
+                  <button @click="confirmResetApiKeys"
                     class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-red-600 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 shadow-sm transition-all duration-200"
                     :disabled="isGeneratingKeys">
                     <Icon icon="mdi:delete" class="h-4 w-4 mr-2" />
@@ -287,7 +312,8 @@
                     </div>
                     <div class="ml-3">
                       <p class="text-sm text-red-700">
-                        <strong>Warning:</strong> Resetting your API keys will invalidate any existing keys. All applications using these credentials will need to be updated.
+                        <strong>Warning:</strong> Resetting your API keys will invalidate any existing keys. All
+                        applications using these credentials will need to be updated.
                       </p>
                     </div>
                   </div>
@@ -298,7 +324,8 @@
               <div class="mt-6">
                 <h4 class="text-sm font-medium text-gray-700 mb-2">Example API Request</h4>
                 <div class="bg-gray-800 text-gray-200 p-4 rounded-md overflow-x-auto">
-                  <pre class="text-xs"><code>curl -X GET "https://api.team695.com/auth/me" \
+                  <pre
+                    class="text-xs"><code>curl -X GET "https://api.team695.com/auth/me" \
   -H "X-API-Key: {{ userData.accessKey || 'YOUR_ACCESS_KEY' }}" \
   -H "X-API-Secret: {{ showSecret ? (userData.accessSecret || 'YOUR_ACCESS_SECRET') : '************************' }}"</code></pre>
                 </div>
@@ -312,7 +339,8 @@
                   </div>
                   <div class="ml-3">
                     <p class="text-sm text-yellow-700">
-                      Keep your API credentials secure. Never share your Access Secret or include it in client-side code.
+                      Keep your API credentials secure. Never share your Access Secret or include it in client-side
+                      code.
                       If you suspect your credentials have been compromised, reset them immediately.
                     </p>
                   </div>
@@ -323,7 +351,8 @@
         </div>
 
         <!-- Google Authentication Card -->
-        <div v-if="userData.google || (userData.properties && Object.keys(userData.properties).some(key => key.startsWith('oauth_Google')))"
+        <div
+          v-if="userData.google || (userData.properties && Object.keys(userData.properties).some(key => key.startsWith('oauth_Google')))"
           class="bg-white shadow rounded-lg overflow-hidden mb-6">
           <div class="px-6 py-5 sm:px-8 border-b border-gray-200">
             <div class="flex items-center">
@@ -347,10 +376,12 @@
                 <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-medium">{{ userData.google || 'Not available' }}</dd>
               </div>
 
-              <div v-if="userData.properties && Object.keys(userData.properties).some(key => key.startsWith('oauth_Google'))"
+              <div
+                v-if="userData.properties && Object.keys(userData.properties).some(key => key.startsWith('oauth_Google'))"
                 class="bg-white px-6 py-4 sm:px-8 m-2">
                 <details class="w-full">
-                  <summary class="cursor-pointer text-sm font-medium text-blue-600 hover:text-blue-500 focus:outline-none flex items-center">
+                  <summary
+                    class="cursor-pointer text-sm font-medium text-blue-600 hover:text-blue-500 focus:outline-none flex items-center">
                     <Icon icon="mdi:information-outline" class="h-5 w-5 mr-2" />
                     View Google Account Details
                     <Icon icon="mdi:chevron-down" class="ml-2 h-4 w-4" />
@@ -406,7 +437,8 @@
                 </dt>
                 <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-medium">{{ orgData.displayName }}</dd>
               </div>
-              <div v-if="orgData.websiteUrl" class="bg-gray-50 px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-8 rounded-md m-2">
+              <div v-if="orgData.websiteUrl"
+                class="bg-gray-50 px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-8 rounded-md m-2">
                 <dt class="text-sm font-medium text-gray-500 flex items-center">
                   <Icon icon="mdi:web" class="h-5 w-5 mr-2 text-blue-500" />
                   Website
@@ -417,7 +449,8 @@
                   </a>
                 </dd>
               </div>
-              <div v-if="orgData.logo" class="bg-white px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-8 rounded-md m-2">
+              <div v-if="orgData.logo"
+                class="bg-white px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-8 rounded-md m-2">
                 <dt class="text-sm font-medium text-gray-500 flex items-center">
                   <Icon icon="mdi:image" class="h-5 w-5 mr-2 text-blue-500" />
                   Logo
@@ -447,7 +480,8 @@
 
           <div class="border-t border-gray-200">
             <details class="w-full">
-              <summary class="cursor-pointer text-sm font-medium text-blue-600 hover:text-blue-500 focus:outline-none px-6 py-4 sm:px-8 flex items-center">
+              <summary
+                class="cursor-pointer text-sm font-medium text-blue-600 hover:text-blue-500 focus:outline-none px-6 py-4 sm:px-8 flex items-center">
                 <Icon icon="mdi:information-outline" class="h-5 w-5 mr-2" />
                 View All Properties
                 <Icon icon="mdi:chevron-down" class="ml-2 h-4 w-4" />
@@ -466,8 +500,7 @@
           </div>
         </div>
 
-        <div v-if="!isLoading && !error && isDev"
-          class="bg-white shadow rounded-lg overflow-hidden mb-6">
+        <div v-if="!isLoading && !error && isDev" class="bg-white shadow rounded-lg overflow-hidden mb-6">
           <div class="px-6 py-5 sm:px-8 border-b border-gray-200">
             <div class="flex items-center">
               <div class="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center mr-3">
@@ -482,7 +515,8 @@
 
           <div class="border-t border-gray-200">
             <details class="w-full">
-              <summary class="cursor-pointer text-sm font-medium text-blue-600 hover:text-blue-500 focus:outline-none px-6 py-4 sm:px-8 flex items-center">
+              <summary
+                class="cursor-pointer text-sm font-medium text-blue-600 hover:text-blue-500 focus:outline-none px-6 py-4 sm:px-8 flex items-center">
                 <Icon icon="mdi:code-braces" class="h-5 w-5 mr-2" />
                 View Raw Data
                 <Icon icon="mdi:chevron-down" class="ml-2 h-4 w-4" />
@@ -495,9 +529,10 @@
         </div>
       </div>
     </div>
-    
+
     <!-- API Keys Reset Confirmation Modal -->
-    <div v-if="showResetConfirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div v-if="showResetConfirmModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div class="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
         <div class="flex items-start">
           <div class="flex-shrink-0 bg-red-100 rounded-full p-2">
@@ -506,14 +541,17 @@
           <div class="ml-4">
             <h3 class="text-lg font-medium text-gray-900">Reset API Keys?</h3>
             <p class="mt-2 text-sm text-gray-500">
-              This action will permanently delete your current API keys. All applications using these credentials will stop working.
+              This action will permanently delete your current API keys. All applications using these credentials will
+              stop working.
               Are you sure you want to continue?
             </p>
             <div class="mt-4 flex justify-end space-x-3">
-              <button @click="showResetConfirmModal = false" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              <button @click="showResetConfirmModal = false"
+                class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                 Cancel
               </button>
-              <button @click="resetApiKeys" class="bg-red-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+              <button @click="resetApiKeys"
+                class="bg-red-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                 Reset Keys
               </button>
             </div>
@@ -521,10 +559,9 @@
         </div>
       </div>
     </div>
-    
+
     <!-- Success Notification Toast -->
-    <div v-if="showToast" 
-      class="fixed top-4 right-4 px-4 py-2 rounded shadow-lg z-50 transition-opacity duration-300"
+    <div v-if="showToast" class="fixed top-4 right-4 px-4 py-2 rounded shadow-lg z-50 transition-opacity duration-300"
       :class="toastType === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'">
       {{ toastMessage }}
     </div>
@@ -536,13 +573,15 @@ import { defineComponent, computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { casdoorService } from '@/services/auth';
 import { Icon } from '@iconify/vue';
+import CachedAvatar from '@/components/common/CachedAvatar.vue';
 import { useUserStore } from '@/stores/userStore';
 import { storeToRefs } from 'pinia';
 
 export default defineComponent({
   name: 'ProfileView',
   components: {
-    Icon
+    Icon,
+    CachedAvatar
   },
   setup() {
     const router = useRouter();

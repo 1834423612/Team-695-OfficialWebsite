@@ -1,32 +1,35 @@
 import { casdoorService } from './auth';
+import { logger } from '@/utils/logger';
 
 /**
- * API响应拦截器
- * 用于统一检查API响应中的身份验证错误
+ * API Response Interceptor
+ * For uniformly checking authentication errors in API responses
  */
 export const checkAuthInResponse = (response: any): boolean => {
     if (!response) return true;
     
-    // 针对标准错误格式进行检查
+    // Check standard error format
     if (response.success === true && response.data) {
         const data = response.data;
         
-        // 检查特定的错误格式
+        // Check specific error format
         if (data.status === 'error' && data.msg) {
             const errorMsg = data.msg;
             
-            // 检查与登录态相关的错误消息
+            // Check for login-related error messages
             if (errorMsg.includes('token') || 
                 errorMsg.includes('Access') || 
                 errorMsg.includes('exist') ||
                 errorMsg.includes('expired') ||
                 errorMsg.includes('invalid')) {
                 
-                console.warn('API authentication error detected:', errorMsg);
+                logger.pretty('Auth Error', errorMsg, 'error');
                 
-                // 触发认证处理
+                // Trigger auth handling
                 setTimeout(() => {
-                    casdoorService.handleInvalidAuthResponse().catch(console.error);
+                    casdoorService.handleInvalidAuthResponse().catch(error => 
+                        logger.error('Failed to handle invalid auth response:', error)
+                    );
                 }, 0);
                 
                 return false;
@@ -38,44 +41,131 @@ export const checkAuthInResponse = (response: any): boolean => {
 };
 
 /**
- * 通用的fetch API包装器，添加自动的身份验证和错误处理
+ * Common fetch API wrapper with automatic authentication and error handling
  */
 export const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<any> => {
+    const startTime = Date.now();
+    let method = options.method || 'GET';
+    
     try {
-        // 确保headers存在
+        // Ensure headers exist
         if (!options.headers) {
             options.headers = {};
         }
         
-        // 添加授权头
+        // Add authorization header
         const token = casdoorService.getToken();
         if (token) {
             (options.headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
         }
         
-        // 发送请求
-        const response = await fetch(url, options);
+        logger.prettyGroup(`API Request: ${method} ${getDisplayUrl(url)}`, 'info', true);
+        if (options.body && typeof options.body === 'string') {
+            try {
+                const bodyData = JSON.parse(options.body);
+                logger.info('Request data:', bodyData);
+            } catch (e) {
+                // Ignore if not JSON
+            }
+        }
         
-        // 检查HTTP状态
+        // Send request
+        const response = await fetch(url, options);
+        const duration = Date.now() - startTime;
+        
+        // Check HTTP status
         if (!response.ok) {
-            // 特殊处理401和403错误
+            // Special handling for 401 and 403 errors
             if (response.status === 401 || response.status === 403) {
-                console.warn(`Auth error ${response.status} detected in API response`);
+                logger.pretty('Auth Error', `${response.status} ${response.statusText}`, 'error');
+                logger.http(method, url, response.status, duration);
+                
                 await casdoorService.handleInvalidAuthResponse();
+                logger.groupEnd();
                 throw new Error(`Authentication error: ${response.status}`);
             }
+            
+            logger.http(method, url, response.status, duration);
+            logger.pretty('Request Failed', `${response.status} ${response.statusText}`, 'error');
+            logger.groupEnd();
             throw new Error(`API error: ${response.status}`);
         }
         
-        // 解析JSON响应
+        // Parse JSON response
         const data = await response.json();
+        logger.http(method, url, response.status, duration);
         
-        // 检查认证错误
-        checkAuthInResponse(data);
+        // Show brief response summary
+        const responsePreview = getResponsePreview(data);
+        logger.info('Response data:', responsePreview);
         
+        // Check for auth errors
+        const isAuthValid = checkAuthInResponse(data);
+        if (!isAuthValid) {
+            logger.pretty('Auth Error', 'Authentication issue detected in response', 'error');
+        }
+        
+        logger.groupEnd();
         return data;
     } catch (error) {
-        console.error('API request failed:', error);
+        const duration = Date.now() - startTime;
+        logger.http(method, url, 500, duration); // Use 500 to indicate request failure
+        logger.pretty('Request Exception', error instanceof Error ? error.message : String(error), 'error');
+        
+        if (logger.isGroupOpen()) {
+            logger.groupEnd();
+        }
         throw error;
     }
 };
+
+/**
+ * Helper function: Get URL for display (removes domain)
+ */
+function getDisplayUrl(url: string): string {
+    try {
+        const urlObj = new URL(url);
+        return urlObj.pathname + urlObj.search;
+    } catch (e) {
+        return url;
+    }
+}
+
+/**
+ * Helper function: Get preview of response data
+ */
+function getResponsePreview(data: any): any {
+    if (!data) return data;
+    
+    // If array, return length and first few items
+    if (Array.isArray(data)) {
+        return {
+            length: data.length,
+            preview: data.slice(0, 3),
+            ...(data.length > 3 ? { more: `...and ${data.length - 3} more items` } : {})
+        };
+    }
+    
+    // If object, return summary version
+    if (typeof data === 'object') {
+        // Create a summary version to avoid console lag with large objects
+        const keys = Object.keys(data);
+        if (keys.length > 10) {
+            const preview: Record<string, any> = {};
+            keys.slice(0, 10).forEach(key => {
+                preview[key] = data[key];
+            });
+            return {
+                ...preview,
+                _summary: `[Object with ${keys.length} keys]`
+            };
+        }
+    }
+    
+    return data;
+}
+
+// Add isGroupOpen method
+if (typeof logger.isGroupOpen !== 'function') {
+    logger.isGroupOpen = () => true;  // Default assume group is open to ensure safe closing
+}

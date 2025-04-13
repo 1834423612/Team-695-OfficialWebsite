@@ -1,16 +1,17 @@
 import { avatarCache } from '@/services/avatarCache';
+import { logger } from '@/utils/logger';
 
-// 缓存调试工具
+// Cache debugger tool
 declare global {
     interface Window {
         avatarDebug?: typeof AvatarCacheDebugger;
     }
 }
 
-// 为开发环境提供头像缓存调试工具
+// Avatar cache debugging tool for development environment
 const AvatarCacheDebugger = {
     /**
-     * 显示所有头像缓存项
+     * Display all avatar cache entries
      */
     listAllCaches() {
         const result: Record<string, any> = {};
@@ -41,52 +42,62 @@ const AvatarCacheDebugger = {
             }
         }
         
-        console.log(`Found ${count} avatar cache entries`);
-        console.table(result);
+        logger.prettyGroup('Avatar Cache Statistics', 'primary', false);
+        logger.info(`Found ${count} avatar cache entries`);
+        logger.table(result);
+        logger.groupEnd();
+        
         return result;
     },
     
     /**
-     * 手动测试缓存特定用户的头像
+     * Manually test caching an avatar for specific user
      */
     async testCache(userId: string, avatarUrl: string) {
-        console.log(`Testing cache for user ${userId} with URL: ${avatarUrl}`);
+        logger.prettyGroup('Test User Avatar Cache', 'info', false);
+        logger.pretty('User ID', userId, 'info');
+        logger.pretty('Avatar URL', avatarUrl.substring(0, 50) + (avatarUrl.length > 50 ? '...' : ''), 'info');
         
         try {
-            // 1. 清除现有缓存
-            console.log('Clearing existing cache...');
+            // 1. Clear existing cache
+            logger.info('Clearing existing cache...');
             avatarCache.clearCache(userId);
             
-            // 2. 缓存新头像
-            console.log('Caching new avatar...');
+            // 2. Cache new avatar
+            logger.info('Caching new avatar...');
             const result = await avatarCache.cacheAvatar(userId, avatarUrl);
             
-            // 3. 验证缓存是否成功
+            // 3. Verify cache success
             const cacheKey = `avatar_cache_${userId}`;
             const cachedData = localStorage.getItem(cacheKey);
             
-            console.log('Cache result:', {
+            const cacheResult = {
                 success: !!result,
                 cachedInLocalStorage: !!cachedData,
                 dataLength: result?.length || 0,
                 localStorageEntryLength: cachedData?.length || 0
-            });
+            };
             
-            return !!result && !!cachedData;
+            logger.table(cacheResult, 'Cache Result');
+            logger.pretty('Status', cacheResult.success ? 'Success' : 'Failed', cacheResult.success ? 'success' : 'error');
+            logger.groupEnd();
+            
+            return cacheResult.success;
         } catch (error) {
-            console.error('Test cache failed:', error);
+            logger.error('Cache test failed:', error);
+            logger.groupEnd();
             return false;
         }
     },
     
     /**
-     * 清除所有头像缓存
+     * Clear all avatar caches
      */
     clearAll() {
+        logger.prettyGroup('Clear All Avatar Caches', 'warn', false);
         avatarCache.clearAllCache();
-        console.log('All avatar caches cleared');
         
-        // 验证清除
+        // Verify clearing
         let remainingCount = 0;
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
@@ -95,14 +106,20 @@ const AvatarCacheDebugger = {
             }
         }
         
-        return {
+        const result = {
             success: remainingCount === 0,
             remainingCaches: remainingCount
         };
+        
+        logger.pretty('Result', result.success ? 'All caches cleared' : `${result.remainingCaches} cache items remain`, 
+                      result.success ? 'success' : 'warn');
+        logger.groupEnd();
+        
+        return result;
     },
     
     /**
-     * 检查localStorage空间使用情况
+     * Check localStorage space usage
      */
     checkStorageUsage() {
         let totalBytes = 0;
@@ -126,19 +143,23 @@ const AvatarCacheDebugger = {
         const usageInMB = totalBytes / (1024 * 1024);
         const avatarUsageInMB = avatarCacheBytes / (1024 * 1024);
         
-        // 排序得到最大的项
+        // Sort to get the largest items
         const sortedItems = Object.entries(items)
             .sort((a, b) => b[1] - a[1])
-            .slice(0, 5); // 只取前5个
-            
-        console.log('localStorage usage:', {
-            totalMB: usageInMB.toFixed(2) + ' MB',
-            avatarCacheMB: avatarUsageInMB.toFixed(2) + ' MB',
-            avatarCachePercentage: (avatarCacheBytes / totalBytes * 100).toFixed(1) + '%',
-            largestItems: Object.fromEntries(
-                sortedItems.map(([key, size]) => [key, (size / 1024).toFixed(1) + ' KB'])
-            )
+            .slice(0, 5); // Only take top 5
+        
+        logger.prettyGroup('localStorage Usage Statistics', 'system', false);
+        logger.info('Overall storage usage:');
+        logger.pretty('Total Space', `${usageInMB.toFixed(2)} MB`, 'info');
+        logger.pretty('Avatar Cache', `${avatarUsageInMB.toFixed(2)} MB (${(avatarCacheBytes / totalBytes * 100).toFixed(1)}%)`, 'primary');
+        
+        logger.prettyGroup('Largest Storage Items (Top 5)', 'secondary', true);
+        sortedItems.forEach(([key, size], index) => {
+            logger.pretty(`#${index+1}`, `${key}: ${(size / 1024).toFixed(1)} KB`, size > 100000 ? 'warn' : 'info');
         });
+        logger.groupEnd(); // Close largest items group
+        
+        logger.groupEnd(); // Close overall stats group
         
         return {
             totalBytes,
@@ -150,10 +171,10 @@ const AvatarCacheDebugger = {
     }
 };
 
-// 在开发环境中暴露给全局
+// Expose to global scope in development environment
 if (process.env.NODE_ENV === 'development') {
     (window as any).avatarDebug = AvatarCacheDebugger;
-    console.log('Avatar cache debugger available as window.avatarDebug');
+    logger.pretty('Debug Tools', 'Avatar cache debugger available as window.avatarDebug', 'important');
 }
 
 export default AvatarCacheDebugger;
