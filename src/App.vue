@@ -24,6 +24,7 @@ export default defineComponent({
     Header,
     Footer,
     ApiErrorHandler,
+    GlobalNotification,
   },
   setup() {
     const route = useRoute();
