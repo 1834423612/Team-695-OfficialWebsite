@@ -14,18 +14,33 @@ const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000;
 const DEFAULT_SIZE = 200;
 // 数据库名称和版本
 const DB_NAME = 'avatar_cache_db';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // 提高版本号，以支持新的索引和存储结构
 const STORE_NAME = 'avatars';
+// 请求控制 - 同一URL的最小请求间隔（24小时）
+const REQUEST_THROTTLE = 24 * 60 * 60 * 1000;
+// 最近请求记录存储
+const REQUEST_STORE = 'avatar_requests';
 
 interface CacheEntry {
     dataUrl: string;
     timestamp: number;
     originalUrl: string;
+    userId: string; // 添加明确的用户ID关联
+    userName?: string; // 可选：存储用户名以便于调试和识别
+    displayName?: string; // 可选：存储显示名以便于调试和识别
+}
+
+interface RequestRecord {
+    url: string;
+    timestamp: number;
+    count: number; // 计数器，记录请求次数
 }
 
 class AvatarCacheService {
     // 内存缓存，用于快速访问
     private memoryCache: Map<string, CacheEntry> = new Map();
+    // 请求记录，用于控制请求频率
+    private requestCache: Map<string, RequestRecord> = new Map();
     // 数据库连接
     private dbPromise: Promise<IDBDatabase> | null = null;
     // 是否已初始化
@@ -49,6 +64,7 @@ class AvatarCacheService {
      * 初始化缓存服务
      * - 打开IndexedDB连接
      * - 加载关键头像到内存缓存
+     * - 初始化请求控制系统
      * 
      * 多次调用是安全的，会返回相同的Promise
      */
@@ -76,6 +92,9 @@ class AvatarCacheService {
             // 从IndexedDB预加载最近的头像到内存缓存
             await this.preloadRecentAvatars();
             
+            // 加载请求记录到内存
+            await this.loadRequestRecords();
+            
             this.initialized = true;
             console.log(`Avatar cache initialized with ${this.memoryCache.size} entries in memory cache`);
         } catch (e) {
@@ -90,8 +109,16 @@ class AvatarCacheService {
      * 缓存用户头像
      * @param userId 用户ID
      * @param avatarUrl 头像URL
+     * @param userInfo 可选的用户信息，帮助识别头像所属用户
      */
-    public async cacheAvatar(userId: string, avatarUrl: string | null | undefined): Promise<string | null> {
+    public async cacheAvatar(
+        userId: string, 
+        avatarUrl: string | null | undefined,
+        userInfo?: {
+            name?: string,
+            displayName?: string
+        }
+    ): Promise<string | null> {
         // 确保服务已初始化
         if (!this.initialized) {
             await this.init();
@@ -100,18 +127,46 @@ class AvatarCacheService {
         if (!userId || !avatarUrl) return null;
 
         try {
+            // 检查请求频率限制
+            if (this.shouldThrottleRequest(avatarUrl)) {
+                console.log(`Request throttled for URL: ${avatarUrl}`);
+                
+                // 如果有缓存，返回缓存
+                const cachedEntry = this.memoryCache.get(userId);
+                if (cachedEntry) {
+                    return cachedEntry.dataUrl;
+                }
+                
+                // 尝试从DB获取
+                const dbEntry = await this.getFromDb(userId);
+                if (dbEntry) {
+                    // 更新内存缓存
+                    this.memoryCache.set(userId, dbEntry);
+                    return dbEntry.dataUrl;
+                }
+                
+                // 如果没有缓存，返回null让调用者使用默认头像
+                return null;
+            }
+            
             console.log(`Caching avatar for user ${userId}: ${avatarUrl}`);
+
+            // 记录请求以控制频率
+            this.recordRequest(avatarUrl);
 
             // 获取图像并转换为Data URL
             const dataUrl = await this.fetchImageAsDataUrl(avatarUrl);
 
             if (!dataUrl) return null;
 
-            // 创建缓存条目
+            // 创建缓存条目，包含用户信息
             const entry: CacheEntry = {
                 dataUrl,
                 timestamp: Date.now(),
-                originalUrl: avatarUrl
+                originalUrl: avatarUrl,
+                userId: userId,
+                userName: userInfo?.name,
+                displayName: userInfo?.displayName
             };
 
             // 更新内存缓存
@@ -155,9 +210,12 @@ class AvatarCacheService {
         
         // 如果有有效缓存，返回缓存的数据URL
         if (cachedEntry && Date.now() - cachedEntry.timestamp < CACHE_DURATION) {
-            // 如果提供了新URL且与缓存的不同，异步更新缓存
-            if (avatarUrl && cachedEntry.originalUrl !== avatarUrl && !cacheOnly) {
-                this.cacheAvatar(userId, avatarUrl).catch(console.error);
+            // 如果提供了新URL且与缓存的不同，异步更新缓存（但需要检查频率限制）
+            if (avatarUrl && cachedEntry.originalUrl !== avatarUrl && !cacheOnly && !this.shouldThrottleRequest(avatarUrl)) {
+                this.cacheAvatar(userId, avatarUrl, {
+                    name: userInfo?.name,
+                    displayName: userInfo?.displayName
+                }).catch(console.error);
             }
             return cachedEntry.dataUrl;
         }
@@ -169,9 +227,12 @@ class AvatarCacheService {
                 // 将找到的条目放入内存缓存
                 this.memoryCache.set(userId, entry);
                 
-                // 如果提供了新URL且与缓存的不同，异步更新缓存
-                if (avatarUrl && entry.originalUrl !== avatarUrl && !cacheOnly) {
-                    this.cacheAvatar(userId, avatarUrl).catch(console.error);
+                // 如果提供了新URL且与缓存的不同，异步更新缓存（但需要检查频率限制）
+                if (avatarUrl && entry.originalUrl !== avatarUrl && !cacheOnly && !this.shouldThrottleRequest(avatarUrl)) {
+                    this.cacheAvatar(userId, avatarUrl, {
+                        name: userInfo?.name,
+                        displayName: userInfo?.displayName
+                    }).catch(console.error);
                 }
                 
                 return entry.dataUrl;
@@ -180,12 +241,15 @@ class AvatarCacheService {
             console.warn(`Failed to get avatar from DB for ${userId}:`, e);
         }
         
-        // 检查并迁移旧缓存 - 确保调用 migrateOldCache
+        // 检查并迁移旧缓存
         this.migrateOldCache(userId);
         
         // 如果没有有效缓存但提供了URL且不是只使用缓存模式，尝试缓存并返回
-        if (avatarUrl && !cacheOnly) {
-            const dataUrl = await this.cacheAvatar(userId, avatarUrl);
+        if (avatarUrl && !cacheOnly && !this.shouldThrottleRequest(avatarUrl)) {
+            const dataUrl = await this.cacheAvatar(userId, avatarUrl, {
+                name: userInfo?.name,
+                displayName: userInfo?.displayName
+            });
             if (dataUrl) return dataUrl;
         }
         
@@ -259,6 +323,172 @@ class AvatarCacheService {
             if (key && key.startsWith(CACHE_PREFIX)) {
                 localStorage.removeItem(key);
             }
+        }
+        
+        // 也清除请求记录
+        this.requestCache.clear();
+        try {
+            const db = await this.dbPromise;
+            if (!db) return;
+            
+            if (db.objectStoreNames.contains(REQUEST_STORE)) {
+                const transaction = db.transaction([REQUEST_STORE], 'readwrite');
+                const store = transaction.objectStore(REQUEST_STORE);
+                await promisifyRequest(store.clear());
+            }
+        } catch (e) {
+            console.error('Failed to clear request records:', e);
+        }
+    }
+
+    /**
+     * 检查是否应该限制请求
+     * @param url 请求的URL
+     * @returns 是否应该限制请求
+     */
+    private shouldThrottleRequest(url: string): boolean {
+        const record = this.requestCache.get(url);
+        if (!record) return false;
+        
+        const timeSinceLastRequest = Date.now() - record.timestamp;
+        
+        // 根据频率计算限流策略
+        // 如果请求计数较高且时间较短，进行更严格的限制
+        let throttleTime = REQUEST_THROTTLE;
+        
+        if (record.count > 10) {
+            // 请求超过10次，限流时间加倍
+            throttleTime = REQUEST_THROTTLE * 2;
+        } else if (record.count > 5) {
+            // 请求超过5次，限流时间增加50%
+            throttleTime = REQUEST_THROTTLE * 1.5;
+        }
+        
+        return timeSinceLastRequest < throttleTime;
+    }
+
+    /**
+     * 记录请求以控制频率
+     * @param url 请求的URL
+     */
+    private recordRequest(url: string): void {
+        const now = Date.now();
+        const existingRecord = this.requestCache.get(url);
+        
+        if (existingRecord) {
+            // 如果记录比较旧（超过限制时间），重置计数器
+            if (now - existingRecord.timestamp > REQUEST_THROTTLE) {
+                this.requestCache.set(url, {
+                    url,
+                    timestamp: now,
+                    count: 1
+                });
+            } else {
+                // 否则增加计数器
+                this.requestCache.set(url, {
+                    url,
+                    timestamp: now,
+                    count: existingRecord.count + 1
+                });
+            }
+        } else {
+            // 新URL，创建新记录
+            this.requestCache.set(url, {
+                url,
+                timestamp: now,
+                count: 1
+            });
+        }
+        
+        // 保存到IndexedDB
+        this.saveRequestRecord(url, this.requestCache.get(url)!).catch(e => {
+            console.warn('Failed to save request record:', e);
+        });
+    }
+
+    /**
+     * 保存请求记录到IndexedDB
+     */
+    private async saveRequestRecord(url: string, record: RequestRecord): Promise<void> {
+        try {
+            const db = await this.dbPromise;
+            if (!db || !db.objectStoreNames.contains(REQUEST_STORE)) return;
+            
+            const transaction = db.transaction([REQUEST_STORE], 'readwrite');
+            const store = transaction.objectStore(REQUEST_STORE);
+            await promisifyRequest(store.put(record, url));
+        } catch (e) {
+            console.error(`Failed to save request record for ${url}:`, e);
+        }
+    }
+
+    /**
+     * 从IndexedDB加载请求记录
+     */
+    private async loadRequestRecords(): Promise<void> {
+        try {
+            const db = await this.dbPromise;
+            if (!db || !db.objectStoreNames.contains(REQUEST_STORE)) return;
+            
+            const transaction = db.transaction([REQUEST_STORE], 'readonly');
+            const store = transaction.objectStore(REQUEST_STORE);
+            const records = await promisifyRequest<RequestRecord[]>(store.getAll());
+            const urls = await promisifyRequest<IDBValidKey[]>(store.getAllKeys());
+            
+            // 加载到内存
+            for (let i = 0; i < urls.length; i++) {
+                if (i < records.length) {
+                    this.requestCache.set(String(urls[i]), records[i]);
+                }
+            }
+            
+            console.log(`Loaded ${this.requestCache.size} request records`);
+            
+            // 清理过期的请求记录
+            this.cleanupRequestRecords();
+        } catch (e) {
+            console.error('Failed to load request records:', e);
+        }
+    }
+
+    /**
+     * 清理过期的请求记录
+     */
+    private async cleanupRequestRecords(): Promise<void> {
+        const now = Date.now();
+        const expiredUrls: string[] = [];
+        
+        // 查找过期记录
+        this.requestCache.forEach((record, url) => {
+            if (now - record.timestamp > REQUEST_THROTTLE * 3) {
+                expiredUrls.push(url);
+            }
+        });
+        
+        // 从内存缓存中删除
+        for (const url of expiredUrls) {
+            this.requestCache.delete(url);
+        }
+        
+        // 从IndexedDB删除
+        try {
+            if (expiredUrls.length === 0) return;
+            
+            const db = await this.dbPromise;
+            if (!db || !db.objectStoreNames.contains(REQUEST_STORE)) return;
+            
+            const transaction = db.transaction([REQUEST_STORE], 'readwrite');
+            const store = transaction.objectStore(REQUEST_STORE);
+            
+            for (const url of expiredUrls) {
+                promisifyRequest(store.delete(url)).catch(e => {
+                    console.warn(`Failed to delete expired request record for ${url}:`, e);
+                });
+            }
+            
+            console.log(`Cleaned up ${expiredUrls.length} expired request records`);
+        } catch (e) {
+            console.error('Failed to cleanup expired request records:', e);
         }
     }
 
@@ -413,7 +643,8 @@ class AvatarCacheService {
                         const entry: CacheEntry = {
                             dataUrl: parsed.dataUrl,
                             timestamp: parsed.timestamp || Date.now(),
-                            originalUrl: parsed.originalUrl || ''
+                            originalUrl: parsed.originalUrl || '',
+                            userId: userId
                         };
 
                         // 保存到新缓存
@@ -503,9 +734,16 @@ class AvatarCacheService {
             request.onupgradeneeded = (event) => {
                 const db = (event.target as IDBOpenDBRequest).result;
                 
-                // 创建对象存储
+                // 创建头像存储
                 if (!db.objectStoreNames.contains(STORE_NAME)) {
                     db.createObjectStore(STORE_NAME);
+                }
+                
+                // 创建请求记录存储
+                if (!db.objectStoreNames.contains(REQUEST_STORE)) {
+                    const requestStore = db.createObjectStore(REQUEST_STORE);
+                    // 为请求记录添加时间戳索引，方便清理过期记录
+                    requestStore.createIndex('timestamp', 'timestamp', { unique: false });
                 }
             };
         });
@@ -662,6 +900,44 @@ class AvatarCacheService {
             console.error('Failed to ensure storage space:', e);
         }
     }
+    
+    /**
+     * 获取缓存信息统计
+     * 用于调试和监控
+     */
+    public async getCacheStats(): Promise<{
+        memoryEntries: number,
+        requestEntries: number,
+        dbEntries: number
+    }> {
+        try {
+            // 确保已初始化
+            if (!this.initialized) {
+                await this.init();
+            }
+            
+            let dbEntries = 0;
+            try {
+                const allEntries = await this.getAllFromDb();
+                dbEntries = allEntries.length;
+            } catch (e) {
+                console.error('Failed to get DB entries count:', e);
+            }
+            
+            return {
+                memoryEntries: this.memoryCache.size,
+                requestEntries: this.requestCache.size,
+                dbEntries
+            };
+        } catch (e) {
+            console.error('Failed to get cache stats:', e);
+            return {
+                memoryEntries: this.memoryCache.size,
+                requestEntries: this.requestCache.size,
+                dbEntries: 0
+            };
+        }
+    }
 }
 
 /**
@@ -682,9 +958,9 @@ if (process.env.NODE_ENV === 'development') {
     // 在开发环境中添加全局调试变量
     (window as any).avatarCacheDebug = {
         service: avatarCache,
-        testCache: async (userId: string, url: string) => {
+        testCache: async (userId: string, url: string, userName?: string) => {
             console.log(`Testing cache for ${userId} with ${url}`);
-            const result = await avatarCache.cacheAvatar(userId, url);
+            const result = await avatarCache.cacheAvatar(userId, url, {name: userName});
             console.log('Result:', result ? 'Success' : 'Failed');
             return result;
         },
@@ -712,6 +988,8 @@ if (process.env.NODE_ENV === 'development') {
                     result[userId] = {
                         originalUrl: entry.originalUrl,
                         timestamp: new Date(entry.timestamp).toLocaleString(),
+                        userName: entry.userName || 'unknown',
+                        displayName: entry.displayName || 'unknown',
                         dataUrlLength: entry.dataUrl?.length || 0
                     };
                 }
@@ -719,6 +997,33 @@ if (process.env.NODE_ENV === 'development') {
                 return result;
             } catch (e) {
                 console.error('Error getting all caches:', e);
+                return { error: String(e) };
+            }
+        },
+        getRequestStats: async () => {
+            try {
+                // 确保服务已初始化
+                if (!avatarCache.isInitialized()) {
+                    await avatarCache.init();
+                }
+                
+                const stats = await avatarCache.getCacheStats();
+                console.table(stats);
+                
+                // 获取请求记录详情
+                const requestData: Record<string, any> = {};
+                (avatarCache as any).requestCache.forEach((record: RequestRecord, url: string) => {
+                    requestData[url] = {
+                        lastRequest: new Date(record.timestamp).toLocaleString(),
+                        count: record.count,
+                        throttled: (avatarCache as any).shouldThrottleRequest(url) ? 'Yes' : 'No'
+                    };
+                });
+                
+                console.table(requestData);
+                return { stats, requestData };
+            } catch (e) {
+                console.error('Error getting request stats:', e);
                 return { error: String(e) };
             }
         }

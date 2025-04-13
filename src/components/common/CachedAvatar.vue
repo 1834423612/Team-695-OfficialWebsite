@@ -117,7 +117,13 @@ export default defineComponent({
                 style.backgroundColor = props.bgColor;
             } else {
                 // Generate background color based on user ID for consistency
-                const hash = hashCode(props.userId);
+                let seed = props.displayName || props.name || props.firstName || '';
+                if (!seed) {
+                    // 如果没有名字相关信息，再回退到userId
+                    seed = props.userId;
+                }
+                
+                const hash = hashCode(seed);
                 const hue = hash % 360;
                 style.backgroundColor = `hsl(${hue}, 70%, 75%)`;
                 style.color = hue > 210 && hue < 330 ? '#fff' : '#333';
@@ -212,7 +218,7 @@ export default defineComponent({
 
         // Handle image loading error
         const handleImageError = () => {
-            console.warn(`Avatar load failed for ${props.userId}`);
+            console.warn(`Avatar load failed for user: ${props.displayName || props.name || props.userId}`);
             loadFailed.value = true;
             avatarSrc.value = null;
         };

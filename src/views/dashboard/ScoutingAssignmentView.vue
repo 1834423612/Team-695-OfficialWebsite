@@ -247,7 +247,7 @@
                                                 <div v-for="(assignee, idx) in getAssigneesList(assignment)" :key="idx"
                                                     class="flex items-center">
                                                     <div class="flex-shrink-0">
-                                                        <img v-if="assignee.avatar" :src="assignee.avatar"
+                                                        <CachedAvatar v-if="assignee.avatar" :userId="assignee.id" :src="assignee.avatar"
                                                             alt="Assignee Avatar"
                                                             class="h-8 w-8 rounded-full object-cover" />
                                                         <div v-else
@@ -431,7 +431,7 @@
                                                     <div v-for="(assignee, idx) in selectedAssignees" :key="idx"
                                                         class="inline-flex items-center bg-gray-100 rounded-full pl-2 pr-1 py-1">
                                                         <div class="flex-shrink-0 mr-1">
-                                                            <img v-if="assignee.avatar" :src="assignee.avatar"
+                                                            <CachedAvatar v-if="assignee.avatar" :userId="assignee.id" :src="assignee.avatar"
                                                                 alt="User Avatar"
                                                                 class="h-6 w-6 rounded-full object-cover" />
                                                             <div v-else
@@ -479,7 +479,7 @@
                                                             class="cursor-pointer hover:bg-gray-100 px-4 py-2">
                                                             <div class="flex items-center">
                                                                 <div class="flex-shrink-0">
-                                                                    <img v-if="user.avatar" :src="user.avatar"
+                                                                    <CachedAvatar v-if="user.avatar" :userId="user.id" :src="user.avatar"
                                                                         alt="User Avatar"
                                                                         class="h-8 w-8 rounded-full object-cover" />
                                                                     <div v-else
@@ -629,11 +629,13 @@ import { useUserStore } from '@/stores/userStore';
 import { storeToRefs } from 'pinia';
 import { casdoorService } from '@/services/auth';
 import Swal from 'sweetalert2';
+import CachedAvatar from '@/components/common/CachedAvatar.vue'; // 导入CachedAvatar组件
 
 export default defineComponent({
     name: 'ScoutingAssignments',
     components: {
-        Icon
+        Icon,
+        CachedAvatar // 注册组件
     },
     setup() {
         // User store
