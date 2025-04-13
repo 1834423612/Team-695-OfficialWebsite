@@ -474,7 +474,8 @@ class CasdoorService {
             }
             
             // 设置锁 - 确保只能有一个令牌交换进行
-            if (!setAuthLock(SIGNIN_LOCK)) {
+            const lockResult = setAuthLock(SIGNIN_LOCK);
+            if (!lockResult.success) {
                 console.warn('Failed to acquire signin lock, another process may be signing in');
                 // 等待并再次检查是否有令牌
                 await new Promise(resolve => setTimeout(resolve, 2000));
@@ -487,7 +488,8 @@ class CasdoorService {
                 }
                 // 如果仍然没有令牌，尝试强制获取锁
                 releaseAuthLock(SIGNIN_LOCK);
-                if (!setAuthLock(SIGNIN_LOCK)) {
+                const retryLockResult = setAuthLock(SIGNIN_LOCK);
+                if (!retryLockResult.success) {
                     console.error('Could not acquire signin lock after retrying, but continuing anyway');
                 }
             }
@@ -632,7 +634,10 @@ class CasdoorService {
         }
         
         // 设置刷新锁
-        setAuthLock(REFRESH_LOCK);
+        const lockResult = setAuthLock(REFRESH_LOCK);
+        if (!lockResult.success) {
+            console.error('Failed to acquire refresh lock');
+        }
         
         // 获取刷新令牌
         let refreshToken = localStorage.getItem(REFRESH_TOKEN_COOKIE);
