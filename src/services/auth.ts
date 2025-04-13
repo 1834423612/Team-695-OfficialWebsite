@@ -1,6 +1,7 @@
 import Sdk from 'casdoor-js-sdk';
 import Cookies from 'js-cookie';
 import { avatarCache } from '@/services/avatarCache';
+import { AUTH_LOCKS, cleanupStaleLocks, setAuthLock, releaseAuthLock, isLockActive } from '@/utils/authUtils';
 
 // Define the Casdoor configuration
 const config = {
@@ -23,7 +24,7 @@ const COOKIE_OPTIONS = {
     secure: window.location.protocol === 'https:',
     // In Vercel preview environments use 'none', otherwise decide based on development environment
     sameSite: isVercel ? 'none' as const : (isDevelopment ? 'lax' as const : 'strict' as const),
-    expires: 7,  // 7 days expiration
+    expires: 2,  // 7 days expiration
     path: '/',   // Available site-wide
     // In Vercel preview environments, we need to set domain
     ...(isVercel ? {} : {})
@@ -40,10 +41,10 @@ const USER_INFO_CACHE = 'casdoor-user-info-cache';
 const USER_INFO_TIMESTAMP = 'casdoor-user-info-timestamp';
 
 // User info cache duration (24 hours)
-const USER_INFO_CACHE_DURATION = 24 * 60 * 60 * 1000; // 24小时
+const USER_INFO_CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 
 // Token check interval (every 5 minutes)
-const TOKEN_CHECK_INTERVAL = 5 * 60 * 1000; // 5分钟
+const TOKEN_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
 // Initialize the SDK
 const sdk = new Sdk(config);
@@ -53,9 +54,9 @@ export interface UserInfo {
     id: string;
     name: string;
     displayName?: string;
-    firstName?: string;  // Add firstName field
-    lastName?: string;   // Add lastName field
-    fullName?: string;   // Add fullName field
+    firstName?: string;
+    lastName?: string;
+    fullName?: string;
     avatar?: string;
     email?: string;
     phone?: string;
@@ -171,14 +172,14 @@ interface TokenResponse {
     scope?: string;
 }
 
-// 添加团队API验证端点
+// Team API validation URL
 const TEAM_API_VALIDATE_URL = 'https://api.team695.com/auth/validate';
 
 // Create a service to handle authentication
 class CasdoorService {
     private userInfoCache: UserInfo | null = null;
     private tokenExpiryTimer: number | null = null;
-    private tokenCheckTimer: number | null = null; // 定期检查令牌有效性的定时器
+    private tokenCheckTimer: number | null = null; // Periodic token check timer
     private refreshing: boolean = false;
     private refreshPromise: Promise<string> | null = null;
     private teamApiValidationPromise: Promise<{valid: boolean, isAdmin: boolean}> | null = null;
@@ -195,10 +196,26 @@ class CasdoorService {
         // Listen for storage changes to sync across tabs
         window.addEventListener('storage', this.handleStorageChange);
 
-        // 初始化时启动令牌定期检查
+        // Setup token periodic check when the app is initialized
         this.setupTokenPeriodicCheck();
+
+        // Cleanup stale locks on initialization
+        this.cleanupStaleLocks();
     }
-    
+
+    // Cleanup stale locks based on predefined timeouts - using `authUtils`
+    private cleanupStaleLocks(): void {
+        const timeouts: Record<string, number> = {
+            [AUTH_LOCKS.SIGNIN]: 20000,      // 20seconds
+            [AUTH_LOCKS.REFRESH]: 10000,     // 10seconds
+            [AUTH_LOCKS.VALIDATION]: 15000,  // 15seconds
+            [AUTH_LOCKS.USER_REFRESH]: 10000, // 10seconds
+            [AUTH_LOCKS.TEAM_API_VALIDATION]: 10000 // 10seconds
+        };
+        
+        cleanupStaleLocks(timeouts);
+    }
+
     // Handle storage changes (for cross-tab synchronization)
     private handleStorageChange = (event: StorageEvent) => {
         if (event.key === TOKEN_COOKIE || event.key === REFRESH_TOKEN_COOKIE || event.key === USER_INFO_CACHE) {
@@ -335,44 +352,182 @@ class CasdoorService {
     // Handle the callback from Casdoor
     async signin(): Promise<string> {
         try {
-            // Check if we have a valid access token in localStorage or cookie
-            const existingToken = this.getToken();
-            if (existingToken) {
-                const tokenInfo = this.parseAccessToken(existingToken);
-                if (tokenInfo && tokenInfo.payload && tokenInfo.payload.exp) {
-                    const expiryTime = tokenInfo.payload.exp * 1000; // Transform to milliseconds
-                    const now = Date.now();
-                    
-                    // If token is valid and not about to expire, return it
-                    if (expiryTime > now + 30 * 60 * 1000) {
-                        this.setupTokenRefresh();
-                        return existingToken;
-                    } else if (expiryTime > now) {
-                        // Token is about to expire, proactively refresh it
-                        try {
-                            return await this.refreshAccessToken();
-                        } catch (e) {
-                            // If refresh fails but token is still valid, return it
-                            return existingToken;
-                        }
-                    }
-                }
+            // 获取浏览器URL中的授权码和状态
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const state = urlParams.get('state');
+            
+            // 检查是否是有效的授权回调
+            if (!code || !state) {
+                console.warn('Missing code or state in signin request');
+                throw new Error('Invalid authorization callback - missing code or state');
             }
-    
-            // If no valid token, get a new one
-            const tokenResponse = await sdk.exchangeForAccessToken();
-            console.log('Token response received:', !!tokenResponse);
-    
-            if (!tokenResponse || !tokenResponse.access_token) {
-                throw new Error('Failed to exchange code for token');
-            }
-    
-            // Store the tokens
-            this.storeTokensInCookies(tokenResponse);
-    
-            return tokenResponse.access_token;
+            
+            // 直接使用signinWithCode方法处理
+            return this.signinWithCode(code, state);
         } catch (error) {
             console.error('Signin error:', error);
+            throw error;
+        }
+    }
+
+    // 新增：使用提供的code和state直接处理登录，无需重新从URL获取
+    async signinWithCode(code: string, state: string): Promise<string> {
+        try {
+            // 添加防重入锁，确保不会同时发起多个token请求
+            const SIGNIN_LOCK = AUTH_LOCKS.SIGNIN;
+            
+            // 首先检查签名状态，防止重复处理同一个授权回调
+            const processedAuth = sessionStorage.getItem('casdoor_auth_processed');
+            if (processedAuth === 'true') {
+                console.log('This authorization code was already processed');
+                const existingToken = this.getToken();
+                if (existingToken) {
+                    return existingToken;
+                }
+                // 如果找不到令牌但已处理过，清除状态并继续
+                sessionStorage.removeItem('casdoor_auth_processed');
+            }
+            
+            // 检查是否有强制刷新标记
+            const forceRefresh = sessionStorage.getItem('force_token_refresh') === 'true';
+            
+            // 检查此授权码是否已处理过
+            const processedCode = sessionStorage.getItem('casdoor_processed_code');
+            if (processedCode === code && !forceRefresh) {
+                console.log(`Authorization code ${code.substring(0, 5)}... already processed, checking for existing token`);
+                
+                const existingToken = this.getToken();
+                if (existingToken) {
+                    console.log('Found existing token for processed code, using it');
+                    sessionStorage.setItem('casdoor_auth_processed', 'true');
+                    return existingToken;
+                }
+                
+                // 如果找不到有效令牌但设置了代码已处理标记，进行清理
+                console.log('No token found for processed code, clearing processed flag to retry');
+                sessionStorage.removeItem('casdoor_processed_code');
+            }
+            
+            // 首先检查是否已经有有效令牌（除非强制刷新）
+            if (!forceRefresh) {
+                const existingToken = this.getToken();
+                if (existingToken) {
+                    try {
+                        const tokenInfo = this.parseAccessToken(existingToken);
+                        if (tokenInfo && tokenInfo.payload && tokenInfo.payload.exp) {
+                            const expiryTime = tokenInfo.payload.exp * 1000;
+                            const now = Date.now();
+                            
+                            // 如果令牌有效且不会很快过期
+                            if (expiryTime > now + 5 * 60 * 1000) { // 至少还有5分钟有效期
+                                this.setupTokenRefresh();
+                                console.log('Using existing valid token');
+                                
+                                // 标记当前授权码已处理
+                                sessionStorage.setItem('casdoor_auth_processed', 'true');
+                                sessionStorage.setItem('casdoor_processed_code', code);
+                                return existingToken;
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Error validating existing token:', e);
+                        // 如果验证失败，继续获取新令牌
+                    }
+                }
+            } else {
+                // 清除强制刷新标记
+                sessionStorage.removeItem('force_token_refresh');
+                // 在强制刷新模式下，清除可能存在的旧token
+                localStorage.removeItem(TOKEN_COOKIE);
+                sessionStorage.removeItem('casdoor_processed_code');
+                try {
+                    Cookies.remove(TOKEN_COOKIE, { path: '/' });
+                } catch (e) {
+                    console.warn('Error removing cookie in force refresh mode:', e);
+                }
+            }
+            
+            // 检查是否已有正在进行的登录流程
+            if (isLockActive(SIGNIN_LOCK, 20000)) {
+                console.log('Signin already in progress, waiting for completion');
+                
+                // 等待一小段时间，看是否有新token生成
+                for (let i = 0; i < 5; i++) {
+                    await new Promise(resolve => setTimeout(resolve, 1000)); // 等待1秒
+                    
+                    // 再次检查是否有新token
+                    const newToken = this.getToken();
+                    if (newToken) {
+                        console.log('New token was generated while waiting');
+                        
+                        // 标记当前授权码已处理
+                        sessionStorage.setItem('casdoor_auth_processed', 'true');
+                        sessionStorage.setItem('casdoor_processed_code', code);
+                        return newToken;
+                    }
+                }
+                
+                // 如果等待后仍然没有新令牌，清除锁并继续
+                console.warn('No token generated after waiting, clearing lock and continuing');
+                releaseAuthLock(SIGNIN_LOCK);
+            }
+            
+            // 设置锁 - 确保只能有一个令牌交换进行
+            const lockResult = setAuthLock(SIGNIN_LOCK);
+            if (!lockResult.success) {
+                console.warn('Failed to acquire signin lock, another process may be signing in');
+                // 等待并再次检查是否有令牌
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                const existingToken = this.getToken();
+                if (existingToken) {
+                    console.log('Found token after waiting for lock');
+                    sessionStorage.setItem('casdoor_auth_processed', 'true');
+                    sessionStorage.setItem('casdoor_processed_code', code);
+                    return existingToken;
+                }
+                // 如果仍然没有令牌，尝试强制获取锁
+                releaseAuthLock(SIGNIN_LOCK);
+                const retryLockResult = setAuthLock(SIGNIN_LOCK);
+                if (!retryLockResult.success) {
+                    console.error('Could not acquire signin lock after retrying, but continuing anyway');
+                }
+            }
+            
+            try {
+                // 记录当前正在处理的授权码
+                sessionStorage.setItem('casdoor_processed_code', code);
+                
+                // 执行代码交换获取令牌 - 使用提供的code和state
+                console.log('Exchanging code for token...');
+                
+                // 手动将code和state存储到sessionStorage中，以便SDK可以找到它们
+                sessionStorage.setItem('casdoor-state', state);
+                
+                // 使用SDK交换令牌
+                const tokenResponse = await sdk.exchangeForAccessToken();
+                console.log('Token response received:', !!tokenResponse);
+        
+                if (!tokenResponse || !tokenResponse.access_token) {
+                    throw new Error('Failed to exchange code for token');
+                }
+        
+                // 存储令牌
+                this.storeTokensInCookies(tokenResponse);
+                
+                // 标记当前授权码已处理完成
+                sessionStorage.setItem('casdoor_auth_processed', 'true');
+                
+                return tokenResponse.access_token;
+            } finally {
+                // 清除锁，确保即使出错也会释放
+                releaseAuthLock(SIGNIN_LOCK);
+            }
+        } catch (error) {
+            console.error('Signin with code error:', error);
+            // 清理所有可能卡住的状态
+            sessionStorage.removeItem('casdoor_processed_code');
+            releaseAuthLock(AUTH_LOCKS.SIGNIN);
             throw error;
         }
     }
@@ -380,7 +535,7 @@ class CasdoorService {
     // Helper method to store tokens in cookies and localStorage
     private storeTokensInCookies(tokenResponse: TokenResponse): void {
         console.log('Storing tokens...');
-        
+
         // Store tokens in localStorage first (more reliable)
         if (tokenResponse.access_token) {
             localStorage.setItem(TOKEN_COOKIE, tokenResponse.access_token);
@@ -399,7 +554,7 @@ class CasdoorService {
             if (tokenResponse.refresh_token) {
                 Cookies.set(REFRESH_TOKEN_COOKIE, tokenResponse.refresh_token, COOKIE_OPTIONS);
             }
-            
+
             // Check if cookies were set successfully
             const cookieToken = Cookies.get(TOKEN_COOKIE);
             console.log('Cookie token set success:', !!cookieToken);
@@ -415,7 +570,7 @@ class CasdoorService {
         // Setup token refresh timer
         this.setupTokenRefresh();
     }
-
+    
     // Manually set tokens (useful for testing or when tokens are received from other sources)
     setTokens(accessToken: string, refreshToken?: string): void {
         // First store in localStorage
@@ -434,21 +589,60 @@ class CasdoorService {
             console.warn('Error setting cookies, but tokens are stored in localStorage:', error);
         }
         
+        // Clear user info cache when tokens change
+        this.userInfoCache = null;
+        localStorage.removeItem(USER_INFO_CACHE);
+        localStorage.removeItem(USER_INFO_TIMESTAMP);
+        
         // Setup token refresh timer
         this.setupTokenRefresh();
     }
 
     // Refresh the access token
     async refreshAccessToken(): Promise<string> {
-        // If already refreshing, return the existing promise
+        // 添加防重入标记，防止多次刷新冲突
+        const REFRESH_LOCK = AUTH_LOCKS.REFRESH;
+        
+        // 如果已经在刷新中，返回现有的Promise
         if (this.refreshing && this.refreshPromise) {
             return this.refreshPromise;
         }
         
-        // Try to get refresh token from localStorage first (more reliable)
+        // 检查是否有其他页面/组件正在刷新 - 使用isLockActive方法
+        if (isLockActive(REFRESH_LOCK, 5000)) {
+            console.log('Another refresh is in progress, waiting for it to complete');
+            
+            // 等待短暂时间后检查是否有新令牌
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // 获取当前令牌并验证它是否是新的
+            const currentToken = this.getToken();
+            if (currentToken) {
+                // 检查令牌是否新鲜（过期时间远在未来）
+                const tokenInfo = this.parseAccessToken(currentToken);
+                if (tokenInfo?.payload?.exp && tokenInfo.payload.exp * 1000 > Date.now() + 10 * 60 * 1000) {
+                    console.log('Using newly refreshed token from another process');
+                    return currentToken;
+                }
+            }
+            
+            // 如果没有获得新令牌，移除可能卡住的锁
+            releaseAuthLock(REFRESH_LOCK);
+        } else if (localStorage.getItem(REFRESH_LOCK) === 'true') {
+            // 如果锁太旧，清除它
+            releaseAuthLock(REFRESH_LOCK);
+        }
+        
+        // 设置刷新锁
+        const lockResult = setAuthLock(REFRESH_LOCK);
+        if (!lockResult.success) {
+            console.error('Failed to acquire refresh lock');
+        }
+        
+        // 获取刷新令牌
         let refreshToken = localStorage.getItem(REFRESH_TOKEN_COOKIE);
         
-        // If not in localStorage, try from cookie
+        // 如果不在localStorage，尝试从cookie获取
         if (!refreshToken) {
             refreshToken = Cookies.get(REFRESH_TOKEN_COOKIE) || null;
         }
@@ -456,20 +650,25 @@ class CasdoorService {
         if (!refreshToken) {
             throw new Error('No refresh token available');
         }
-
+        
         try {
             this.refreshing = true;
             this.refreshPromise = (async () => {
-                const tokenResponse = await sdk.refreshAccessToken(refreshToken!);
-
-                if (!tokenResponse || !tokenResponse.access_token) {
-                    throw new Error('Failed to refresh token');
+                try {
+                    const tokenResponse = await sdk.refreshAccessToken(refreshToken!);
+    
+                    if (!tokenResponse || !tokenResponse.access_token) {
+                        throw new Error('Failed to refresh token');
+                    }
+    
+                    // Update the tokens
+                    this.storeTokensInCookies(tokenResponse);
+                    
+                    return tokenResponse.access_token;
+                } finally {
+                    // 无论成功或失败，都清除锁
+                    releaseAuthLock(REFRESH_LOCK);
                 }
-
-                // Update the tokens
-                this.storeTokensInCookies(tokenResponse);
-
-                return tokenResponse.access_token;
             })();
 
             return await this.refreshPromise;
@@ -477,6 +676,7 @@ class CasdoorService {
             console.error('Token refresh error:', error);
             // If refresh fails, clear tokens and force re-login
             this.logout();
+            releaseAuthLock(REFRESH_LOCK);
             throw error;
         } finally {
             this.refreshing = false;
@@ -496,7 +696,7 @@ class CasdoorService {
         const cookieToken = Cookies.get(TOKEN_COOKIE);
         return !!cookieToken;
     }
-
+    
     // Get the token
     getToken(): string | null {
         // First get from localStorage (more reliable)
@@ -556,7 +756,7 @@ class CasdoorService {
         if (!token) {
             throw new Error('Not authenticated');
         }
-
+        
         // Check for valid cached user info
         if (!forceRefresh) {
             // Check memory cache first
@@ -581,7 +781,7 @@ class CasdoorService {
                 }
             }
         }
-
+        
         // Extract basic info from token first
         const tokenInfo = this.parseAccessToken(token);
         let basicUserInfo: UserInfo | null = null;
@@ -655,11 +855,11 @@ class CasdoorService {
                     },
                     mode: 'cors'
                 });
-
+                
                 if (!response.ok) {
                     throw new Error(`Failed to get user info from secondary endpoint: ${response.status}`);
                 }
-
+                
                 const userData = await response.json();
                 
                 // Process name fields if needed
@@ -688,11 +888,11 @@ class CasdoorService {
                         },
                         mode: 'cors'
                     });
-
+                    
                     if (!response.ok) {
                         throw new Error(`Failed to get user info from tertiary endpoint: ${response.status}`);
                     }
-
+                    
                     const userInfo: UserInfo = await response.json();
                     
                     // Process name fields if needed
@@ -736,11 +936,11 @@ class CasdoorService {
         };
         
         const response = await fetch(userInfoUrl, fetchOptions);
-
+        
         if (!response.ok) {
             throw new Error(`Failed to get user info: ${response.status} ${response.statusText}`);
         }
-
+        
         const responseData = await response.json();
         
         // Extract user data from the API response format
@@ -775,7 +975,7 @@ class CasdoorService {
         
         return userData;
     }
-
+    
     // Check if the current user is an admin
     isUserAdmin(): boolean {
         try {
@@ -826,7 +1026,7 @@ class CasdoorService {
             return false;
         }
     }
-
+    
     // Enhanced logout method
     async logout(): Promise<void> {
         try {
@@ -856,7 +1056,7 @@ class CasdoorService {
                 window.clearInterval(this.tokenCheckTimer);
                 this.tokenCheckTimer = null;
             }
-
+            
             // Clear any token refresh timer
             if (this.tokenExpiryTimer !== null) {
                 window.clearTimeout(this.tokenExpiryTimer);
@@ -865,7 +1065,7 @@ class CasdoorService {
             
             // Clear user info cache
             this.userInfoCache = null;
-    
+            
             // Clear tokens from localStorage
             localStorage.removeItem(TOKEN_COOKIE);
             localStorage.removeItem(REFRESH_TOKEN_COOKIE);
@@ -880,7 +1080,7 @@ class CasdoorService {
             } catch (error) {
                 console.warn('Error removing cookies:', error);
             }
-    
+            
             // Clear PKCE state
             sessionStorage.clear();
             
@@ -900,8 +1100,34 @@ class CasdoorService {
 
     // 使用团队API验证令牌
     async validateWithTeamApi(token: string | null = null): Promise<{valid: boolean, isAdmin: boolean}> {
+        // 添加缓存机制，避免短时间内频繁调用
+        const CACHE_KEY = 'team_api_validation_result';
+        const CACHE_TIME = 30000; // 30秒内不重复验证
+        
+        // 检查缓存
+        const cachedResult = localStorage.getItem(CACHE_KEY);
+        if (cachedResult) {
+            try {
+                const parsed = JSON.parse(cachedResult);
+                if (Date.now() - parsed.timestamp < CACHE_TIME) {
+                    // 如果提供了特定令牌且与缓存时的令牌不同，则不使用缓存
+                    if (token && parsed.tokenHash && parsed.tokenHash !== this.simpleTokenHash(token)) {
+                        console.log('Token changed, not using cached validation result');
+                    } else {
+                        console.log('Using cached team API validation result');
+                        return {
+                            valid: parsed.valid,
+                            isAdmin: parsed.isAdmin
+                        };
+                    }
+                }
+            } catch (e) {
+                // 忽略缓存解析错误
+            }
+        }
+        
         // 如果已经有请求在进行中，返回该请求的Promise
-        if (this.teamApiValidationPromise) {
+        if (this.teamApiValidationPromise && isLockActive(AUTH_LOCKS.TEAM_API_VALIDATION)) {
             return this.teamApiValidationPromise;
         }
         
@@ -914,6 +1140,9 @@ class CasdoorService {
         }
         
         try {
+            // 设置验证锁
+            setAuthLock(AUTH_LOCKS.TEAM_API_VALIDATION);
+            
             // 创建新的Promise并存储引用
             this.teamApiValidationPromise = (async () => {
                 try {
@@ -936,6 +1165,15 @@ class CasdoorService {
                     
                     if (result.success && result.data && typeof result.data.valid === 'boolean') {
                         console.log('Team API validation result:', result.data);
+                        
+                        // 缓存结果
+                        localStorage.setItem(CACHE_KEY, JSON.stringify({
+                            valid: result.data.valid,
+                            isAdmin: !!result.data.isAdmin,
+                            timestamp: Date.now(),
+                            tokenHash: token ? this.simpleTokenHash(token) : null
+                        }));
+                        
                         return {
                             valid: result.data.valid,
                             isAdmin: !!result.data.isAdmin
@@ -944,9 +1182,10 @@ class CasdoorService {
                     
                     return { valid: false, isAdmin: false };
                 } finally {
-                    // 无论成功失败，请求完成后清除Promise引用
+                    // 无论成功失败，请求完成后清除Promise引用和锁
                     setTimeout(() => {
                         this.teamApiValidationPromise = null;
+                        releaseAuthLock(AUTH_LOCKS.TEAM_API_VALIDATION);
                     }, 100);
                 }
             })();
@@ -955,8 +1194,18 @@ class CasdoorService {
         } catch (error) {
             console.error('Team API validation error:', error);
             this.teamApiValidationPromise = null;
+            releaseAuthLock(AUTH_LOCKS.TEAM_API_VALIDATION);
             return { valid: false, isAdmin: false };
         }
+    }
+
+    // 简单的令牌散列函数，用于比较令牌是否变化
+    private simpleTokenHash(token: string): string {
+        // 只取令牌的前10个和后10个字符进行比较
+        // 注意：这不是安全散列，仅用于检测令牌变化
+        const prefix = token.substring(0, 10);
+        const suffix = token.length > 10 ? token.substring(token.length - 10) : '';
+        return `${prefix}...${suffix}`;
     }
 
     // Basic token validation without external API calls
@@ -1004,7 +1253,7 @@ class CasdoorService {
         const token = this.getToken();
         
         if (!token) return false;
-
+        
         try {
             // 首先验证令牌格式和过期时间
             const tokenInfo = this.parseAccessToken(token);
@@ -1029,7 +1278,7 @@ class CasdoorService {
                     return false;
                 }
             }
-
+            
             // 使用团队API验证令牌
             const teamApiResult = await this.validateWithTeamApi(token);
             if (!teamApiResult.valid) {
@@ -1068,15 +1317,14 @@ class CasdoorService {
                     console.warn('Preemptive token refresh failed:', err)
                 );
             }
-
-            return true;
             
+            return true;
         } catch (error) {
             console.error('Token validation error:', error);
             return false;
         }
     }
-    
+
     // 检查token是否有效（公开方法，首选使用团队API验证）
     async isTokenValid(): Promise<boolean> {
         if (!this.isLoggedIn()) return false;
@@ -1167,8 +1415,10 @@ class CasdoorService {
             return true;
         } catch (error) {
             console.error('Failed to refresh token after invalid response:', error);
+            
             // If refresh fails, log out and clear everything
             await this.logout();
+            
             // 通知用户需要重新登录
             this.triggerInvalidAuthEvent('Your session has expired. Please login again.');
             return false;
@@ -1190,6 +1440,7 @@ class CasdoorService {
             
             this.tokenCheckTimer = window.setInterval(async () => {
                 console.log('Token check interval triggered, checking if validation needed');
+                
                 // 验证令牌是否有效 - 不再检查上次验证时间，每5分钟固定验证一次
                 try {
                     console.log('Performing periodic token validation check');
@@ -1213,11 +1464,11 @@ class CasdoorService {
                             }
                         } catch (error) {
                             console.error('Failed to refresh token during periodic check:', error);
+                            
                             // 如果刷新失败，触发无效认证事件
                             this.triggerInvalidAuthEvent('Your session has expired. Please login again.');
                         }
                     }
-                    
                 } catch (error) {
                     console.error('Error during periodic token validation:', error);
                 }
@@ -1290,4 +1541,5 @@ export const casdoorService = new CasdoorService();
 export { sdk };
 
 // Export the helper function to detect invalid auth responses
-export { isInvalidAuthResponse };
+    // Export the helper function to detect invalid auth responses
+    export { isInvalidAuthResponse, AUTH_LOCKS };

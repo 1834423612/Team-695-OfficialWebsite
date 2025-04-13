@@ -12,8 +12,9 @@
 <script lang="ts">
 import { defineComponent, onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { casdoorService } from '@/services/auth';
+import { casdoorService, AUTH_LOCKS } from '@/services/auth';
 import { useUserStore } from '@/stores/userStore';
+import { isLockActive, setAuthLock, releaseAuthLock } from '@/utils/authUtils';
 
 /**
  * 全局认证管理组件
@@ -41,7 +42,16 @@ export default defineComponent({
          * 包含防重复请求机制
          */
         const validateAuth = async (): Promise<void> => {
-            // 如果已经在验证中，返回当前验证Promise
+            // 创建验证锁的键
+            const AUTH_VALIDATION_LOCK = AUTH_LOCKS.VALIDATION;
+            
+            // 如果已经在验证中，避免并发验证
+            if (isLockActive(AUTH_VALIDATION_LOCK)) {
+                console.log('AuthManager: Another validation is in progress, skipping');
+                return;
+            }
+            
+            // 如果已经有验证Promise，等待它完成
             if (validationLock.value) {
                 return validationLock.value;
             }
@@ -49,6 +59,10 @@ export default defineComponent({
             // 创建新的验证Promise并保存引用
             validationLock.value = (async () => {
                 try {
+                    // 设置锁，防止并发验证
+                    setAuthLock(AUTH_VALIDATION_LOCK);
+                    localStorage.setItem('auth_validation_start_time', Date.now().toString());
+                    
                     console.log('AuthManager: Validating authentication...');
 
                     // 检查是否在Dashboard路径下
@@ -72,6 +86,10 @@ export default defineComponent({
 
                     // 验证令牌有效性
                     const validationResult = await casdoorService.validateWithTeamApi();
+                    
+                    // 验证完成后记录验证时间，用于与ApiErrorHandler协调
+                    localStorage.setItem('last_auth_check_time', Date.now().toString());
+                    
                     if (!validationResult.valid) {
                         console.warn('AuthManager: Token validation failed');
 
@@ -139,6 +157,7 @@ export default defineComponent({
                 } finally {
                     // 验证完成后清除锁
                     validationLock.value = null;
+                    releaseAuthLock(AUTH_VALIDATION_LOCK);
                 }
             })();
 
@@ -156,22 +175,38 @@ export default defineComponent({
                 // 注销用户
                 await casdoorService.logout();
 
-                // 显示消息（如果提供）
+                // 显示消息（如果提供）并重定向
                 if (message) {
-                    alert(message);
+                    if (window.$notify) {
+                        window.$notify(
+                            'Authentication Error',
+                            message,
+                            'error',
+                            'Login Again',
+                            () => {
+                                // 直接刷新页面跳转到登录
+                                window.location.href = `/login?redirect=${encodeURIComponent(route.fullPath)}`;
+                            }
+                        );
+                    } else {
+                        // 降级方案：使用原生alert
+                        alert(message);
+                        // 直接刷新页面跳转到登录
+                        window.location.href = `/login?redirect=${encodeURIComponent(route.fullPath)}`;
+                    }
+                } else {
+                    // 直接刷新页面跳转到登录
+                    window.location.href = `/login?redirect=${encodeURIComponent(route.fullPath)}`;
                 }
-
-                // 重定向到登录页
-                await navigateToLogin();
             } catch (error) {
                 console.error('AuthManager: Error during auth failure handling:', error);
                 // 确保重定向到登录页
-                await navigateToLogin();
+                window.location.href = `/login?redirect=${encodeURIComponent(route.fullPath)}`;
             }
         };
 
         /**
-         * 重定向到登录页面
+         * 重定向到登录页面 - 已不再使用，由handleAuthFailure处理
          */
         const navigateToLogin = async () => {
             // 保存当前路径用于登录后重定向
@@ -238,8 +273,19 @@ export default defineComponent({
 
         // 组件挂载时
         onMounted(() => {
-            // 初始验证
-            validateAuth().catch(console.error);
+            // 清除任何过期的锁
+            if (!isLockActive(AUTH_LOCKS.VALIDATION, 30000)) { // 30秒超时
+                releaseAuthLock(AUTH_LOCKS.VALIDATION);
+            }
+            
+            // 初始验证之前检查有没有最近的验证记录
+            const lastAuthCheck = window.localStorage.getItem('last_auth_check_time');
+            if (lastAuthCheck && Date.now() - parseInt(lastAuthCheck) < 5000) {
+                console.log('AuthManager: Skipping initial validation, recent verification found');
+            } else {
+                // 初始验证
+                validateAuth().catch(console.error);
+            }
 
             // 设置定期验证
             setupPeriodicValidation();

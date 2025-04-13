@@ -1,6 +1,7 @@
 <template>
   <div>
     <ApiErrorHandler />
+    <GlobalNotification />
     <!-- Show Header when not on /dashboard or its subpages -->
     <Header v-if="!isDashboardRoute" />
     <router-view></router-view>
@@ -15,6 +16,7 @@ import { useRoute } from 'vue-router';
 import Header from './components/Header.vue';
 import Footer from './components/Footer.vue';
 import ApiErrorHandler from '@/components/global/ApiErrorHandler.vue';
+import GlobalNotification from '@/components/common/GlobalNotification.vue';
 
 export default defineComponent({
   name: 'App',
@@ -22,6 +24,7 @@ export default defineComponent({
     Header,
     Footer,
     ApiErrorHandler,
+    GlobalNotification,
   },
   setup() {
     const route = useRoute();
