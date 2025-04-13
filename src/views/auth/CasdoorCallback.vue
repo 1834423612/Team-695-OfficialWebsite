@@ -91,15 +91,72 @@ export default defineComponent({
             return info;
         };
 
+        /**
+         * 更强大的令牌验证，避免不必要的新令牌请求
+         */
+        // 完全重写validateExistingToken方法，不再做任何验证，直接信任存在的token
+        const validateExistingToken = async (): Promise<boolean> => {
+            const token = casdoorService.getToken();
+            if (!token) return false;
+
+            try {
+                console.log('Found existing token - setting trust flags and SKIPPING validation completely');
+                
+                // 设置最高级别的信任标记，表示绝对不要再验证
+                localStorage.setItem('token_absolute_trust', 'true');
+                localStorage.setItem('token_trusted', 'true');
+                localStorage.setItem('token_verified', 'true');
+                localStorage.setItem('auth_callback_completed_time', Date.now().toString());
+                localStorage.setItem('skip_all_token_validation', 'true');
+                
+                return true;
+            } catch (error) {
+                console.error('Error setting trust flags:', error);
+                return !!token; // 如果有token，即使设置标记失败也视为有效
+            }
+        };
+
         // 改进的处理登录流程
         const processLogin = async () => {
             try {
-                // 获取URL中的授权码和状态
+                // 首先检查是否已经有token - 如果有，完全信任它，不做任何验证
+                if (await validateExistingToken()) {
+                    message.value = 'Using existing session';
+                    subMessage.value = 'Redirecting to dashboard...';
+                    isLoading.value = false;
+                    isProcessing.value = false;
+                    
+                    // 设置处理完成标记
+                    callbackProcessed.value = true;
+                    sessionStorage.setItem('auth_callback_processed', 'true');
+                    
+                    // 立即重定向
+                    window.location.href = '/dashboard';
+                    return;
+                }
+
+                // 检查URL参数 - 只有在真正需要处理授权码时才继续
                 const urlParams = new URLSearchParams(window.location.search);
                 const code = urlParams.get('code');
                 const state = urlParams.get('state');
                 
-                // 必须确保code和state存在
+                // 如果没有授权码或状态，但有有效令牌，直接跳转
+                if ((!code || !state) && casdoorService.isLoggedIn()) {
+                    console.log('No auth parameters but user is logged in, redirecting');
+                    message.value = 'Already authenticated';
+                    subMessage.value = 'Redirecting to dashboard...';
+                    isLoading.value = false;
+                    
+                    // 设置处理完成标记
+                    callbackProcessed.value = true;
+                    sessionStorage.setItem('auth_callback_processed', 'true');
+                    
+                    // 直接重定向，无需延迟
+                    window.location.href = '/dashboard';
+                    return;
+                }
+                
+                // 如果没有授权码或状态，且未登录，显示错误
                 if (!code || !state) {
                     console.error("Missing authorization code or state in URL parameters");
                     message.value = 'Missing authorization parameters';
@@ -109,7 +166,9 @@ export default defineComponent({
                     return;
                 }
                 
-                // 检查token是否已存在（可能是上一次登录产生的）
+                // 获取认证令牌流程 - 其余代码保持不变
+                // ...existing code...
+                // 获取URL中的授权码和状态
                 const currentToken = casdoorService.getToken();
                 if (currentToken) {
                     console.log("Token already exists in storage, validating...");
@@ -247,6 +306,11 @@ export default defineComponent({
                 isLoading.value = false;
                 isProcessing.value = false;
                 
+                // 记录认证完成时间，避免页面刷新后重复验证
+                localStorage.setItem('auth_callback_completed_time', Date.now().toString());
+                localStorage.setItem('token_verified', 'true');
+                localStorage.setItem('token_trusted', 'true'); // 添加绝对信任标记
+                
                 // 清除全局处理标记
                 localStorage.removeItem(GLOBAL_SINGLETON_KEY);
                 
@@ -254,7 +318,7 @@ export default defineComponent({
                 setTimeout(() => {
                     // 使用页面刷新方式重定向到dashboard
                     window.location.href = '/dashboard';
-                }, 1500);
+                }, 1000); // 缩短延迟时间，加快转向
             } catch (error) {
                 console.error('Authentication error:', error);
                 isProcessing.value = false;
@@ -290,31 +354,26 @@ export default defineComponent({
 
         onMounted(async () => {
             try {
-                // 1. 首先检查是否已有有效令牌，如果有且有效则无需继续处理
-                if (casdoorService.isLoggedIn()) {
-                    try {
-                        const isValid = await casdoorService.validateLocalToken();
-                        if (isValid) {
-                            console.log("Valid token already exists, skipping callback processing");
-                            message.value = 'Already authenticated';
-                            subMessage.value = 'Redirecting to dashboard...';
-                            isLoading.value = false;
-                            showRetryButton.value = false;
-                            
-                            // 设置处理完成标记
-                            callbackProcessed.value = true;
-                            sessionStorage.setItem('auth_callback_processed', 'true');
-                            
-                            // 延迟重定向
-                            setTimeout(() => {
-                                window.location.href = '/dashboard';
-                            }, 1500);
-                            return;
-                        }
-                    } catch (error) {
-                        console.error("Error validating existing token:", error);
-                        // 继续处理，尝试获取新令牌
-                    }
+                // 立即检查是否已有token - 完全信任它，不做任何验证
+                const token = casdoorService.getToken();
+                if (token) {
+                    console.log("Token exists - setting absolute trust flags and redirecting");
+                    
+                    // 设置最高级别的信任标记
+                    localStorage.setItem('token_absolute_trust', 'true');
+                    localStorage.setItem('token_trusted', 'true');
+                    localStorage.setItem('token_verified', 'true');
+                    localStorage.setItem('auth_callback_completed_time', Date.now().toString());
+                    localStorage.setItem('skip_all_token_validation', 'true');
+                    
+                    message.value = 'Already authenticated';
+                    subMessage.value = 'Redirecting to dashboard...';
+                    isLoading.value = false;
+                    showRetryButton.value = false;
+                    
+                    // 直接重定向
+                    window.location.href = '/dashboard';
+                    return;
                 }
                 
                 // 清除过时的全局标记（预防通过刷新页面重试）

@@ -149,88 +149,101 @@ export default defineComponent({
 
             // 避免页面加载时立即执行，允许 AuthManager 先处理验证
             // 首次验证延迟到5秒后执行，避免和AuthManager冲突
-            setTimeout(async () => {
-                try {
-                    if (casdoorService.isLoggedIn()) {
-                        // 检查上次验证时间，如果AuthManager最近已验证过，则跳过
-                        const lastAuthCheck = window.localStorage.getItem('last_auth_check_time');
-                        if (lastAuthCheck && Date.now() - parseInt(lastAuthCheck) < 10000) {
-                            console.log('ApiErrorHandler: Skipping initial validation, AuthManager recently verified');
-                            return;
-                        }
-                        
-                        const isValid = await casdoorService.validateToken();
-                        console.log('Initial token validation result:', isValid);
-
-                        if (!isValid) {
-                            // 如果初始验证失败，尝试自动刷新
-                            const wasRefreshed = await casdoorService.handleInvalidAuthResponse();
-                            if (!wasRefreshed) {
-                                // 如果刷新失败，通知用户
-                                handleAuthError(new CustomEvent('auth:invalid', {
-                                    detail: { message: 'Your session is invalid. Please login again.' }
-                                }));
-                            }
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error during initial token validation:', error);
-                }
-            }, 5000); // 延迟5秒执行首次验证
+            setTimeout(() => {
+                // 立即检查信任标记和验证状态，而不是尝试验证
+                checkTokenStatus();
+            }, 5000);
 
             // 设置定期验证
-            const intervalId = setInterval(async () => {
-                const now = Date.now();
-
-                // 验证是否有正在进行的验证
-                if (localStorage.getItem('auth_validation_in_progress') === 'true') {
-                    console.log('ApiErrorHandler: Skipping validation, another validation in progress');
-                    return;
-                }
-
-                // 避免频繁验证
-                if (now - lastValidationCheck.value < VALIDATION_INTERVAL) {
-                    return;
-                }
-                
-                // 检查AuthManager是否已经最近验证过
-                const lastAuthCheck = window.localStorage.getItem('last_auth_check_time');
-                if (lastAuthCheck && now - parseInt(lastAuthCheck) < VALIDATION_INTERVAL / 2) {
-                    console.log('ApiErrorHandler: Skipping validation, AuthManager recently verified');
-                    lastValidationCheck.value = now; // 更新时间戳，但跳过验证
-                    return;
-                }
-
-                lastValidationCheck.value = now;
-
-                try {
-                    if (casdoorService.isLoggedIn()) {
-                        // 设置锁，防止与其他组件验证冲突
-                        localStorage.setItem('api_error_handler_validating', 'true');
-                        
-                        try {
-                            console.log('Performing periodic token validation');
-                            const teamApiResult = await casdoorService.validateWithTeamApi();
-
-                            if (!teamApiResult.valid) {
-                                console.warn('Team API indicates token is invalid during periodic check');
-                                const wasRefreshed = await casdoorService.handleInvalidAuthResponse();
-                                if (!wasRefreshed) {
-                                    handleAuthError(new CustomEvent('auth:invalid', {
-                                        detail: { message: 'Your session has expired. Please login again.' }
-                                    }));
-                                }
-                            }
-                        } finally {
-                            localStorage.removeItem('api_error_handler_validating');
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error during periodic validation:', error);
-                }
+            const intervalId = setInterval(() => {
+                checkTokenStatus();
             }, VALIDATION_INTERVAL);
 
             return intervalId;
+        };
+
+        // 新方法：检查令牌状态但不触发验证
+        const checkTokenStatus = async () => {
+            // 检查绝对信任标记
+            if (localStorage.getItem('token_absolute_trust') === 'true' || 
+                localStorage.getItem('skip_all_token_validation') === 'true') {
+                console.log('ApiErrorHandler: Absolute trust flag detected, skipping ALL validation');
+                return;
+            }
+            
+            // 检查常规信任标记
+            if (localStorage.getItem('token_trusted') === 'true') {
+                console.log('ApiErrorHandler: Trust flag detected, skipping validation');
+                return;
+            }
+            
+            // 检查登录后时间
+            const authCallbackTime = localStorage.getItem('auth_callback_completed_time');
+            if (authCallbackTime && Date.now() - parseInt(authCallbackTime) < 10 * 60 * 1000) {
+                console.log('ApiErrorHandler: Recent auth (<10min), skipping validation');
+                return;
+            }
+            
+            const now = Date.now();
+            
+            // 避免频繁验证
+            if (now - lastValidationCheck.value < VALIDATION_INTERVAL) {
+                return;
+            }
+            
+            // 检查AuthManager是否已经最近验证过
+            const lastAuthCheck = localStorage.getItem('last_auth_check_time');
+            if (lastAuthCheck && now - parseInt(lastAuthCheck) < VALIDATION_INTERVAL / 2) {
+                console.log('ApiErrorHandler: AuthManager recently verified, skipping validation');
+                lastValidationCheck.value = now; // 更新时间戳，但跳过验证
+                return;
+            }
+            
+            // 检查是否有验证正在进行中
+            if (localStorage.getItem('auth_validation_in_progress') === 'true' ||
+                localStorage.getItem('api_error_handler_validating') === 'true') {
+                console.log('ApiErrorHandler: Validation already in progress, skipping');
+                return;
+            }
+            
+            // 更新时间戳
+            lastValidationCheck.value = now;
+            
+            try {
+                // 只有在真正需要验证时，且用户已登录时
+                if (casdoorService.isLoggedIn()) {
+                    // 设置锁，防止与其他组件验证冲突
+                    localStorage.setItem('api_error_handler_validating', 'true');
+                    
+                    try {
+                        console.log('ApiErrorHandler: Performing token validation without requesting new token');
+                        
+                        // 使用不请求新token的验证方法
+                        const isValid = await casdoorService.isTokenValidWithoutRefresh();
+                        
+                        if (!isValid) {
+                            console.warn('ApiErrorHandler: Token is invalid');
+                            // 只有在token无效时才尝试刷新
+                            const wasRefreshed = await casdoorService.handleInvalidAuthResponse();
+                            if (!wasRefreshed) {
+                                handleAuthError(new CustomEvent('auth:invalid', {
+                                    detail: { message: 'Your session has expired. Please login again.' }
+                                }));
+                            }
+                        } else {
+                            // 如果token有效，简单记录结果，但不执行任何操作
+                            console.log('ApiErrorHandler: Token is valid');
+                            localStorage.setItem('last_token_validated_time', Date.now().toString());
+                        }
+                    } finally {
+                        // 完成验证，删除锁
+                        localStorage.removeItem('api_error_handler_validating');
+                    }
+                }
+            } catch (error) {
+                console.error('ApiErrorHandler: Error during validation check:', error);
+                localStorage.removeItem('api_error_handler_validating');
+            }
         };
 
         // 保存定时器ID

@@ -53,19 +53,39 @@ export const useUserStore = defineStore('user', {
 
     actions: {
         // 初始化存储
-        async initializeStore() {
-            console.log('Initializing user store...');
+        async initializeStore(skipValidation = false) {
+            console.log('Initializing user store...' + (skipValidation ? ' (skipping validation)' : ''));
+
+            // 首先检查绝对信任标记，如果存在，强制跳过验证
+            if (localStorage.getItem('token_absolute_trust') === 'true' || 
+                localStorage.getItem('skip_all_token_validation') === 'true') {
+                console.log('UserStore: Absolute trust flag detected, forcing skipValidation to true');
+                skipValidation = true;
+            }
+            
+            // 检查登录时间，如果在最近10分钟内登录，强制跳过验证
+            const authCallbackTime = localStorage.getItem('auth_callback_completed_time');
+            if (authCallbackTime && Date.now() - parseInt(authCallbackTime) < 10 * 60 * 1000) {
+                console.log('UserStore: Recent login detected (<10min), forcing skipValidation to true');
+                skipValidation = true;
+            }
 
             // 如果已初始化且有数据，则不重复初始化
             if (this.isInitialized && this.userInfo) {
-                console.log('User store already initialized with data');
+                console.log('UserStore: Already initialized with data');
                 
-                // 验证token是否有效
-                if (await casdoorService.isTokenValid()) {
-                    this.setupAutoRefresh(); // 设置自动刷新
+                // 如果设置了跳过验证，直接返回不做验证
+                if (skipValidation) {
+                    return this.userInfo;
+                }
+                
+                // 使用不请求新token的验证方法
+                const isValid = await casdoorService.isTokenValidWithoutRefresh();
+                if (isValid) {
+                    this.setupAutoRefresh();
                     return this.userInfo;
                 } else {
-                    console.warn('Stored token is invalid, clearing user info');
+                    console.warn('UserStore: Stored token is invalid, clearing user info');
                     this.clearUserInfo();
                     return null;
                 }
@@ -73,26 +93,34 @@ export const useUserStore = defineStore('user', {
 
             // 如果未登录，则不初始化
             if (!casdoorService.isLoggedIn()) {
-                console.log('User not logged in, skipping initialization');
+                console.log('UserStore: Not logged in, skipping initialization');
                 return null;
             }
 
             // 如果最近已获取数据，则不重复获取
             const now = Date.now();
             if (this.lastFetchTime && now - this.lastFetchTime < 5 * 60 * 1000) {
-                console.log('Using cached user data (less than 5 minutes old)');
+                console.log('UserStore: Using cached user data (<5min)');
                 this.isInitialized = true;
                 
-                // 即使缓存有效，也验证一下token是否有效
-                if (await casdoorService.isTokenValid()) {
-                    this.setupAutoRefresh(); // 设置自动刷新
+                // 如果设置了跳过验证，无需验证直接返回
+                if (skipValidation) {
+                    this.setupAutoRefresh();
+                    return this.userInfo;
+                }
+                
+                // 使用不请求新token的验证方法
+                const isValid = await casdoorService.isTokenValidWithoutRefresh();
+                if (isValid) {
+                    this.setupAutoRefresh();
                     return this.userInfo;
                 }
             }
 
-            const result = await this.refreshUserInfo(false);
+            // 刷新用户信息，传递skipValidation参数
+            const result = await this.refreshUserInfo(false, skipValidation);
             if (result) {
-                this.setupAutoRefresh(); // 设置自动刷新
+                this.setupAutoRefresh();
             }
             return result;
         },
@@ -114,8 +142,41 @@ export const useUserStore = defineStore('user', {
         },
 
         // 增强的刷新用户信息方法
-        async refreshUserInfo(showLoading = true): Promise<any> {
-            console.log('Refreshing user info...');
+        async refreshUserInfo(showLoading = true, skipValidation = false): Promise<any> {
+            console.log('Refreshing user info...' + (skipValidation ? ' (skipping validation)' : ''));
+            
+            // 检查绝对信任标记，如果存在，强制跳过验证
+            if (localStorage.getItem('token_absolute_trust') === 'true' || 
+                localStorage.getItem('skip_all_token_validation') === 'true') {
+                console.log('UserStore: Absolute trust flag detected, forcing skipValidation to true');
+                skipValidation = true;
+            }
+            
+            // 检查登录时间，如果在最近10分钟内登录，强制跳过验证
+            const authCallbackTime = localStorage.getItem('auth_callback_completed_time');
+            if (authCallbackTime && Date.now() - parseInt(authCallbackTime) < 10 * 60 * 1000) {
+                console.log('UserStore: Recent login detected (<10min), forcing skipValidation to true');
+                skipValidation = true;
+            }
+            
+            // 如果要跳过验证，直接获取用户信息
+            if (skipValidation) {
+                console.log('UserStore: Skipping validation for user info refresh');
+                
+                try {
+                    // 直接获取用户信息，不进行令牌验证
+                    const userInfo = await casdoorService.getUserInfo(showLoading);
+                    this.userInfo = userInfo;
+                    this.orgData = userInfo.data2;
+                    this.lastFetchTime = Date.now();
+                    this.isInitialized = true;
+                    return userInfo;
+                } catch (error) {
+                    console.error('UserStore: Failed to fetch user info with skipped validation:', error);
+                    this.error = error instanceof Error ? error.message : String(error);
+                    return null;
+                }
+            }
             
             // 添加防重入机制
             const REFRESH_INFO_LOCK = AUTH_LOCKS.USER_REFRESH;
