@@ -353,14 +353,53 @@ class CasdoorService {
     // Handle the callback from Casdoor
     async signin(): Promise<string> {
         try {
-            // 首先检查最高级别信任标志 - 如果存在，完全跳过后续处理
-            if (localStorage.getItem('token_absolute_trust') === 'true') {
+            // 获取浏览器URL中的授权码和状态
+            // 安全检查：信任标记必须同时满足多个条件才有效，降低单点失效风险
+            const absoluteTrustEnabled = localStorage.getItem('token_absolute_trust') === 'true';
+            const trustExpireAtStr = localStorage.getItem('trust_flags_expire_at');
+            const tokenValidated = localStorage.getItem('token_verified') === 'true';
+            const authCallbackStr = localStorage.getItem('auth_callback_completed_time');
+            
+            // 验证信任标记的有效性 - 多重验证
+            let trustValid = false;
+            
+            // 1. 验证过期时间 - 信任标记必须有明确过期时间且未过期
+            if (trustExpireAtStr) {
+                const trustExpireAt = parseInt(trustExpireAtStr, 10);
+                if (!isNaN(trustExpireAt) && Date.now() < trustExpireAt) {
+                    // 2. 验证与认证回调时间的一致性
+                    if (authCallbackStr) {
+                        const authCallbackTime = parseInt(authCallbackStr, 10);
+                        // 信任标记必须在认证回调后不久创建（防止伪造）
+                        if (!isNaN(authCallbackTime) && 
+                            trustExpireAt - authCallbackTime < 15 * 60 * 1000 && // 信任期不能超过认证时间15分钟
+                            Date.now() - authCallbackTime < 10 * 60 * 1000) {    // 认证必须在10分钟内
+                            trustValid = true;
+                        }
+                    }
+                } else {
+                    // 信任标记已过期，立即清除
+                    localStorage.removeItem('token_absolute_trust');
+                    localStorage.removeItem('trust_flags_expire_at');
+                }
+            }
+            
+            // 只有当满足多个安全条件时才允许使用绝对信任
+            if (absoluteTrustEnabled && trustValid && tokenValidated) {
                 const existingToken = this.getToken();
                 if (existingToken) {
-                    console.log('ABSOLUTE TRUST: Using existing token without ANY validation');
-                    return existingToken;
+                    // 添加限制：即使信任标记有效，也需验证token格式和基本有效性
+                    const tokenInfo = this.parseAccessToken(existingToken);
+                    if (tokenInfo?.payload?.exp && tokenInfo.payload.exp * 1000 > Date.now()) {
+                        logger.info('Secure trust validation passed, using existing token');
+                        return existingToken;
+                    } else {
+                        logger.warn('Token appears invalid despite trust flag, removing trust');
+                        localStorage.removeItem('token_absolute_trust');
+                    }
+                } else {
+                    localStorage.removeItem('token_absolute_trust');
                 }
-                localStorage.removeItem('token_absolute_trust');
             }
             
             const urlParams = new URLSearchParams(window.location.search);

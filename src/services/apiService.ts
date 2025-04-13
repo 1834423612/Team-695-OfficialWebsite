@@ -49,6 +49,7 @@ export async function callApi<T = any>(
         if (!response.ok) {
             if (response.status === 401 || response.status === 403) {
                 logger.pretty('Auth Error', `Request returned status code ${response.status}`, 'error');
+                logger.groupEnd();
                 await casdoorService.handleInvalidAuthResponse();
                 throw new Error(`Authentication error: ${response.status}`);
             }

@@ -307,10 +307,19 @@ export default defineComponent({
                 isProcessing.value = false;
                 
                 // 记录认证完成时间，避免页面刷新后重复验证
+                // 这个时间戳会被AuthManager和其他组件用来确定是否在信任期内（10分钟）
                 localStorage.setItem('auth_callback_completed_time', Date.now().toString());
-                localStorage.setItem('token_verified', 'true');
-                localStorage.setItem('token_trusted', 'true'); // 添加绝对信任标记
                 
+                // 设置验证标记，表示token已通过初始验证
+                localStorage.setItem('token_verified', 'true');
+                
+                // 设置信任标记，但这只在10分钟内有效
+                // AuthManager组件会在超过10分钟后清除此标记，确保令牌被重新验证
+                localStorage.setItem('token_trusted', 'true');
+                
+                // 为信任标记设置过期时间，防止无限期信任
+                localStorage.setItem('trust_flags_expire_at', (Date.now() + 10 * 60 * 1000).toString());
+
                 // 清除全局处理标记
                 localStorage.removeItem(GLOBAL_SINGLETON_KEY);
                 
