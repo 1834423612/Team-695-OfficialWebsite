@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { casdoorService, isInvalidAuthResponse, AUTH_LOCKS } from '@/services/auth';
 import { setAuthLock, releaseAuthLock, isLockActive } from '@/utils/authUtils';
+import { logger } from '@/utils/logger';
 
 // 用户信息自动刷新间隔 (2小时)
 const USER_INFO_REFRESH_INTERVAL = 2 * 60 * 60 * 1000;
@@ -54,41 +55,62 @@ export const useUserStore = defineStore('user', {
     actions: {
         // 初始化存储
         async initializeStore(skipValidation = false) {
-            console.log('Initializing user store...' + (skipValidation ? ' (skipping validation)' : ''));
+            logger.debug('Initializing user store...' + (skipValidation ? ' (skipping validation)' : ''));
 
             // 首先检查绝对信任标记，如果存在，强制跳过验证
             if (localStorage.getItem('token_absolute_trust') === 'true' || 
                 localStorage.getItem('skip_all_token_validation') === 'true') {
-                console.log('UserStore: Absolute trust flag detected, forcing skipValidation to true');
+                logger.debug('UserStore: Absolute trust flag detected, forcing skipValidation to true');
                 skipValidation = true;
             }
             
             // 检查登录时间，如果在最近10分钟内登录，强制跳过验证
             const authCallbackTime = localStorage.getItem('auth_callback_completed_time');
             if (authCallbackTime && Date.now() - parseInt(authCallbackTime) < 10 * 60 * 1000) {
-                console.log('UserStore: Recent login detected (<10min), forcing skipValidation to true');
+                logger.debug('UserStore: Recent login detected (<10min), forcing skipValidation to true');
                 skipValidation = true;
             }
 
             // 如果已初始化且有数据，则不重复初始化
             if (this.isInitialized && this.userInfo) {
-                console.log('UserStore: Already initialized with data');
+                logger.debug('UserStore: Already initialized with data');
                 
                 // 如果设置了跳过验证，直接返回不做验证
                 if (skipValidation) {
                     return this.userInfo;
                 }
                 
-                // 使用不请求新token的验证方法
-                const isValid = await casdoorService.isTokenValidWithoutRefresh();
-                if (isValid) {
-                    this.setupAutoRefresh();
-                    return this.userInfo;
+                // 10分钟后使用Team API验证令牌状态
+                if (authCallbackTime && Date.now() - parseInt(authCallbackTime) >= 10 * 60 * 1000) {
+                    logger.info('UserStore: Trust period elapsed, validating against Team API');
+                    try {
+                        const validationResult = await casdoorService.validateWithTeamApi();
+                        if (!validationResult.valid) {
+                            logger.warn('UserStore: Team API validation failed, clearing user info');
+                            this.clearUserInfo();
+                            return null;
+                        }
+                    } catch (error) {
+                        logger.error('UserStore: Team API validation error:', error);
+                        // 如果API验证出错，回退到本地验证
+                        const isValid = await casdoorService.isTokenValidWithoutRefresh();
+                        if (!isValid) {
+                            this.clearUserInfo();
+                            return null;
+                        }
+                    }
                 } else {
-                    console.warn('UserStore: Stored token is invalid, clearing user info');
-                    this.clearUserInfo();
-                    return null;
+                    // 信任期内使用本地验证
+                    const isValid = await casdoorService.isTokenValidWithoutRefresh();
+                    if (!isValid) {
+                        logger.warn('UserStore: Stored token is invalid, clearing user info');
+                        this.clearUserInfo();
+                        return null;
+                    }
                 }
+                
+                this.setupAutoRefresh();
+                return this.userInfo;
             }
 
             // 如果未登录，则不初始化

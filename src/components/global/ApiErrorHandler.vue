@@ -6,6 +6,8 @@
 import { defineComponent, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useUserStore } from '@/stores/userStore';
 import { casdoorService } from '@/services/auth';
+import { isRecentLogin, AUTH_FLAGS, clearTrustFlags } from '@/utils/authConfig';
+import { logger } from '@/utils/logger';
 
 // 定义全局通知函数类型
 declare global {
@@ -162,29 +164,18 @@ export default defineComponent({
             return intervalId;
         };
 
-        // 新方法：检查令牌状态但不触发验证
+        // 新方法：检查令牌状态但不触发新token请求
         const checkTokenStatus = async () => {
-            // 检查绝对信任标记
-            if (localStorage.getItem('token_absolute_trust') === 'true' || 
-                localStorage.getItem('skip_all_token_validation') === 'true') {
-                console.log('ApiErrorHandler: Absolute trust flag detected, skipping ALL validation');
-                return;
-            }
-            
-            // 检查常规信任标记
-            if (localStorage.getItem('token_trusted') === 'true') {
-                console.log('ApiErrorHandler: Trust flag detected, skipping validation');
-                return;
-            }
-            
-            // 检查登录后时间
-            const authCallbackTime = localStorage.getItem('auth_callback_completed_time');
-            if (authCallbackTime && Date.now() - parseInt(authCallbackTime) < 10 * 60 * 1000) {
-                console.log('ApiErrorHandler: Recent auth (<10min), skipping validation');
-                return;
-            }
-            
             const now = Date.now();
+            
+            // 检查是否在10分钟信任期内
+            if (isRecentLogin(10)) {
+                logger.debug('ApiErrorHandler: Recent login detected (<10min), skipping validation');
+                return;
+            }
+            
+            // 10分钟后清除绝对信任标记
+            clearTrustFlags();
             
             // 避免频繁验证
             if (now - lastValidationCheck.value < VALIDATION_INTERVAL) {
@@ -192,9 +183,9 @@ export default defineComponent({
             }
             
             // 检查AuthManager是否已经最近验证过
-            const lastAuthCheck = localStorage.getItem('last_auth_check_time');
+            const lastAuthCheck = localStorage.getItem(AUTH_FLAGS.AUTH_CHECK_TIME);
             if (lastAuthCheck && now - parseInt(lastAuthCheck) < VALIDATION_INTERVAL / 2) {
-                console.log('ApiErrorHandler: AuthManager recently verified, skipping validation');
+                logger.debug('ApiErrorHandler: AuthManager recently verified, skipping validation');
                 lastValidationCheck.value = now; // 更新时间戳，但跳过验证
                 return;
             }
@@ -202,7 +193,7 @@ export default defineComponent({
             // 检查是否有验证正在进行中
             if (localStorage.getItem('auth_validation_in_progress') === 'true' ||
                 localStorage.getItem('api_error_handler_validating') === 'true') {
-                console.log('ApiErrorHandler: Validation already in progress, skipping');
+                logger.debug('ApiErrorHandler: Validation already in progress, skipping');
                 return;
             }
             
@@ -210,30 +201,29 @@ export default defineComponent({
             lastValidationCheck.value = now;
             
             try {
-                // 只有在真正需要验证时，且用户已登录时
+                // 只在用户已登录时验证
                 if (casdoorService.isLoggedIn()) {
-                    // 设置锁，防止与其他组件验证冲突
+                    // 设置锁，防止冲突
                     localStorage.setItem('api_error_handler_validating', 'true');
                     
                     try {
-                        console.log('ApiErrorHandler: Performing token validation without requesting new token');
+                        logger.info('ApiErrorHandler: Performing token validation against Team API');
                         
-                        // 使用不请求新token的验证方法
-                        const isValid = await casdoorService.isTokenValidWithoutRefresh();
+                        // 直接使用Team API验证，确保捕获服务器端撤销的令牌
+                        const validationResult = await casdoorService.validateWithTeamApi();
                         
-                        if (!isValid) {
-                            console.warn('ApiErrorHandler: Token is invalid');
-                            // 只有在token无效时才尝试刷新
-                            const wasRefreshed = await casdoorService.handleInvalidAuthResponse();
-                            if (!wasRefreshed) {
-                                handleAuthError(new CustomEvent('auth:invalid', {
-                                    detail: { message: 'Your session has expired. Please login again.' }
-                                }));
-                            }
+                        if (!validationResult.valid) {
+                            logger.warn('ApiErrorHandler: Team API validation failed - token is invalid');
+                            
+                            // 如果token无效，直接触发登出，不尝试刷新
+                            handleAuthError(new CustomEvent('auth:invalid', {
+                                detail: { message: 'Your session has expired or been revoked. Please login again.' }
+                            }));
                         } else {
-                            // 如果token有效，简单记录结果，但不执行任何操作
-                            console.log('ApiErrorHandler: Token is valid');
-                            localStorage.setItem('last_token_validated_time', Date.now().toString());
+                            // 记录验证结果
+                            logger.info('ApiErrorHandler: Team API validation successful');
+                            localStorage.setItem(AUTH_FLAGS.VALIDATION_TIME, Date.now().toString());
+                            localStorage.setItem(AUTH_FLAGS.AUTH_CHECK_TIME, Date.now().toString());
                         }
                     } finally {
                         // 完成验证，删除锁
@@ -241,7 +231,7 @@ export default defineComponent({
                     }
                 }
             } catch (error) {
-                console.error('ApiErrorHandler: Error during validation check:', error);
+                logger.error('ApiErrorHandler: Error during validation check:', error);
                 localStorage.removeItem('api_error_handler_validating');
             }
         };
