@@ -122,6 +122,12 @@ const routes: Array<RouteRecordRaw> = [
         path: 'Assignments',
         name: 'Assignments',
         component: () => import('@/views/dashboard/ScoutingAssignmentView.vue'),
+        meta: { requiresAdmin: true }
+      },
+      {
+        path: 'System/Version',
+        name: 'SystemVersion',
+        component: () => import('@/views/dashboard/System/VersionView.vue'),
       }
     ]
   },
