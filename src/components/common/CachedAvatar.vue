@@ -3,7 +3,7 @@
         <img v-if="avatarSrc" :src="avatarSrc" :alt="alt" class="avatar-image"
             :class="{ 'rounded-full': rounded, 'border': border }" @error="handleImageError" v-bind="$attrs"
             @load="handleImageLoaded" />
-        <div v-else class="avatar-fallback" :class="{ 'rounded-full': rounded }" :style="fallbackStyle">
+        <div v-if="!avatarSrc && !loading" class="avatar-fallback" :class="{ 'rounded-full': rounded }" :style="fallbackStyle">
             <span>{{ initials }}</span>
         </div>
         <div v-if="loading" class="avatar-loading">
@@ -15,6 +15,7 @@
 <script lang="ts">
 import { defineComponent, ref, computed, PropType, onMounted, watch } from 'vue';
 import { avatarCache } from '@/services/avatarCache';
+import { logger } from '@/utils/logger'; // 导入logger工具
 
 // Helper function for throttling
 function throttle(fn: Function, delay: number): (...args: any[]) => void {
@@ -46,7 +47,12 @@ export default defineComponent({
     props: {
         userId: {
             type: String,
-            required: true
+            required: false,
+            default: '' // 将required改为false，允许不提供userId
+        },
+        initial: {
+            type: String,
+            default: '' // 添加新的initial属性
         },
         src: {
             type: String as PropType<string | null | undefined>,
@@ -54,7 +60,7 @@ export default defineComponent({
         },
         size: {
             type: [Number, String],
-            default: 40
+            default: 32
         },
         alt: {
             type: String,
@@ -89,7 +95,7 @@ export default defineComponent({
             default: ''
         }
     },
-    setup(props) {
+    setup(props, { expose }) {
         // State
         const avatarSrc = ref<string | null>(null);
         const loading = ref(true);
@@ -100,6 +106,16 @@ export default defineComponent({
             width: typeof props.size === 'number' ? `${props.size}px` : props.size,
             height: typeof props.size === 'number' ? `${props.size}px` : props.size
         }));
+
+        // 修改有效ID的计算属性，优先使用userId
+        const effectiveId = computed(() => {
+            // 确保先使用实际的userId作为缓存键，而不是initial
+            if (props.userId && props.userId.length > 2) {
+                return props.userId;
+            }
+            // 只有在没有userId的情况下，才使用initial作为备用
+            return props.userId || props.initial || 'default';
+        });
 
         const fallbackStyle = computed(() => {
             const style: Record<string, string> = {
@@ -117,10 +133,10 @@ export default defineComponent({
                 style.backgroundColor = props.bgColor;
             } else {
                 // Generate background color based on user ID for consistency
-                let seed = props.displayName || props.name || props.firstName || '';
+                let seed = props.displayName || props.name || props.firstName || props.initial || '';
                 if (!seed) {
-                    // 如果没有名字相关信息，再回退到userId
-                    seed = props.userId;
+                    // 如果没有名字相关信息，再回退到userId，确保seed不为undefined
+                    seed = props.userId || 'default';
                 }
                 
                 const hash = hashCode(seed);
@@ -157,56 +173,90 @@ export default defineComponent({
                 return props.name.substring(0, 2).toUpperCase();
             }
             
-            // Last resort: use userId
-            return props.userId.substring(0, 2).toUpperCase();
+            // Last resort: use userId (保证不会是undefined)
+            return (props.userId || 'XX').substring(0, 2).toUpperCase();
         });
 
-        // Load avatar
+        // 增加：导出获取用户首字母的函数 
+        // 这可以被外部组件通过ref调用
+        const getUserInitials = (userInfo?: {
+            firstName?: string,
+            lastName?: string,
+            displayName?: string,
+            name?: string,
+            userId?: string
+        }): string => {
+            // 首先使用传入的信息
+            if (userInfo) {
+                // 优先尝试firstName + lastName
+                if (userInfo.firstName && userInfo.lastName) {
+                    return `${userInfo.firstName[0]}${userInfo.lastName[0]}`.toUpperCase();
+                }
+                
+                // 然后尝试displayName
+                if (userInfo.displayName) {
+                    const parts = userInfo.displayName.trim().split(/\s+/);
+                    if (parts.length >= 2) {
+                        return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+                    }
+                    return userInfo.displayName.substring(0, 2).toUpperCase();
+                }
+                
+                // 然后是name
+                if (userInfo.name) {
+                    const parts = userInfo.name.trim().split(/\s+/);
+                    if (parts.length >= 2) {
+                        return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+                    }
+                    return userInfo.name.substring(0, 2).toUpperCase();
+                }
+                
+                // 最后用userId
+                if (userInfo.userId) {
+                    return userInfo.userId.substring(0, 2).toUpperCase();
+                }
+            }
+            
+            // 如果没有传入信息，使用组件自身的属性
+            return initials.value;
+        };
+
+        // 修改loadAvatarImpl方法，确保总是返回某种头像
         const loadAvatarImpl = async () => {
             loading.value = true;
             loadFailed.value = false;
             
             try {
-                // Always use userId for cache key
                 const url = props.src;
+                const cacheId = effectiveId.value;
                 
-                // If no src provided or previous load failed, use default
-                if (!url || loadFailed.value) {
-                    // Use avatar cache to either get cached image or generate default
-                    const cachedAvatar = await avatarCache.getAvatar(
-                        props.userId, 
-                        undefined,
-                        {
-                            firstName: props.firstName,
-                            lastName: props.lastName,
-                            displayName: props.displayName,
-                            name: props.name
-                        },
-                        true // Cache only mode - don't fetch new images
-                    );
-                    
-                    avatarSrc.value = cachedAvatar;
-                    loading.value = false;
-                    return;
-                }
+                logger.debug(`Loading avatar for ${props.userId ? 'userId: ' + props.userId : 'initial: ' + props.initial}${url ? ` with URL: ${url}` : ' (no URL)'}`);
                 
-                // Try to get from cache first, passing user info for better default avatar
+                // 始终尝试获取头像，无论有没有URL
                 const cachedAvatar = await avatarCache.getAvatar(
-                    props.userId, 
-                    url,
+                    cacheId, 
+                    url || undefined,
                     {
                         firstName: props.firstName,
                         lastName: props.lastName,
                         displayName: props.displayName,
-                        name: props.name
-                    }
+                        name: props.name,
+                        initial: props.initial
+                    },
+                    !url // 如果没有URL，则使用cacheOnly模式
                 );
                 
                 avatarSrc.value = cachedAvatar;
+                loading.value = false;
+                
+                if (url) {
+                    logger.debug(`${cachedAvatar === url ? 'Using original' : 'Using cached'} avatar for ${cacheId}`);
+                } else {
+                    logger.debug(`Generated default avatar for ${cacheId}`);
+                }
             } catch (error) {
-                console.error('Error loading avatar:', error);
+                logger.error(`Error loading avatar for ${effectiveId.value}:`, error);
                 loadFailed.value = true;
-                // On error, use fallback
                 avatarSrc.value = null;
             } finally {
                 loading.value = false;
@@ -218,18 +268,44 @@ export default defineComponent({
 
         // Handle image loading error
         const handleImageError = () => {
-            console.warn(`Avatar load failed for user: ${props.displayName || props.name || props.userId}`);
+            logger.warn(`Avatar image load failed for: ${props.displayName || props.name || props.initial || props.userId || 'unknown'}`);
             loadFailed.value = true;
             avatarSrc.value = null;
+            
+            // 错误时重新尝试加载默认头像
+            if (effectiveId.value) {
+                avatarCache.getAvatar(
+                    effectiveId.value, 
+                    undefined, 
+                    {
+                        firstName: props.firstName,
+                        lastName: props.lastName,
+                        displayName: props.displayName,
+                        name: props.name,
+                        initial: props.initial
+                    },
+                    true
+                ).then(defaultAvatar => {
+                    avatarSrc.value = defaultAvatar;
+                }).catch(() => {
+                    // 如果获取默认头像也失败，保持avatarSrc为null
+                });
+            }
         };
 
         // Handle image loaded successfully
         const handleImageLoaded = () => {
+            logger.debug(`Avatar loaded successfully for: ${props.displayName || props.name || props.initial || props.userId || 'unknown'}`);
             loading.value = false;
         };
 
         // Helper function: compute hash code for a string
         const hashCode = (str: string): number => {
+            // 防御性编程: 确保str不为undefined或null
+            if (!str) {
+                return 0; // 返回默认值
+            }
+            
             let hash = 0;
             for (let i = 0; i < str.length; i++) {
                 hash = ((hash << 5) - hash) + str.charCodeAt(i);
@@ -241,33 +317,59 @@ export default defineComponent({
         // Watch for property changes, including all props that might affect the avatar
         watch(
             [
-                () => props.userId,
+                () => effectiveId.value, // 监听计算出的effectiveId
                 () => props.src,
                 () => props.firstName,
                 () => props.lastName,
                 () => props.displayName,
-                () => props.name
+                () => props.name,
+                () => props.initial
             ],
             () => {
-                loadAvatar();
+                // 只有当effectiveId存在时才加载头像
+                if (effectiveId.value) {
+                    loadAvatar();
+                }
             },
             { immediate: false }
         );
 
         // Initialize on component mount
         onMounted(() => {
-            loadAvatar();
+            // 只有当effectiveId存在时才加载头像
+            if (effectiveId.value) {
+                loadAvatar();
+            }
+            
+            // 如果有URL，则添加到预加载队列中
+            if (props.src) {
+                // 使用Image对象预加载
+                const img = new Image();
+                img.src = props.src;
+                img.onload = () => {
+                    logger.debug(`Preloaded image: ${props.src}`);
+                };
+            }
+        });
+
+        // 将getUserInitials方法暴露给父组件
+        expose({
+            getUserInitials,
+            // 同时导出当前用户的initials便于快速访问
+            initials
         });
 
         return {
             avatarSrc,
             loading,
+            effectiveId, // 导出effectiveId
             containerStyle,
             fallbackStyle,
             initials,
             handleImageError,
             handleImageLoaded,
-            hashCode
+            hashCode,
+            getUserInitials // 也返回给template使用
         };
     }
 });
@@ -302,6 +404,7 @@ export default defineComponent({
     color: white;
     font-weight: 600;
     text-transform: uppercase;
+    overflow: hidden; /* 确保内容不超出容器 */
 }
 
 .avatar-loading {

@@ -12,6 +12,10 @@ export async function callApi<T = any>(
     options: RequestInit = {}
 ): Promise<T> {
     const startTime = Date.now();
+    const groupName = `API Request: ${method} ${getDisplayUrl(url)}`;
+    
+    logger.prettyGroup(groupName, 'info', true);
+    
     try {
         // Prepare request options
         const requestOptions: RequestInit = {
@@ -35,7 +39,6 @@ export async function callApi<T = any>(
             (requestOptions.headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
         }
 
-        logger.prettyGroup(`API Request: ${method} ${getDisplayUrl(url)}`, 'info', true);
         if (data) {
             logger.info('Request data:', data);
         }
@@ -49,7 +52,6 @@ export async function callApi<T = any>(
         if (!response.ok) {
             if (response.status === 401 || response.status === 403) {
                 logger.pretty('Auth Error', `Request returned status code ${response.status}`, 'error');
-                logger.groupEnd();
                 await casdoorService.handleInvalidAuthResponse();
                 throw new Error(`Authentication error: ${response.status}`);
             }
@@ -65,7 +67,6 @@ export async function callApi<T = any>(
 
             logger.http(method, url, response.status, duration);
             logger.pretty('Request Failed', errorText, 'error');
-            logger.groupEnd();
             throw new Error(`API error (${response.status}): ${errorText}`);
         }
 
@@ -80,20 +81,18 @@ export async function callApi<T = any>(
         // Check for auth errors
         if (!checkAuthInResponse(responseData)) {
             logger.pretty('Auth Error', 'Authentication issue detected in API response', 'error');
-            logger.groupEnd();
             throw new Error('Authentication error detected in API response');
         }
 
-        logger.groupEnd();
         return responseData as T;
     } catch (error) {
         const duration = Date.now() - startTime;
         logger.http(method, url, 500, duration); // Use 500 to indicate request failure
         logger.pretty('Request Exception', error instanceof Error ? error.message : String(error), 'error');
-        if (logger.isGroupOpen()) {
-            logger.groupEnd();
-        }
         throw error;
+    } finally {
+        // 使用安全的组关闭方法，传入组名以确保关闭正确的组
+        logger.safeGroupEnd(groupName);
     }
 }
 
@@ -169,28 +168,4 @@ function getResponsePreview(data: any): any {
     }
     
     return data;
-}
-
-// Add to logger to check if groups are open
-if (typeof logger.isGroupOpen !== 'function') {
-    let groupDepth = 0;
-    
-    const originalGroup = logger.prettyGroup;
-    const originalGroupEnd = logger.groupEnd;
-    
-    logger.prettyGroup = function(...args) {
-        groupDepth++;
-        return originalGroup.apply(this, args);
-    };
-    
-    logger.groupEnd = function() {
-        if (groupDepth > 0) {
-            groupDepth--;
-        }
-        return originalGroupEnd.apply(this);
-    };
-    
-    logger.isGroupOpen = function() {
-        return groupDepth > 0;
-    };
 }

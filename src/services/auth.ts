@@ -174,7 +174,7 @@ interface TokenResponse {
 }
 
 // Team API validation URL
-const TEAM_API_VALIDATE_URL = 'https://api.team695.com/auth/validate';
+// const TEAM_API_VALIDATE_URL = 'https://api.team695.com/auth/validate';
 
 // Create a service to handle authentication
 class CasdoorService {
@@ -1269,8 +1269,13 @@ class CasdoorService {
             // 创建新的Promise并存储引用
             this.teamApiValidationPromise = (async () => {
                 try {
-                    logger.info('Validating token with Team API...');
-                    const response = await fetch(TEAM_API_VALIDATE_URL, {
+                    // 使用Casdoor API验证令牌
+                    logger.info('Validating token with Casdoor API...');
+                    
+                    // 使用Casdoor的用户端点验证令牌
+                    const validationUrl = `${config.serverUrl}/api/user`;
+                    
+                    const response = await fetch(validationUrl, {
                         method: 'GET',
                         headers: {
                             'Authorization': `Bearer ${token}`,
@@ -1279,38 +1284,42 @@ class CasdoorService {
                         }
                     });
                     
+                    // 检查响应状态
                     if (!response.ok) {
-                        logger.warn(`Team API validation failed with status: ${response.status}`);
+                        logger.warn(`Casdoor API validation failed with status: ${response.status}`);
                         return { valid: false, isAdmin: false };
                     }
                     
+                    // 解析响应
                     const result = await response.json();
                     
-                    if (result.success && result.data && typeof result.data.valid === 'boolean') {
-                        logger.info('Team API validation result:', result.data);
-                        
-                        // 仅对非周期性验证进行短期缓存
-                        if (!isPeriodicCheck) {
-                            localStorage.setItem('team_api_validation_result', JSON.stringify({
-                                valid: result.data.valid,
-                                isAdmin: !!result.data.isAdmin,
-                                timestamp: Date.now(),
-                                tokenHash: token ? this.simpleTokenHash(token) : null
-                            }));
-                        }
-                        
-                        // 如果用户是管理员，设置标记
-                        if (result.data.valid && result.data.isAdmin) {
-                            localStorage.setItem('is_admin_validated', 'true');
-                        }
-                        
-                        return {
-                            valid: result.data.valid,
-                            isAdmin: !!result.data.isAdmin
-                        };
+                    // 检查是否为错误响应
+                    if (result.status === 'error') {
+                        logger.warn('Casdoor API returned error:', result.msg);
+                        return { valid: false, isAdmin: false };
                     }
                     
-                    return { valid: false, isAdmin: false };
+                    // 如果返回的是JWT格式(成功)，表示令牌有效
+                    // 解析响应中的用户信息
+                    const isAdmin = this.checkIfUserIsAdmin(result);
+                    
+                    // 仅对非周期性验证进行短期缓存
+                    if (!isPeriodicCheck) {
+                        localStorage.setItem('team_api_validation_result', JSON.stringify({
+                            valid: true,
+                            isAdmin: isAdmin,
+                            timestamp: Date.now(),
+                            tokenHash: token ? this.simpleTokenHash(token) : null
+                        }));
+                    }
+                    
+                    // 如果用户是管理员，设置标记
+                    if (isAdmin) {
+                        localStorage.setItem('is_admin_validated', 'true');
+                    }
+                    
+                    logger.info('Casdoor API validation successful, token is valid');
+                    return { valid: true, isAdmin: isAdmin };
                 } finally {
                     // 无论成功失败，请求完成后清除Promise引用和锁
                     setTimeout(() => {
@@ -1322,20 +1331,58 @@ class CasdoorService {
             
             return this.teamApiValidationPromise;
         } catch (error) {
-            logger.error('Team API validation error:', error);
+            logger.error('Casdoor API validation error:', error);
             this.teamApiValidationPromise = null;
             releaseAuthLock(AUTH_LOCKS.TEAM_API_VALIDATION);
             return { valid: false, isAdmin: false };
         }
     }
+    
+    // 新增：从Casdoor用户响应中检查用户是否为管理员
+    private checkIfUserIsAdmin(userResponse: any): boolean {
+        try {
+            // 检查直接的isAdmin字段
+            if (userResponse.isAdmin === true) {
+                return true;
+            }
+            
+            // 检查角色中是否包含admin角色
+            if (userResponse.roles && Array.isArray(userResponse.roles)) {
+                const hasAdminRole = userResponse.roles.some(
+                    (role: any) => role.name === 'admin' || role.name.toLowerCase().includes('admin')
+                );
+                if (hasAdminRole) return true;
+            }
+            
+            // 检查组中是否包含admin组
+            if (userResponse.groups && Array.isArray(userResponse.groups)) {
+                const hasAdminGroup = userResponse.groups.some(
+                    (group: string) => group.toLowerCase().includes('admin')
+                );
+                if (hasAdminGroup) return true;
+            }
+            
+            return false;
+        } catch (e) {
+            logger.error('Error checking admin status from user response:', e);
+            return false;
+        }
+    }
 
-    // 简单的令牌散列函数，用于比较令牌是否变化
+    // 实现简单的令牌哈希方法，用于令牌比较
     private simpleTokenHash(token: string): string {
-        // 只取令牌的前10个和后10个字符进行比较
-        // 注意：这不是安全散列，仅用于检测令牌变化
-        const prefix = token.substring(0, 10);
-        const suffix = token.length > 10 ? token.substring(token.length - 10) : '';
-        return `${prefix}...${suffix}`;
+        // 仅使用令牌的前8个和后8个字符创建简单哈希
+        // 这不是密码学安全哈希，仅用于令牌缓存比较
+        if (!token || token.length < 16) {
+            return token; // 如果令牌太短，直接返回原始值
+        }
+        
+        const prefix = token.substring(0, 8);
+        const suffix = token.substring(token.length - 8);
+        const length = token.length.toString();
+        
+        // 结合令牌长度和首尾字符，创建简单哈希标识
+        return `${prefix}_${length}_${suffix}`;
     }
 
     // Basic token validation without external API calls
