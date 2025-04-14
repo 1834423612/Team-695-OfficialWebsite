@@ -36,8 +36,10 @@ declare module 'vue' {
     NotFound: typeof import('./src/components/NotFound.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SidebarContent: typeof import('./src/components/dashboard/SidebarContent.vue')['default']
     TeamMember: typeof import('./src/components/Member/TeamMember.vue')['default']
     TeamSection: typeof import('./src/components/Member/TeamSection.vue')['default']
+    VersionInfo: typeof import('./src/components/common/VersionInfo.vue')['default']
     WinnerBanner: typeof import('./src/components/Cards/WinnerBanner.vue')['default']
   }
 }
