@@ -2,170 +2,138 @@ import { casdoorService } from './auth';
 import { logger } from '@/utils/logger';
 
 /**
- * API Response Interceptor
- * For uniformly checking authentication errors in API responses
+ * API 拦截器工具
+ * 提供用于检查API响应中的认证错误的工具函数
  */
-export const checkAuthInResponse = (response: any): boolean => {
-    if (!response) return true;
+
+/**
+ * 检查API响应中的认证错误
+ * @param response API响应对象
+ * @returns 如果不存在认证错误返回true，否则返回false
+ */
+export function checkAuthInResponse(response: any): boolean {
+    logger.prettyGroup('API Auth Check', 'info', true);
     
-    // Check standard error format
-    if (response.success === true && response.data) {
-        const data = response.data;
+    try {
+        // 检查响应是否为空
+        if (!response) {
+            logger.pretty('Empty Response', 'No response data', 'error');
+            return false;
+        }
         
-        // Check specific error format
-        if (data.status === 'error' && data.msg) {
-            const errorMsg = data.msg;
+        // 检查明确的错误信息
+        if (response.success === true && response.data && response.data.status === 'error') {
+            const errorMsg = response.data.msg;
             
-            // Check for login-related error messages
-            if (errorMsg.includes('token') || 
+            if (errorMsg && (
+                errorMsg.includes('token') || 
                 errorMsg.includes('Access') || 
                 errorMsg.includes('exist') ||
-                errorMsg.includes('expired') ||
-                errorMsg.includes('invalid')) {
-                
+                errorMsg.includes('auth')
+            )) {
                 logger.pretty('Auth Error', errorMsg, 'error');
                 
-                // Trigger auth handling
+                // 触发认证错误处理
                 setTimeout(() => {
-                    casdoorService.handleInvalidAuthResponse().catch(error => 
-                        logger.error('Failed to handle invalid auth response:', error)
-                    );
+                    casdoorService.handleInvalidAuthResponse().catch(error => {
+                        logger.error('Error handling invalid auth:', error);
+                    });
                 }, 0);
                 
                 return false;
             }
         }
-    }
-    
-    return true;
-};
-
-/**
- * Common fetch API wrapper with automatic authentication and error handling
- */
-export const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<any> => {
-    const startTime = Date.now();
-    let method = options.method || 'GET';
-    
-    try {
-        // Ensure headers exist
-        if (!options.headers) {
-            options.headers = {};
+        
+        // 检查通用错误格式
+        if (response.status === 'error' && 
+            response.msg && (
+                response.msg.includes('token') || 
+                response.msg.includes('Access') || 
+                response.msg.includes('exist') ||
+                response.msg.includes('auth')
+            )) {
+            logger.pretty('Auth Error', response.msg, 'error');
+            return false;
         }
         
-        // Add authorization header
-        const token = casdoorService.getToken();
-        if (token) {
-            (options.headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+        // 如果本质上是空响应
+        if (response.status === 'ok' && 
+            (!response.sub || response.sub === '') && 
+            (!response.name || response.name === '') && 
+            (response.data === true || response.data === null) && 
+            response.data2 === null) {
+            logger.pretty('Invalid Response Format', 'Response appears to be a token validation error', 'warn');
+            return false;
         }
         
-        logger.prettyGroup(`API Request: ${method} ${getDisplayUrl(url)}`, 'info', true);
-        if (options.body && typeof options.body === 'string') {
-            try {
-                const bodyData = JSON.parse(options.body);
-                logger.info('Request data:', bodyData);
-            } catch (e) {
-                // Ignore if not JSON
-            }
-        }
-        
-        // Send request
-        const response = await fetch(url, options);
-        const duration = Date.now() - startTime;
-        
-        // Check HTTP status
-        if (!response.ok) {
-            // Special handling for 401 and 403 errors
-            if (response.status === 401 || response.status === 403) {
-                logger.pretty('Auth Error', `${response.status} ${response.statusText}`, 'error');
-                logger.http(method, url, response.status, duration);
-                
-                await casdoorService.handleInvalidAuthResponse();
-                logger.groupEnd();
-                throw new Error(`Authentication error: ${response.status}`);
-            }
-            
-            logger.http(method, url, response.status, duration);
-            logger.pretty('Request Failed', `${response.status} ${response.statusText}`, 'error');
-            logger.groupEnd();
-            throw new Error(`API error: ${response.status}`);
-        }
-        
-        // Parse JSON response
-        const data = await response.json();
-        logger.http(method, url, response.status, duration);
-        
-        // Show brief response summary
-        const responsePreview = getResponsePreview(data);
-        logger.info('Response data:', responsePreview);
-        
-        // Check for auth errors
-        const isAuthValid = checkAuthInResponse(data);
-        if (!isAuthValid) {
-            logger.pretty('Auth Error', 'Authentication issue detected in response', 'error');
-        }
-        
-        logger.groupEnd();
-        return data;
+        logger.pretty('Check Status', 'Response appears valid', 'success');
+        return true;
     } catch (error) {
-        const duration = Date.now() - startTime;
-        logger.http(method, url, 500, duration); // Use 500 to indicate request failure
-        logger.pretty('Request Exception', error instanceof Error ? error.message : String(error), 'error');
-        
-        if (logger.isGroupOpen()) {
-            logger.groupEnd();
-        }
-        throw error;
+        logger.error('Error checking auth in response:', error);
+        return false;
+    } finally {
+        // 使用安全的组关闭方法
+        logger.safeGroupEnd('API Auth Check');
     }
-};
+}
 
 /**
- * Helper function: Get URL for display (removes domain)
+ * 处理API错误响应的通用方法
+ * @param error 捕获的错误对象
+ * @param handleAuthErrors 是否自动处理认证错误
+ * @returns 格式化的错误对象
  */
-function getDisplayUrl(url: string): string {
+export function handleApiError(error: any, handleAuthErrors = true): {message: string, status?: number} {
+    logger.prettyGroup('API Error Handler', 'error', true);
+    
     try {
-        const urlObj = new URL(url);
-        return urlObj.pathname + urlObj.search;
-    } catch (e) {
-        return url;
-    }
-}
-
-/**
- * Helper function: Get preview of response data
- */
-function getResponsePreview(data: any): any {
-    if (!data) return data;
-    
-    // If array, return length and first few items
-    if (Array.isArray(data)) {
-        return {
-            length: data.length,
-            preview: data.slice(0, 3),
-            ...(data.length > 3 ? { more: `...and ${data.length - 3} more items` } : {})
-        };
-    }
-    
-    // If object, return summary version
-    if (typeof data === 'object') {
-        // Create a summary version to avoid console lag with large objects
-        const keys = Object.keys(data);
-        if (keys.length > 10) {
-            const preview: Record<string, any> = {};
-            keys.slice(0, 10).forEach(key => {
-                preview[key] = data[key];
-            });
-            return {
-                ...preview,
-                _summary: `[Object with ${keys.length} keys]`
-            };
+        // 默认错误消息
+        let message = 'An unexpected error occurred';
+        let status: number | undefined = undefined;
+        
+        // 处理不同类型的错误
+        if (error.response) {
+            // 服务器返回错误响应
+            status = error.response.status;
+            
+            // 检查认证错误
+            if ((status === 401 || status === 403) && handleAuthErrors) {
+                logger.pretty('Auth Error', `Status code: ${status}`, 'error');
+                
+                // 触发认证错误处理
+                setTimeout(() => {
+                    casdoorService.handleInvalidAuthResponse().catch(console.error);
+                }, 0);
+                
+                message = 'Authentication failed. Please login again.';
+            } else if (error.response.data && error.response.data.message) {
+                // 使用服务器返回的错误消息
+                message = error.response.data.message;
+            } else {
+                // 使用HTTP状态描述
+                message = `Server error: ${error.response.statusText || status}`;
+            }
+        } else if (error.request) {
+            // 请求发送但未收到响应
+            message = 'No response received from server. Please check your connection.';
+        } else if (error.message) {
+            // 请求设置过程中的错误
+            message = error.message;
         }
+        
+        logger.pretty('Error Details', message, 'error');
+        
+        return { message, status };
+    } catch (err) {
+        logger.error('Error in handleApiError:', err);
+        return { message: 'An unexpected error occurred' };
+    } finally {
+        // 使用安全的组关闭方法
+        logger.safeGroupEnd('API Error Handler');
     }
-    
-    return data;
 }
 
-// Add isGroupOpen method
-if (typeof logger.isGroupOpen !== 'function') {
-    logger.isGroupOpen = () => true;  // Default assume group is open to ensure safe closing
-}
+export default {
+    checkAuthInResponse,
+    handleApiError
+};

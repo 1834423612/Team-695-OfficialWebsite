@@ -1182,3 +1182,6 @@ if (process.env.NODE_ENV === 'development') {
         }
     };
 }
+
+// Export the avatar cache instance
+export default avatarCache;

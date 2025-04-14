@@ -103,6 +103,8 @@ const getCallerInfo = (): {file: string, line: number, column: number} => {
 
 // Track group depth for proper group closing
 let groupDepth = 0;
+// 添加组堆栈追踪
+const groupStack: string[] = [];
 
 // Create the logger object
 export const logger = {
@@ -178,6 +180,9 @@ export const logger = {
             const callerInfo = `${caller.file}:${caller.line}`;
             const groupTitle = `[GROUP] ${title} ${callerInfo}`;
             
+            // 添加到组堆栈
+            groupStack.push(title);
+            
             if (collapsed) {
                 console.groupCollapsed(groupTitle);
             } else {
@@ -191,12 +196,65 @@ export const logger = {
         if (currentLevel <= LogLevel.DEBUG && groupDepth > 0) {
             console.groupEnd();
             groupDepth--;
+            // 从堆栈中移除
+            if (groupStack.length > 0) {
+                groupStack.pop();
+            }
         }
     },
     
-    // Check if any group is open
+    // 检查是否有组处于打开状态
     isGroupOpen: (): boolean => {
         return groupDepth > 0;
+    },
+
+    // 获取当前组嵌套深度
+    getGroupDepth: (): number => {
+        return groupDepth;
+    },
+    
+    // 获取当前组堆栈
+    getGroupStack: (): string[] => {
+        return [...groupStack];
+    },
+    
+    // 重置所有组嵌套 - 用于确保清理所有未关闭的组
+    resetGroups: () => {
+        while (groupDepth > 0) {
+            console.groupEnd();
+            groupDepth--;
+        }
+        groupStack.length = 0; // 清空堆栈
+        console.log('[LOGGER] All groups have been reset');
+    },
+
+    // 安全关闭组 - 确保关闭特定组及其所有子组
+    safeGroupEnd: (title?: string) => {
+        if (currentLevel <= LogLevel.DEBUG) {
+            if (title) {
+                // 查找标题在堆栈中的位置
+                const index = groupStack.lastIndexOf(title);
+                if (index !== -1) {
+                    const closeCount = groupStack.length - index;
+                    for (let i = 0; i < closeCount; i++) {
+                        console.groupEnd();
+                        groupDepth--;
+                        groupStack.pop();
+                    }
+                    console.log(`[LOGGER] Safely closed group "${title}" and ${closeCount-1} nested groups`);
+                } else if (groupDepth > 0) {
+                    // 如果找不到特定标题，但仍有打开的组，则关闭最近的组
+                    console.groupEnd();
+                    groupDepth--;
+                    console.log(`[LOGGER] Group "${title}" not found, closed the most recent group "${groupStack.pop() || 'unknown'}"`);
+                }
+            } else if (groupDepth > 0) {
+                // 如果没有指定标题，关闭最后一个组
+                console.groupEnd();
+                groupDepth--;
+                console.log(`[LOGGER] Closed the most recent group "${groupStack.pop() || 'unknown'}"`);
+            }
+        }
     },
 
     /**
@@ -247,6 +305,9 @@ export const logger = {
         const groupTitle = `${title} ${callerInfo}`;
         
         groupDepth++;
+        // 添加到组堆栈
+        groupStack.push(title);
+        
         if (collapsed) {
             console.groupCollapsed(`%c${groupTitle}`, logStyle);
         } else {
