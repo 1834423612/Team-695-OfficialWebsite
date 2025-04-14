@@ -278,8 +278,8 @@ export const useUserStore = defineStore('user', {
                 try {
                     logger.prettyGroup('API Validation Flow', 'secondary', true);
                     
-                    // 1. First validate token with Team API
-                    logger.info('Step 1: Validating token with Team API');
+                    // 1. First validate token with Casdoor API
+                    logger.info('Step 1: Validating token with Casdoor API');
                     const validationResult = await casdoorService.validateWithTeamApi();
                     
                     if (!validationResult.valid) {

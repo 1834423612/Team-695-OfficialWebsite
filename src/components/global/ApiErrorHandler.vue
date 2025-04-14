@@ -207,13 +207,13 @@ export default defineComponent({
                     localStorage.setItem('api_error_handler_validating', 'true');
                     
                     try {
-                        logger.info('ApiErrorHandler: Performing token validation against Team API');
+                        logger.info('ApiErrorHandler: Performing token validation against Casdoor API');
                         
-                        // 直接使用Team API验证，确保捕获服务器端撤销的令牌
+                        // 直接使用Casdoor API验证，确保检测到服务器端撤销的令牌
                         const validationResult = await casdoorService.validateWithTeamApi();
                         
                         if (!validationResult.valid) {
-                            logger.warn('ApiErrorHandler: Team API validation failed - token is invalid');
+                            logger.warn('ApiErrorHandler: Casdoor API validation failed - token is invalid');
                             
                             // 如果token无效，直接触发登出，不尝试刷新
                             handleAuthError(new CustomEvent('auth:invalid', {
@@ -221,7 +221,7 @@ export default defineComponent({
                             }));
                         } else {
                             // 记录验证结果
-                            logger.info('ApiErrorHandler: Team API validation successful');
+                            logger.info('ApiErrorHandler: Casdoor API validation successful');
                             localStorage.setItem(AUTH_FLAGS.VALIDATION_TIME, Date.now().toString());
                             localStorage.setItem(AUTH_FLAGS.AUTH_CHECK_TIME, Date.now().toString());
                         }

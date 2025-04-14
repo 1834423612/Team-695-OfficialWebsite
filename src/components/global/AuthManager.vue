@@ -118,11 +118,11 @@ export default defineComponent({
                         return;
                     }
 
-                    // 直接使用Team API验证，确保检测到服务器端撤销的令牌
+                    // 直接使用Casdoor API验证，确保检测到服务器端撤销的令牌
                     const validationResult = await casdoorService.validateWithTeamApi();
                     
                     if (!validationResult.valid) {
-                        logger.warn('AuthManager: Team API validation failed');
+                        logger.warn('AuthManager: Casdoor API validation failed');
                         
                         // 如果验证失败，直接登出，不尝试刷新
                         logger.error('AuthManager: Token is invalid or revoked, logging out');
