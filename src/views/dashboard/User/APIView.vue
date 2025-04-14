@@ -1,5 +1,5 @@
 <template>
-    <div class="space-y-6">
+    <div class="px-4 py-6 space-y-6">
         <!-- API Overview Card -->
         <div class="bg-white rounded-lg shadow overflow-hidden">
             <div class="bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-4">

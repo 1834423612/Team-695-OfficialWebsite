@@ -9,7 +9,7 @@
     </div>
 
     <main class="-mt-32 w-full flex justify-center">
-      <div class="mx-auto md:mx-8 max-w-7xl px-4 pb-12 sm:px-6 lg:px-8 w-full">
+      <div class="mx-auto md:mx-8 max-w-7xl px-2 pb-12 sm:px-6 lg:px-8 w-full">
         <div class="bg-white rounded-lg shadow px-5 py-6 sm:px-6">
           <!-- Tabs -->
           <div class="mb-6 bg-gray-50 rounded-md p-4 border-2 border-dashed border-amber-500">

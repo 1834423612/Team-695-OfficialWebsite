@@ -122,9 +122,9 @@
 
             <!-- Main content with scrollable area -->
             <div class="flex-1 overflow-auto">
-                <main class="p-5 mx-auto w-full max-w-7xl">
+                <main class="p-2 mb-4 mx-auto w-full max-w-7xl">
                     <!-- Breadcrumb -->
-                    <div class="flex items-center mb-2 space-x-2 text-sm p-3 bg-white rounded-lg shadow-sm border border-gray-100 transition-all hover:shadow-md">
+                    <div class="flex items-center mt-4 mb-2 mx-2 space-x-2 text-sm p-3 bg-white rounded-lg shadow-sm border border-gray-100 transition-all hover:shadow-md">
                         <router-link to="/Dashboard" class="flex items-center text-gray-600 hover:text-blue-600 transition-colors duration-200">
                             <span class="flex items-center justify-center bg-blue-50 p-1.5 rounded-md">
                                 <Icon icon="mdi:view-dashboard" class="w-4 h-4 text-blue-500" />
