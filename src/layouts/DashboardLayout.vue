@@ -53,16 +53,38 @@
                     <!-- Navbar right (Header) -->
                     <div class="relative flex items-center space-x-3">
                         <div class="items-center hidden md:flex">
-                            <router-link to="/"
-                                class="hover:bg-gray-100 p-2 rounded-md text-gray-500 hover:text-gray-700">
-                                <Icon icon="mdi:home" class="w-5 h-5" />
-                            </router-link>
-                            <!-- Only show this button in desktop mode -->
-                            <button @click="toggleNavMode"
-                                class="hover:bg-gray-100 p-2 rounded-md text-gray-500 hover:text-gray-700 ml-1">
-                                <Icon :icon="navMode === 'fixed' ? 'mdi:dock-left' : 'mdi:dock-window'"
-                                    class="w-5 h-5" />
-                            </button>
+                            <!-- Home icon with tooltip -->
+                            <div class="relative group">
+                                <router-link to="/"
+                                    class="hover:bg-gray-100 p-2 rounded-md text-gray-500 hover:text-gray-700 flex items-center justify-center"
+                                    @touchstart="handleTouchStart($event, 'home')"
+                                    @touchend="handleTouchEnd">
+                                    <Icon icon="mdi:home" class="w-5 h-5" />
+                                </router-link>
+                                <!-- Desktop tooltip (hover) - set to show on bottom -->
+                                <div class="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-max opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+                                    <div class="bg-gray-800 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap">
+                                        Go to Home
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Navigation mode toggle with tooltip -->
+                            <div class="relative group ml-1">
+                                <button @click="toggleNavMode"
+                                    class="hover:bg-gray-100 p-2 rounded-md text-gray-500 hover:text-gray-700 flex items-center justify-center"
+                                    @touchstart="handleTouchStart($event, 'navMode')" 
+                                    @touchend="handleTouchEnd">
+                                    <Icon :icon="navMode === 'fixed' ? 'mdi:dock-left' : 'mdi:dock-window'"
+                                        class="w-5 h-5" />
+                                </button>
+                                <!-- Desktop tooltip (hover) - set to show on bottom -->
+                                <div class="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-max opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+                                    <div class="bg-gray-800 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap">
+                                        {{ navMode === 'fixed' ? 'Switch to Overlay Mode' : 'Switch to Fixed Mode' }}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- User dropdown -->
@@ -211,6 +233,37 @@ export default defineComponent({
         const isLargeScreen = ref(false);
         const showMobileWarning = ref(false);
 
+        // For mobile tooltip functionality
+        const activeTouchTooltip = ref<string | null>(null);
+        const touchTimer = ref<number | null>(null);
+        
+        // Handle long press on mobile devices
+        const handleTouchStart = (_event: TouchEvent, buttonType: string) => {
+            // Clear any existing timer
+            if (touchTimer.value) {
+                clearTimeout(touchTimer.value);
+            }
+            
+            // Set a timeout to trigger the tooltip after 500ms (long press)
+            touchTimer.value = window.setTimeout(() => {
+                activeTouchTooltip.value = buttonType;
+            }, 500);
+        };
+        
+        // Clear tooltip on touch end
+        const handleTouchEnd = () => {
+            // Clear timeout if touch ends before long press threshold
+            if (touchTimer.value) {
+                clearTimeout(touchTimer.value);
+                touchTimer.value = null;
+            }
+            
+            // Hide tooltip after a short delay to allow user to see it
+            setTimeout(() => {
+                activeTouchTooltip.value = null;
+            }, 1500);
+        };
+
         // Use Pinia store
         const userStore = useUserStore();
         const { userInfo, orgData } = storeToRefs(userStore);
@@ -223,7 +276,7 @@ export default defineComponent({
             const savedNavMode = localStorage.getItem('dashboard_nav_mode');
             const savedSidebarState = localStorage.getItem('sidebar_open');
             
-            console.log('Read from localStorage:', { savedNavMode, savedSidebarState });
+            // console.log('Read from localStorage:', { savedNavMode, savedSidebarState });
             
             // First detect current screen size - Fixed to 720px instead of 800px to match checkScreenSize
             const isMobileSize = window.innerWidth < 720;
@@ -232,11 +285,11 @@ export default defineComponent({
                 // Always use overlay mode on small screen devices
                 navMode.value = 'overlay';
                 sidebarOpen.value = false;
-                console.log('Mobile screen detected, forcing overlay mode');
+                // console.log('Mobile screen detected, forcing overlay mode');
             } else if (savedNavMode === 'fixed' || savedNavMode === 'overlay') {
                 // Use saved settings on desktop
                 navMode.value = savedNavMode;
-                console.log('Using saved navigation mode:', navMode.value);
+                // console.log('Using saved navigation mode:', navMode.value);
                 
                 // Set sidebar state based on saved preferences
                 if (savedSidebarState) {
@@ -245,12 +298,12 @@ export default defineComponent({
                     // By default, open sidebar in fixed mode, close it in overlay mode
                     sidebarOpen.value = navMode.value === 'fixed';
                 }
-                console.log('Setting sidebar state based on preferences:', sidebarOpen.value);
+                // console.log('Setting sidebar state based on preferences:', sidebarOpen.value);
             } else {
                 // Default mode for desktop is fixed
                 navMode.value = 'fixed';
                 sidebarOpen.value = true;
-                console.log('Setting default mode for desktop:', { navMode: 'fixed', sidebarOpen: true });
+                // console.log('Setting default mode for desktop:', { navMode: 'fixed', sidebarOpen: true });
             }
             
             // Save current state to localStorage
@@ -382,7 +435,7 @@ export default defineComponent({
             sidebarOpen.value = !sidebarOpen.value;
             // Save sidebar state to local storage
             localStorage.setItem('sidebar_open', sidebarOpen.value.toString());
-            console.log('Toggle sidebar state:', sidebarOpen.value);
+            // console.log('Toggle sidebar state:', sidebarOpen.value);
         };
 
         // Close sidebar (for overlay mode and mobile)
@@ -410,7 +463,7 @@ export default defineComponent({
             
             // Toggle mode
             navMode.value = navMode.value === 'fixed' ? 'overlay' : 'fixed';
-            console.log('Switching navigation mode to:', navMode.value);
+            // console.log('Switching navigation mode to:', navMode.value);
             
             // Adjust sidebar state based on new mode
             if (navMode.value === 'fixed') {
@@ -444,7 +497,7 @@ export default defineComponent({
             
             // If screen size category changed
             if (wasLargeScreen !== isLargeScreen.value) {
-                console.log('Screen size changed:', isLargeScreen.value ? 'Desktop' : 'Mobile');
+                // console.log('Screen size changed:', isLargeScreen.value ? 'Desktop' : 'Mobile');
                 
                 if (!isLargeScreen.value) {
                     // Small screen: force overlay mode and close sidebar
@@ -452,7 +505,7 @@ export default defineComponent({
                     sidebarOpen.value = false;
                     localStorage.setItem('dashboard_nav_mode', navMode.value);
                     localStorage.setItem('sidebar_open', 'false');
-                    console.log('Switched to mobile view:', { navMode: 'overlay', sidebarOpen: false });
+                    // console.log('Switched to mobile view:', { navMode: 'overlay', sidebarOpen: false });
                 } else {
                     // Large screen: restore user's saved settings
                     const savedNavMode = localStorage.getItem('dashboard_nav_mode');
@@ -461,12 +514,12 @@ export default defineComponent({
                     // If there were previously saved settings not forced by mobile view
                     if (savedNavMode && (savedNavMode === 'fixed' || savedNavMode === 'overlay')) {
                         navMode.value = savedNavMode as 'fixed' | 'overlay';
-                        console.log('Restored saved navigation mode:', navMode.value);
+                        // console.log('Restored saved navigation mode:', navMode.value);
                     } else {
                         // Default desktop mode is fixed
                         navMode.value = 'fixed';
                         localStorage.setItem('dashboard_nav_mode', 'fixed');
-                        console.log('Set default desktop mode to fixed');
+                        // console.log('Set default desktop mode to fixed');
                     }
                     
                     // Restore sidebar state
@@ -474,12 +527,12 @@ export default defineComponent({
                         // In fixed mode, default to open sidebar
                         sidebarOpen.value = savedSidebarState !== 'false';
                         localStorage.setItem('sidebar_open', sidebarOpen.value.toString());
-                        console.log('Restored sidebar state for fixed mode:', sidebarOpen.value);
+                        // console.log('Restored sidebar state for fixed mode:', sidebarOpen.value);
                     } else {
                         // In overlay mode, default to closed sidebar
                         sidebarOpen.value = savedSidebarState === 'true';
                         localStorage.setItem('sidebar_open', sidebarOpen.value.toString());
-                        console.log('Restored sidebar state for overlay mode:', sidebarOpen.value);
+                        // console.log('Restored sidebar state for overlay mode:', sidebarOpen.value);
                     }
                 }
                 
@@ -542,7 +595,10 @@ export default defineComponent({
             logout,
             getBreadcrumbIcon,
             userMenuItems,
-            navigationConfig
+            navigationConfig,
+            handleTouchStart,
+            handleTouchEnd,
+            activeTouchTooltip
         };
     }
 });
@@ -562,5 +618,32 @@ export default defineComponent({
 ::-webkit-scrollbar-thumb {
     background-color: rgba(156, 163, 175, 0.5);
     border-radius: 3px;
+}
+
+/* Mobile tooltip styles */
+.mobile-tooltip {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    z-index: 100;
+    font-size: 14px;
+    max-width: 280px;
+    text-align: center;
+}
+
+/* Fade transition for mobile tooltip */
+.tooltip-fade-enter-active,
+.tooltip-fade-leave-active {
+    transition: opacity 0.3s ease;
+}
+
+.tooltip-fade-enter-from,
+.tooltip-fade-leave-to {
+    opacity: 0;
 }
 </style>

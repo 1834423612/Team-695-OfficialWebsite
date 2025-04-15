@@ -192,7 +192,7 @@ export default defineComponent({
         // Listen for custom navigation mode change events
         const handleNavModeChanged = (event: CustomEvent) => {
             navMode.value = event.detail.mode;
-            console.log('Received nav mode change event:', event.detail);
+            // console.log('Received nav mode change event:', event.detail);
         };
         
         // Monitor window size changes
