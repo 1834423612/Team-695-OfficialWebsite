@@ -1,7 +1,7 @@
 <template>
-    <div class="min-h-screen bg-gray-50">
+    <div class="px-2 py-2 md:px-6 min-h-screen bg-gray-50">
         <!-- Welcome Banner -->
-        <div class="px-4 py-6 sm:px-0 mb-6">
+        <div class="px-2 py-6 sm:px-0 mb-6">
             <div class="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg shadow-lg overflow-hidden">
                 <div class="px-6 py-8 md:p-10 md:flex md:items-center md:justify-between">
                     <div>

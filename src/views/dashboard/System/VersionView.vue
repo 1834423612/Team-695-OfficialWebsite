@@ -1,5 +1,5 @@
 <template>
-    <div class="space-y-8">
+    <div class="space-y-8 px-4 sm:px-6 lg:px-8 py-6">
         <!-- Page Header -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between">
             <h1 class="text-2xl font-bold text-gray-900">

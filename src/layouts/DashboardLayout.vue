@@ -27,13 +27,13 @@
             @click="closeSidebar"></div>
 
         <!-- Main content -->
-        <div class="flex flex-col flex-1 h-full overflow-hidden transition-all duration-300 ease-in-out" :class="{
-            'filter blur-sm': sidebarOpen && navMode === 'overlay' && !isLargeScreen
-        }">
+        <div class="flex flex-col flex-1 h-full overflow-hidden transition-all duration-300 ease-in-out" 
+            :class="{
+                'filter blur-sm pointer-events-none': sidebarOpen && navMode === 'overlay' && !isLargeScreen
+            }">
             <!-- Navbar -->
             <header
-                class="flex-shrink-0 border-b bg-white shadow-sm sticky top-0 z-10 transition-all duration-300 ease-in-out"
-                :class="{ 'opacity-30': sidebarOpen && navMode === 'overlay' && !isLargeScreen }">
+                class="flex-shrink-0 border-b bg-white shadow-sm sticky top-0 z-10 transition-all duration-300 ease-in-out">
                 <div class="flex items-center justify-between p-2 px-4">
                     <!-- Navbar left -->
                     <div class="flex items-center space-x-3">
@@ -57,6 +57,7 @@
                                 class="hover:bg-gray-100 p-2 rounded-md text-gray-500 hover:text-gray-700">
                                 <Icon icon="mdi:home" class="w-5 h-5" />
                             </router-link>
+                            <!-- Only show this button in desktop mode -->
                             <button @click="toggleNavMode"
                                 class="hover:bg-gray-100 p-2 rounded-md text-gray-500 hover:text-gray-700 ml-1">
                                 <Icon :icon="navMode === 'fixed' ? 'mdi:dock-left' : 'mdi:dock-window'"
@@ -124,7 +125,7 @@
             <div class="flex-1 overflow-auto">
                 <main class="p-2 mb-4 mx-auto w-full max-w-7xl">
                     <!-- Breadcrumb -->
-                    <div class="flex items-center mt-4 mb-2 mx-2 space-x-2 text-sm p-3 bg-white rounded-lg shadow-sm border border-gray-100 transition-all hover:shadow-md">
+                    <div class="flex items-center mt-4 mb-2 mx-4 space-x-2 text-sm p-3 bg-white rounded-lg shadow-sm border border-gray-100 transition-all hover:shadow-md">
                         <router-link to="/Dashboard" class="flex items-center text-gray-600 hover:text-blue-600 transition-colors duration-200">
                             <span class="flex items-center justify-center bg-blue-50 p-1.5 rounded-md">
                                 <Icon icon="mdi:view-dashboard" class="w-4 h-4 text-blue-500" />
@@ -180,10 +181,10 @@ import { useUserStore } from '@/stores/userStore';
 import { storeToRefs } from 'pinia';
 import CachedAvatar from '@/components/common/CachedAvatar.vue';
 import SidebarContent from '@/components/dashboard/SidebarContent.vue';
-// 修改导入路径，使用相对路径而不是使用 @ 别名
+// Modify import path to use relative path instead of @ alias
 import { navigationConfig } from '../config/navigation';
 
-// 用户菜单项接口
+// User menu item interface
 interface UserMenuItem {
     text?: string;
     icon?: string;
@@ -208,10 +209,54 @@ export default defineComponent({
         const userMenuContainer = ref<HTMLElement | null>(null);
         const navMode = ref<'overlay' | 'fixed'>('overlay');
         const isLargeScreen = ref(false);
+        const showMobileWarning = ref(false);
 
         // Use Pinia store
         const userStore = useUserStore();
         const { userInfo, orgData } = storeToRefs(userStore);
+
+        // Initialize navigation mode, prioritize local storage
+        const initNavMode = () => {
+            console.log('Initializing navigation mode...');
+            
+            // Get navigation mode from localStorage
+            const savedNavMode = localStorage.getItem('dashboard_nav_mode');
+            const savedSidebarState = localStorage.getItem('sidebar_open');
+            
+            console.log('Read from localStorage:', { savedNavMode, savedSidebarState });
+            
+            // First detect current screen size - Fixed to 720px instead of 800px to match checkScreenSize
+            const isMobileSize = window.innerWidth < 720;
+            
+            if (isMobileSize) {
+                // Always use overlay mode on small screen devices
+                navMode.value = 'overlay';
+                sidebarOpen.value = false;
+                console.log('Mobile screen detected, forcing overlay mode');
+            } else if (savedNavMode === 'fixed' || savedNavMode === 'overlay') {
+                // Use saved settings on desktop
+                navMode.value = savedNavMode;
+                console.log('Using saved navigation mode:', navMode.value);
+                
+                // Set sidebar state based on saved preferences
+                if (savedSidebarState) {
+                    sidebarOpen.value = savedSidebarState === 'true';
+                } else {
+                    // By default, open sidebar in fixed mode, close it in overlay mode
+                    sidebarOpen.value = navMode.value === 'fixed';
+                }
+                console.log('Setting sidebar state based on preferences:', sidebarOpen.value);
+            } else {
+                // Default mode for desktop is fixed
+                navMode.value = 'fixed';
+                sidebarOpen.value = true;
+                console.log('Setting default mode for desktop:', { navMode: 'fixed', sidebarOpen: true });
+            }
+            
+            // Save current state to localStorage
+            localStorage.setItem('dashboard_nav_mode', navMode.value);
+            localStorage.setItem('sidebar_open', sidebarOpen.value.toString());
+        };
 
         // User data computed property
         const userData = computed(() => userInfo.value || {});
@@ -242,10 +287,11 @@ export default defineComponent({
             if (path === '/dashboard') return 'Dashboard';
             if (path.includes('profile')) return 'User Profile';
             if (path.includes('api')) return 'API Management';
+            if (path.includes('assignments')) return 'Assignments';
             if (path.includes('pit-scouting/admin')) return 'Pit Scouting Admin';
             if (path.includes('pit-scouting')) return 'Pit Scouting';
             if (path.includes('calendar')) return 'Calendar';
-            if (path.includes('assignments')) return 'Assignments';
+            if (path.includes('system/version')) return 'System Version';
 
             return 'Dashboard';
         });
@@ -254,10 +300,11 @@ export default defineComponent({
         const breadcrumbMap: Record<string, { name: string; icon: string; path: string }> = {
             '/Dashboard/Profile': { name: 'Profile', icon: 'mdi:account-circle', path: '/Dashboard/Profile' },
             '/Dashboard/API': { name: 'API', icon: 'mdi:api', path: '/Dashboard/API' },
-            '/Dashboard/Pit-Scouting': { name: 'Pit Scouting', icon: 'mdi:clipboard-text', path: '/Dashboard/Pit-Scouting' },
+            '/Dashboard/Assignments': { name: 'Assignments', icon: 'mdi:calendar-check', path: '/Dashboard/Assignments' },
+            '/Dashboard/Pit-Scouting': { name: 'Pit Scouting Form', icon: 'mdi:clipboard-text', path: '/Dashboard/Pit-Scouting' },
             '/Dashboard/Pit-Scouting/Admin': { name: 'Pit Scouting Admin', icon: 'mdi:shield-account', path: '/Dashboard/Pit-Scouting/Admin' },
             '/Dashboard/Calendar': { name: 'Calendar', icon: 'mdi:calendar', path: '/Dashboard/Calendar' },
-            '/Dashboard/Assignments': { name: 'Assignments', icon: 'mdi:calendar-check', path: '/Dashboard/Assignments' },
+            '/Dashboard/System/Version': { name: 'System Version', icon: 'mdi:information-outline', path: '/Dashboard/System/Version' },
         };
 
         // Current breadcrumb
@@ -333,32 +380,49 @@ export default defineComponent({
         // Toggle sidebar
         const toggleSidebar = () => {
             sidebarOpen.value = !sidebarOpen.value;
+            // Save sidebar state to local storage
+            localStorage.setItem('sidebar_open', sidebarOpen.value.toString());
+            console.log('Toggle sidebar state:', sidebarOpen.value);
         };
 
         // Close sidebar (for overlay mode and mobile)
         const closeSidebar = () => {
             if (navMode.value === 'overlay' || !isLargeScreen.value) {
                 sidebarOpen.value = false;
+                localStorage.setItem('sidebar_open', 'false');
             }
         };
 
         // Toggle navigation mode between fixed and overlay
         const toggleNavMode = () => {
-            // Close sidebar before changing mode
-            sidebarOpen.value = false;
-
-            // Change mode after a small delay to ensure smooth transition
-            setTimeout(() => {
-                navMode.value = navMode.value === 'fixed' ? 'overlay' : 'fixed';
-
-                // For fixed mode, open the sidebar by default
-                if (navMode.value === 'fixed' && isLargeScreen.value) {
-                    sidebarOpen.value = true;
-                }
-
-                // Save preference to localStorage
-                localStorage.setItem('dashboard_nav_mode', navMode.value);
-            }, 50);
+            // Only allow mode switching on large screens - Fixed to 720px to match checkScreenSize
+            if (window.innerWidth < 720) {
+                showMobileWarning.value = true;
+                
+                // Hide the warning after 2 seconds
+                setTimeout(() => {
+                    showMobileWarning.value = false;
+                }, 2000);
+                
+                console.log('Mobile devices cannot switch to fixed mode');
+                return;
+            }
+            
+            // Toggle mode
+            navMode.value = navMode.value === 'fixed' ? 'overlay' : 'fixed';
+            console.log('Switching navigation mode to:', navMode.value);
+            
+            // Adjust sidebar state based on new mode
+            if (navMode.value === 'fixed') {
+                sidebarOpen.value = true;
+            } else {
+                sidebarOpen.value = false;
+            }
+            
+            // Save settings to localStorage
+            localStorage.setItem('dashboard_nav_mode', navMode.value);
+            localStorage.setItem('sidebar_open', sidebarOpen.value.toString());
+            console.log('Saved settings:', { navMode: navMode.value, sidebarOpen: sidebarOpen.value });
         };
 
         // Toggle user menu
@@ -375,15 +439,54 @@ export default defineComponent({
 
         // Check screen size
         const checkScreenSize = () => {
-            isLargeScreen.value = window.innerWidth >= 1024;
-
-            // On mobile, always use overlay mode
-            if (!isLargeScreen.value) {
-                navMode.value = 'overlay';
-                sidebarOpen.value = false;
-            } else if (navMode.value === 'fixed') {
-                // On desktop with fixed mode, ensure sidebar is open
-                sidebarOpen.value = true;
+            const wasLargeScreen = isLargeScreen.value;
+            isLargeScreen.value = window.innerWidth >= 720;
+            
+            // If screen size category changed
+            if (wasLargeScreen !== isLargeScreen.value) {
+                console.log('Screen size changed:', isLargeScreen.value ? 'Desktop' : 'Mobile');
+                
+                if (!isLargeScreen.value) {
+                    // Small screen: force overlay mode and close sidebar
+                    navMode.value = 'overlay';
+                    sidebarOpen.value = false;
+                    localStorage.setItem('dashboard_nav_mode', navMode.value);
+                    localStorage.setItem('sidebar_open', 'false');
+                    console.log('Switched to mobile view:', { navMode: 'overlay', sidebarOpen: false });
+                } else {
+                    // Large screen: restore user's saved settings
+                    const savedNavMode = localStorage.getItem('dashboard_nav_mode');
+                    const savedSidebarState = localStorage.getItem('sidebar_open');
+                    
+                    // If there were previously saved settings not forced by mobile view
+                    if (savedNavMode && (savedNavMode === 'fixed' || savedNavMode === 'overlay')) {
+                        navMode.value = savedNavMode as 'fixed' | 'overlay';
+                        console.log('Restored saved navigation mode:', navMode.value);
+                    } else {
+                        // Default desktop mode is fixed
+                        navMode.value = 'fixed';
+                        localStorage.setItem('dashboard_nav_mode', 'fixed');
+                        console.log('Set default desktop mode to fixed');
+                    }
+                    
+                    // Restore sidebar state
+                    if (navMode.value === 'fixed') {
+                        // In fixed mode, default to open sidebar
+                        sidebarOpen.value = savedSidebarState !== 'false';
+                        localStorage.setItem('sidebar_open', sidebarOpen.value.toString());
+                        console.log('Restored sidebar state for fixed mode:', sidebarOpen.value);
+                    } else {
+                        // In overlay mode, default to closed sidebar
+                        sidebarOpen.value = savedSidebarState === 'true';
+                        localStorage.setItem('sidebar_open', sidebarOpen.value.toString());
+                        console.log('Restored sidebar state for overlay mode:', sidebarOpen.value);
+                    }
+                }
+                
+                // Dispatch custom event to notify other components of mode change
+                window.dispatchEvent(new CustomEvent('nav-mode-changed', { 
+                    detail: { mode: navMode.value, sidebarOpen: sidebarOpen.value } 
+                }));
             }
         };
 
@@ -391,29 +494,27 @@ export default defineComponent({
         watch(() => route.path, () => {
             showUserMenu.value = false;
 
-            // On mobile, close sidebar on route change
-            if (!isLargeScreen.value) {
+            // Only close sidebar on mobile devices or in overlay mode
+            if (!isLargeScreen.value || navMode.value === 'overlay') {
                 sidebarOpen.value = false;
+                localStorage.setItem('sidebar_open', 'false');
             }
         });
 
         onMounted(() => {
+            console.log('Component mounted');
+            // Initialize navigation mode and sidebar state
+            initNavMode();
+            
             document.addEventListener('click', handleClickOutside);
             window.addEventListener('resize', checkScreenSize);
+            // Run checkScreenSize once to set initial state correctly
+            checkScreenSize();
 
             // Initialize user store
             if (casdoorService.isLoggedIn()) {
                 userStore.initializeStore();
             }
-
-            // Load nav mode preference from localStorage
-            const savedNavMode = localStorage.getItem('dashboard_nav_mode');
-            if (savedNavMode === 'fixed' || savedNavMode === 'overlay') {
-                navMode.value = savedNavMode;
-            }
-
-            // Set initial screen size and sidebar state
-            checkScreenSize();
         });
 
         onUnmounted(() => {
@@ -424,6 +525,7 @@ export default defineComponent({
         return {
             sidebarOpen,
             showUserMenu,
+            showMobileWarning,
             userMenuContainer,
             userData,
             orgData,
