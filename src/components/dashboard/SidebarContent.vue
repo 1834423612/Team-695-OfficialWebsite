@@ -340,13 +340,9 @@ export default defineComponent({
 
         // Toggle sidebar
         const toggleSidebar = () => {
-            // Check current mode and screen size
-            if (navMode.value === 'overlay' || props.sidebarOpen || !isLargeScreen.value) {
-                emit('toggle-sidebar');
-            } else {
-                // In fixed mode on large screens, avoid toggling if sidebar is already collapsed
-                console.log('In fixed mode, cannot fully close sidebar');
-            }
+            // 修复: 无论当前模式如何，都允许切换sidebar状态
+            // 移除对于fixed模式下的限制条件
+            emit('toggle-sidebar');
         };
         
         // 创建一个更可靠的获取菜单唯一标识符的方法
