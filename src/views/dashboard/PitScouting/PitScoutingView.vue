@@ -105,17 +105,40 @@
               </div>
             </Transition>
           </div>
-
           <!-- Event ID and Form ID -->
           <div
-            class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 bg-gray-50 p-4 rounded-md border-2 border-dotted border-pink-500">
-            <div class="mb-2 sm:mb-0">
-              <span class="text-sm font-medium text-gray-500">Event ID:</span>
-              <span class="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-sm">{{ eventId }}</span>
+            class="flex flex-col justify-start items-start mb-6 bg-gray-50 p-4 rounded-lg shadow-sm border-2 border-indigo-300">
+            <div class="w-full mb-3 flex flex-col sm:flex-row items-start sm:items-center">
+              <span
+                class="text-xs sm:text-base font-medium text-gray-600 mb-1 sm:mb-0 sm:mr-2 min-w-[50px] inline-block">
+                Event ID:
+              </span>
+              <div class="flex items-center w-full sm:w-auto">
+                <span
+                  class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-md text-xs sm:text-base font-medium shadow-sm border border-blue-200 overflow-hidden text-ellipsis whitespace-nowrap inline-block">
+                  {{ eventId }}
+                </span>
+                <button @click="copyToClipboard(eventId)"
+                  class="ml-1 text-gray-500 hover:text-indigo-600 focus:outline-none" title="Copy to clipboard">
+                  <Icon icon="mdi:content-copy" class="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
-            <div>
-              <span class="text-sm font-medium text-gray-500">Form ID:</span>
-              <span class="ml-2 px-2 py-1 bg-green-100 text-green-800 rounded-md text-sm">{{ currentFormId }}</span>
+            <div class="w-full flex flex-col sm:flex-row items-start sm:items-center">
+              <span
+                class="text-xs sm:text-base font-medium text-gray-600 mb-1 sm:mb-0 sm:mr-2 min-w-[50px] inline-block">
+                Form ID:
+              </span>
+              <div class="flex items-center w-full sm:w-auto">
+                <span
+                  class="px-2 py-0.5 bg-green-100 text-green-800 rounded-md text-xs sm:text-base font-medium shadow-sm border border-green-200 overflow-hidden text-ellipsis whitespace-nowrap inline-block">
+                  {{ currentFormId }}
+                </span>
+                <button @click="copyToClipboard(currentFormId)"
+                  class="ml-1 text-gray-500 hover:text-indigo-600 focus:outline-none" title="Copy to clipboard">
+                  <Icon icon="mdi:content-copy" class="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1454,6 +1477,33 @@ onMounted(() => {
     logo: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgdmlld0JveD0iMCAwIDIwIDIwIj48cGF0aCBmaWxsPSIjNTM1MzUzIiBkPSJNMyA2YTMgMyAwIDAgMSAzLTNoOGEzIDMgMCAwIDEgMyAzdjIuMDNhNC41IDQuNSAwIDAgMC0xLS4wMDRWN0h2N2EyIDIgMCAwIDAgMiAyaDMuNDkyYTIuNSAyLjUgMCAwIDAtLjQ0MyAxSDZhMyAzIDAgMCAxLTMtM3ptMTAuMDQ0IDMuNThhNC41MDUgNC41MDUgMCAwIDAtMy4wNDQtMS41OCA0LjUgNC41IDAgMSAwIDQuNSA0LjVhNC40ODEgNC40ODEgMCAwIDAtLjExNS0uOTc0bC0uODkxIC44OTFhMS41IDEuNSAwIDAgMS0yLjEyMSAyLjEyMWwtMy0zYTEuNSAxLjUgMCAwIDEgMi4xMjEtMi4xMmwuODk5Ljg5OEEzLjQ4NCAzLjQ4NCAwIDAgMSA2LjcwOC0uMjJsLjg0My0uODQzek0xNSAxMmEyIDIgMCAxIDEtNCAwIDIgMiAwIDAgMSA0IDB6Ii8+PC9zdmc+'
   } as any); // 使用类型断言来绕过TypeScript检查
 });
+
+const copyToClipboard = (text: string) => {
+  navigator.clipboard.writeText(text).then(() => {
+    // 显示短暂的成功提示
+    Swal.fire({
+      title: "Copied!",
+      text: "ID has been copied to clipboard",
+      icon: "success",
+      toast: true,
+      position: "top-end",
+      showConfirmButton: false,
+      timer: 1500,
+      timerProgressBar: true
+    });
+  }).catch(err => {
+    console.error('Failed to copy: ', err);
+    Swal.fire({
+      title: "Error",
+      text: "Failed to copy to clipboard",
+      icon: "error",
+      toast: true,
+      position: "top-end",
+      showConfirmButton: false,
+      timer: 1500
+    });
+  });
+};
 
 // function processValue(value: any): any {
 //   // No special processing needed - we've already handled escaping elsewhere

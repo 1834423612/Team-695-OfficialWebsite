@@ -1,8 +1,8 @@
 <template>
     <div class="min-h-screen bg-gray-50 flex">
-        <!-- Sidebar - Overlay Mode -->
+        <!-- Sidebar - Overlay Mode - 确保z-index值低于header，修复顶部间距 -->
         <aside v-if="navMode === 'overlay'"
-            class="fixed inset-y-0 z-20 flex flex-col flex-shrink-0 w-64 max-h-screen overflow-hidden transition-all transform bg-white border-r shadow-lg lg:z-auto"
+            class="fixed inset-y-0 z-[30] flex flex-col flex-shrink-0 w-64 max-h-screen overflow-hidden transition-all transform bg-white border-r shadow-lg pt-[60px] mobile-sidebar"
             :class="{
                 '-translate-x-full': !sidebarOpen,
                 'translate-x-0': sidebarOpen
@@ -13,7 +13,7 @@
 
         <!-- Sidebar - Fixed Mode -->
         <aside v-if="navMode === 'fixed'"
-            class="flex-shrink-0 flex flex-col transition-all duration-300 ease-in-out bg-white border-r shadow-sm h-screen sticky top-0"
+            class="flex-shrink-0 flex flex-col transition-all duration-300 ease-in-out bg-white border-r shadow-sm h-screen sticky top-0 pt-[60px]"
             :class="{
                 'w-64': sidebarOpen,
                 'w-20': !sidebarOpen
@@ -22,18 +22,15 @@
                 @toggle-sidebar="toggleSidebar" :logout="logout" />
         </aside>
 
-        <!-- Backdrop for overlay sidebar on mobile -->
-        <div v-if="sidebarOpen && navMode === 'overlay'" class="fixed inset-0 z-10 bg-black bg-opacity-30 lg:hidden"
+        <!-- Backdrop for overlay sidebar on mobile - 最低的z-index -->
+        <div v-if="sidebarOpen && navMode === 'overlay'" class="fixed inset-0 z-[20] bg-black bg-opacity-30"
             @click="closeSidebar"></div>
 
         <!-- Main content -->
-        <div class="flex flex-col flex-1 h-full overflow-hidden transition-all duration-300 ease-in-out" 
-            :class="{
-                'filter blur-sm pointer-events-none': sidebarOpen && navMode === 'overlay' && !isLargeScreen
-            }">
-            <!-- Navbar -->
+        <div class="flex flex-col flex-1 h-full overflow-hidden transition-all duration-300 ease-in-out">
+            <!-- Navbar - 最高的z-index值 - 确保不受模糊影响 -->
             <header
-                class="flex-shrink-0 border-b bg-white shadow-sm sticky top-0 z-10 transition-all duration-300 ease-in-out">
+                class="flex-shrink-0 border-b bg-white shadow-sm fixed top-0 left-0 right-0 z-[50] transition-all duration-300 ease-in-out w-full">
                 <div class="flex items-center justify-between p-2 px-4">
                     <!-- Navbar left -->
                     <div class="flex items-center space-x-3">
@@ -57,30 +54,32 @@
                             <div class="relative group">
                                 <router-link to="/"
                                     class="hover:bg-gray-100 p-2 rounded-md text-gray-500 hover:text-gray-700 flex items-center justify-center"
-                                    @touchstart="handleTouchStart($event, 'home')"
-                                    @touchend="handleTouchEnd">
+                                    @touchstart="handleTouchStart($event, 'home')" @touchend="handleTouchEnd">
                                     <Icon icon="mdi:home" class="w-5 h-5" />
                                 </router-link>
                                 <!-- Desktop tooltip (hover) - set to show on bottom -->
-                                <div class="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-max opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
-                                    <div class="bg-gray-800 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap">
+                                <div
+                                    class="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-max opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+                                    <div
+                                        class="bg-gray-800 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap">
                                         Go to Home
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <!-- Navigation mode toggle with tooltip -->
                             <div class="relative group ml-1">
                                 <button @click="toggleNavMode"
                                     class="hover:bg-gray-100 p-2 rounded-md text-gray-500 hover:text-gray-700 flex items-center justify-center"
-                                    @touchstart="handleTouchStart($event, 'navMode')" 
-                                    @touchend="handleTouchEnd">
+                                    @touchstart="handleTouchStart($event, 'navMode')" @touchend="handleTouchEnd">
                                     <Icon :icon="navMode === 'fixed' ? 'mdi:dock-left' : 'mdi:dock-window'"
                                         class="w-5 h-5" />
                                 </button>
                                 <!-- Desktop tooltip (hover) - set to show on bottom -->
-                                <div class="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-max opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
-                                    <div class="bg-gray-800 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap">
+                                <div
+                                    class="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-max opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+                                    <div
+                                        class="bg-gray-800 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap">
                                         {{ navMode === 'fixed' ? 'Switch to Overlay Mode' : 'Switch to Fixed Mode' }}
                                     </div>
                                 </div>
@@ -92,11 +91,11 @@
                             <button @click="toggleUserMenu" class="flex items-center p-2 rounded-md hover:bg-gray-100">
                                 <span class="sr-only">User menu</span>
                                 <div class="flex items-center space-x-2">
-                                    <div class="relative flex-shrink-0">
+                                    <div class="relative flex-shrink-0 flex items-center justify-center w-8 h-8">
                                         <CachedAvatar v-if="userData.id" :userId="userData.id" :src="userData.avatar"
                                             :name="userData.name" :firstName="userData.firstName"
                                             :lastName="userData.lastName" :displayName="userData.displayName" :size="32"
-                                            class="h-8 w-8 rounded-full" />
+                                            class="h-8 w-8 rounded-full object-cover" />
                                         <div v-else
                                             class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
                                             <Icon icon="mdi:account" class="h-5 w-5 text-blue-600" />
@@ -143,12 +142,17 @@
                 </div>
             </header>
 
-            <!-- Main content with scrollable area -->
-            <div class="flex-1 overflow-auto">
-                <main class="p-2 mb-4 mx-auto w-full max-w-7xl">
+            <!-- Main content with scrollable area - add padding top to account for fixed header -->
+            <!-- 仅对内容区域应用模糊效果，而不是整个容器 -->
+            <div class="flex-1 overflow-auto pt-[60px]">
+                <main class="p-2 mb-4 mx-auto w-full max-w-7xl" :class="{
+                        'filter blur-sm pointer-events-none': sidebarOpen && navMode === 'overlay' && !isLargeScreen
+                    }">
                     <!-- Breadcrumb -->
-                    <div class="flex items-center mt-4 mb-2 mx-4 space-x-2 text-sm p-3 bg-white rounded-lg shadow-sm border border-gray-100 transition-all hover:shadow-md">
-                        <router-link to="/Dashboard" class="flex items-center text-gray-600 hover:text-blue-600 transition-colors duration-200">
+                    <div
+                        class="flex items-center mt-4 mb-2 mx-4 space-x-2 text-sm p-3 bg-white rounded-lg shadow-sm border border-gray-100 transition-all hover:shadow-md">
+                        <router-link to="/Dashboard"
+                            class="flex items-center text-gray-600 hover:text-blue-600 transition-colors duration-200">
                             <span class="flex items-center justify-center bg-blue-50 p-1.5 rounded-md">
                                 <Icon icon="mdi:view-dashboard" class="w-4 h-4 text-blue-500" />
                             </span>
@@ -160,7 +164,8 @@
                             </span>
                             <span class="flex items-center text-blue-600 font-medium">
                                 <span class="flex items-center justify-center bg-blue-50 p-1.5 rounded-md">
-                                    <Icon :icon="getBreadcrumbIcon(currentBreadcrumb.path)" class="w-4 h-4 text-blue-500" />
+                                    <Icon :icon="getBreadcrumbIcon(currentBreadcrumb.path)"
+                                        class="w-4 h-4 text-blue-500" />
                                 </span>
                                 <span class="ml-1.5">{{ currentBreadcrumb.name }}</span>
                             </span>
@@ -171,8 +176,10 @@
                     <slot></slot>
                 </main>
 
-                <!-- Footer -->
-                <footer class="flex items-center justify-between p-4 border-t">
+                <!-- Footer 也应该被模糊 -->
+                <footer class="flex items-center justify-between p-4 border-t" :class="{
+                        'filter blur-sm pointer-events-none': sidebarOpen && navMode === 'overlay' && !isLargeScreen
+                    }">
                     <div>
                         <p class="text-sm text-gray-500">
                             © {{ new Date().getFullYear() }} Team 695. All rights reserved.
@@ -190,6 +197,17 @@
                     </div>
                 </footer>
             </div>
+        </div>
+
+        <!-- 移动设备工具提示 -->
+        <div v-if="activeTouchTooltip"
+            class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/80 text-white py-2 px-3 rounded-md z-[100] text-sm max-w-[280px] text-center">
+            <template v-if="activeTouchTooltip === 'home'">
+                Go to Home
+            </template>
+            <template v-else-if="activeTouchTooltip === 'navMode'">
+                {{ navMode === 'fixed' ? 'Switch to Overlay Mode' : 'Switch to Fixed Mode' }}
+            </template>
         </div>
     </div>
 </template>
@@ -620,23 +638,25 @@ export default defineComponent({
     border-radius: 3px;
 }
 
-/* Mobile tooltip styles */
-.mobile-tooltip {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: rgba(0, 0, 0, 0.8);
-    color: white;
-    padding: 8px 12px;
-    border-radius: 6px;
-    z-index: 100;
-    font-size: 14px;
-    max-width: 280px;
-    text-align: center;
+/* 移动设备特定样式 */
+@media (max-width: 720px) {
+    /* 确保sidebar始终位于header下方，并调整顶部间距 */
+    aside.fixed, .mobile-sidebar {
+        top: 60px; /* 匹配header高度 */
+    }
+    
+    /* 移除sidebar上方的空白区域 */
+    .mobile-sidebar {
+        padding-top: 0 !important; /* 覆盖pt-[60px]类 */
+    }
+    
+    /* 优化背景模糊效果 */
+    .filter.blur-sm {
+        backdrop-filter: blur(4px);
+    }
 }
 
-/* Fade transition for mobile tooltip */
+/* 淡入淡出过渡效果 */
 .tooltip-fade-enter-active,
 .tooltip-fade-leave-active {
     transition: opacity 0.3s ease;

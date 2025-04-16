@@ -1,21 +1,23 @@
 <template>
     <div class="flex flex-col h-full">
-        <!-- Sidebar header -->
-        <div class="flex items-center justify-between flex-shrink-0 p-2" :class="{ 'justify-center': !sidebarOpen }">
+        <!-- Sidebar header - Logo -->
+        <!-- <div class="flex items-center justify-between flex-shrink-0 p-2" :class="{ 'justify-center': !sidebarOpen }"> -->
+            <!-- 
             <router-link to="/" class="flex items-center space-x-2" :class="{ 'justify-center w-full': !sidebarOpen }">
                 <img v-if="orgData && orgData.logo" :src="orgData.logo" alt="Team 695 Logo" class="h-8 w-auto" />
                 <span v-if="sidebarOpen"
                     class="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Team
                     695</span>
             </router-link>
+            -->
             <!-- Only show close button in overlay mode and when sidebar is open -->
-            <button v-if="sidebarOpen" @click="$emit('close')" class="p-2 rounded-md lg:hidden hover:bg-gray-100">
+            <!-- <button v-if="sidebarOpen" @click="$emit('close')" class="p-2 rounded-md lg:hidden hover:bg-gray-100">
                 <Icon icon="mdi:close" class="w-6 h-6 text-gray-600" />
             </button>
-        </div>
+        </div> -->
 
         <!-- User details -->
-        <div class="flex-shrink-0 p-2 mb-2">
+        <div class="flex-shrink-0 p-2 mt-4 sm:mt-2 mb-2">
             <div class="flex items-center space-x-2 bg-gray-50 p-2 rounded-md" :class="{ 'justify-center': !sidebarOpen }">
                 <div class="relative">
                     <CachedAvatar v-if="userData.id" :userId="userData.id" :src="userData.avatar" :name="userData.name"
@@ -39,7 +41,7 @@
         </div>
 
         <!-- Sidebar navigation -->
-        <nav class="flex-1 overflow-y-auto py-2 px-2">
+        <nav class="flex-1 overflow-y-auto py-2 px-2 relative z-30 max-sm:pt-0">
             <template v-for="section in ['main', 'scouting', 'user', 'external']" :key="section">
                 <div v-if="getNavItemsBySection(section).length > 0" class="mb-6">
                     <h3 v-if="sidebarOpen" class="px-2 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -51,7 +53,7 @@
                             <div v-if="item.children && item.children.length > 0">
                                 <!-- Parent menu -->
                                 <div @click="toggleSubmenu(item)"
-                                    class="flex items-center p-2 text-gray-600 rounded-md hover:bg-gray-100 transition-colors duration-200 cursor-pointer"
+                                    class="flex items-center p-2 text-gray-600 rounded-md hover:bg-gray-100 transition-colors duration-200 cursor-pointer relative z-10"
                                     :class="{ 
                                     'bg-blue-50 text-blue-600 font-medium': isParentActive(item),
                                     'justify-center': !sidebarOpen 
@@ -90,7 +92,7 @@
 
                             <!-- Handle router links -->
                             <router-link v-else-if="!item.isExternalLink" :to="item.path"
-                                class="flex items-center p-2 text-gray-600 rounded-md hover:bg-gray-100 transition-colors duration-200"
+                                class="flex items-center p-2 text-gray-600 rounded-md hover:bg-gray-100 transition-colors duration-200 relative z-10"
                                 :class="{ 
                                     'bg-blue-50 text-blue-600 font-medium': isActive(item.path, item.exact),
                                     'justify-center': !sidebarOpen 
@@ -107,7 +109,7 @@
                             
                             <!-- Handle external links -->
                             <a v-else :href="item.path" :target="item.targetBlank ? '_blank' : '_self'"
-                                class="flex items-center p-2 text-gray-600 rounded-md hover:bg-gray-100 transition-colors duration-200"
+                                class="flex items-center p-2 text-gray-600 rounded-md hover:bg-gray-100 transition-colors duration-200 relative z-10"
                                 :class="{ 'justify-center': !sidebarOpen }">
                                 <Icon :icon="item.icon" class="w-5 h-5 flex-shrink-0"
                                     :class="{ 'mr-3': sidebarOpen }" />
@@ -226,7 +228,6 @@ export default defineComponent({
             // First identify if this is a parent or child menu item
             let isParentMenu = false;
             let isChildMenu = false;
-            let parentPath = '';
             
             // Check if this is a parent menu with children
             isParentMenu = navigationConfig.sidebarNavItems.some(item => 
@@ -239,7 +240,6 @@ export default defineComponent({
                     const childMatch = item.children.find(child => child.path.toLowerCase() === targetPath);
                     if (childMatch) {
                         isChildMenu = true;
-                        parentPath = item.path.toLowerCase();
                         break;
                     }
                 }
@@ -341,7 +341,7 @@ export default defineComponent({
         // Toggle sidebar
         const toggleSidebar = () => {
             // 修复: 无论当前模式如何，都允许切换sidebar状态
-            // 移除对于fixed模式下的限制条件
+            // 移除对于固定模式下的限制条件
             emit('toggle-sidebar');
         };
         
@@ -384,3 +384,31 @@ export default defineComponent({
     }
 });
 </script>
+
+<style scoped>
+/* 为移动设备优化侧边栏导航 */
+@media (max-width: 720px) {
+    .mobile-nav {
+        position: relative;
+        z-index: 30; /* 确保与DashboardLayout的z-index值匹配 */
+    }
+    
+    /* 确保侧边栏内容在移动设备上正确显示 */
+    .flex-col.h-full {
+        z-index: 31; /* 比父容器高，确保内容可见 */
+        position: relative;
+        padding-top: 1rem; /* 移除顶部空白 */
+    }
+    
+    /* 调整用户信息区域，移除多余边距 */
+    .flex-shrink-0.p-2.mt-4 {
+        margin-top: 0;
+    }
+}
+
+/* 调整链接的样式以确保它们在移动设备上正确显示 */
+nav a, nav button, nav div.cursor-pointer {
+    position: relative;
+    z-index: 10;
+}
+</style>
