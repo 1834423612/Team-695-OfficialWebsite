@@ -214,6 +214,16 @@
                                                 <span v-for="team in assignment.assigned_team_numbers" :key="team"
                                                     class="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-gray-100 text-gray-800">
                                                     Team {{ team }}
+                                                    <span v-if="isTeamPit(team)" 
+                                                        class="ml-1 px-1.5 py-0.5 text-xs font-medium rounded-full bg-purple-100 text-purple-700 flex items-center">
+                                                        <Icon icon="mdi:check-circle" class="h-3 w-3 mr-0.5" />Pit
+                                                    </span>
+                                                    <button v-if="isAdmin" 
+                                                        @click.stop="toggleTeamPitStatus(team)"
+                                                        class="ml-1 p-0.5 text-gray-500 hover:text-purple-600"
+                                                        :title="isTeamPit(team) ? 'Remove pit status' : 'Mark as pit team'">
+                                                        <Icon :icon="isTeamPit(team) ? 'mdi:close-circle' : 'mdi:check-circle'" class="h-4 w-4" />
+                                                    </button>
                                                 </span>
                                             </div>
                                         </div>
@@ -303,7 +313,7 @@
 
                                     <!-- Action Buttons -->
                                     <div class="mt-5 flex justify-between">
-                                        <button v-if="isUserInAssignment(assignment, userData.id)"
+                                        <button v-if="isUserInAssignment(assignment, userData.id) || isAdmin"
                                             @click="updateAssignmentStatus(assignment)"
                                             class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
                                             :class="{
@@ -391,14 +401,85 @@
                                                 <label for="assigned_team_numbers"
                                                     class="block text-sm font-medium text-gray-700">Assigned
                                                     Teams</label>
-                                                <div class="mt-1">
-                                                    <input id="assigned_team_numbers" v-model="teamNumbersInput"
-                                                        type="text"
-                                                        placeholder="Enter team numbers separated by commas (e.g., 695, 254, 1114)"
-                                                        class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500 sm:text-sm" />
+                                                <div class="mt-1 relative">
+                                                    <div class="relative">
+                                                        <input id="team_search" v-model="teamSearchQuery"
+                                                            @focus="showTeamDropdown = true"
+                                                            @input="showTeamDropdown = true"
+                                                            placeholder="Search teams..."
+                                                            class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 sm:text-sm" />
+                                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                            <Icon icon="mdi:magnify" class="h-5 w-5 text-gray-400" />
+                                                        </div>
+                                                        <button v-if="teamSearchQuery"
+                                                            @click.stop="teamSearchQuery = ''; showTeamDropdown = true"
+                                                            class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                                            <Icon icon="mdi:close"
+                                                                class="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                                                        </button>
+                                                    </div>
+                                                    
+                                                    <!-- Teams dropdown -->
+                                                    <div v-if="showTeamDropdown && filteredAvailableTeams.length > 0"
+                                                        class="absolute z-50 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm team-dropdown"
+                                                        style="max-height: 300px;" @click.stop>
+                                                        <div v-for="team in filteredAvailableTeams" :key="team.team_number"
+                                                            @mousedown.prevent="addSelectedTeam(team)"
+                                                            class="cursor-pointer hover:bg-gray-100 px-4 py-2">
+                                                            <div class="flex items-center justify-between">
+                                                                <div>
+                                                                    <span class="text-sm font-medium text-gray-900">
+                                                                        Team {{ team.team_number }}
+                                                                    </span>
+                                                                    <p class="text-xs text-gray-500">{{ team.nickname }}</p>
+                                                                </div>
+                                                                <div class="flex items-center">
+                                                                    <span v-if="team.is_pit" 
+                                                                        class="px-2 py-0.5 mr-2 text-xs font-medium rounded-full bg-purple-100 text-purple-700 flex items-center">
+                                                                        <Icon icon="mdi:check-circle" class="h-3 w-3 mr-0.5" />
+                                                                    </span>
+                                                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                                                                        Add
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- No team results message -->
+                                                    <div v-if="showTeamDropdown && teamSearchQuery && filteredAvailableTeams.length === 0"
+                                                        class="absolute z-50 mt-1 w-full bg-white shadow-lg rounded-md py-4 px-4 text-center text-base ring-1 ring-black ring-opacity-5 sm:text-sm">
+                                                        <p class="text-gray-500">No available teams found matching "{{ teamSearchQuery }}"</p>
+                                                    </div>
                                                 </div>
-                                                <p class="mt-1 text-xs text-gray-500">Current teams: {{
-                                                    formData.assigned_team_numbers?.join(', ') || 'None' }}</p>
+                                                
+                                                <!-- Selected teams display -->
+                                                <div v-if="formData.assigned_team_numbers.length > 0"
+                                                    class="mt-2 flex items-center flex-wrap gap-2">
+                                                    <div v-for="teamNumber in formData.assigned_team_numbers" :key="teamNumber"
+                                                        class="inline-flex items-center bg-gray-100 rounded-full pl-2 pr-1 py-1">
+                                                        <span class="text-xs font-medium text-gray-800 flex items-center">
+                                                            Team {{ teamNumber }}
+                                                            <span v-if="isTeamPit(teamNumber)" 
+                                                                class="ml-1 px-1.5 py-0.5 text-xs font-medium rounded-full bg-purple-100 text-purple-700 flex items-center">
+                                                                <Icon icon="mdi:check-circle" class="h-3 w-3 mr-0.5" />
+                                                            </span>
+                                                            <button v-if="isAdmin" 
+                                                                @click.stop="toggleTeamPitStatus(teamNumber)"
+                                                                class="ml-1 p-0.5 text-gray-500 hover:text-purple-600"
+                                                                :title="isTeamPit(teamNumber) ? 'Remove pit status' : 'Mark as pit team'">
+                                                                <Icon :icon="isTeamPit(teamNumber) ? 'mdi:close-circle' : 'mdi:check-circle'" class="h-4 w-4" />
+                                                            </button>
+                                                            <span class="text-xs text-gray-500 ml-1 truncate max-w-[100px]">
+                                                                {{ getTeamNickname(teamNumber) }}
+                                                            </span>
+                                                        </span>
+                                                        <button @click="removeSelectedTeam(teamNumber)"
+                                                            class="ml-1 rounded-full p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600 flex items-center justify-center">
+                                                            <Icon icon="mdi:close" class="h-3 w-3" />
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
 
                                             <!-- Alliance & Matches (for match scouting) -->
@@ -673,9 +754,9 @@ export default defineComponent({
         const error = ref('');
         const assignments = ref<any[]>([]);
         const events = ref([
-            { key: '2025ohcl', name: '2025 Buckeye Regional' },
+            { key: '2025johnson', name: '2025 Johnson Division' },
         ]);
-        const selectedEvent = ref('2025ohcl');
+        const selectedEvent = ref('2025johnson');
         const activeTab = ref('all');
         const filterType = ref('all');
         const searchQuery = ref('');
@@ -691,7 +772,7 @@ export default defineComponent({
 
         // Form data - Updated for multiple assignees
         const formData = ref({
-            event_key: '2025ohcl',
+            event_key: '2025johnson',
             task_type: 'scouting',
             assigned_team_numbers: [] as number[],
             assigned_alliance: 'red',
@@ -878,6 +959,7 @@ export default defineComponent({
         // Refresh data
         const refreshData = () => {
             loadAssignments();
+            loadEventTeams();
             if (isAdmin.value) {
                 loadTeamMembers();
             }
@@ -1272,6 +1354,7 @@ export default defineComponent({
         // Watch for event changes
         watch(selectedEvent, () => {
             loadAssignments();
+            loadEventTeams();
         });
 
         // Load data on mount
@@ -1281,6 +1364,7 @@ export default defineComponent({
 
             // Load assignments and team members
             loadAssignments();
+            loadEventTeams();
             if (isAdmin.value) {
                 loadTeamMembers();
             }
@@ -1296,6 +1380,17 @@ export default defineComponent({
                     // Check if click is outside dropdown and search input
                     if (!dropdown?.contains(target) && target !== searchInput) {
                         showUserDropdown.value = false;
+                    }
+                }
+                
+                // 同样处理团队下拉菜单
+                if (showTeamDropdown.value) {
+                    const target = e.target as HTMLElement;
+                    const dropdown = document.querySelector('.team-dropdown');
+                    const searchInput = document.getElementById('team_search');
+
+                    if (!dropdown?.contains(target) && target !== searchInput) {
+                        showTeamDropdown.value = false;
                     }
                 }
             });
@@ -1332,6 +1427,189 @@ export default defineComponent({
             }
             
             return (user.id || 'XX').substring(0, 2).toUpperCase();
+        };
+
+        // 添加团队数据相关状态
+        const eventTeams = ref<any[]>([]);
+        const teamSearchQuery = ref('');
+        const showTeamDropdown = ref(false);
+        // const assignedTeamNumbers = ref<number[]>([]);
+
+        // 加载事件队伍数据
+        const loadEventTeams = async () => {
+            try {
+                const token = casdoorService.getToken();
+                if (!token) {
+                    throw new Error('Authentication token not found');
+                }
+
+                const response = await fetch(`https://api.team695.com/team-matches/event/${selectedEvent.value}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to load event teams: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                if (data.success) {
+                    eventTeams.value = data.data || [];
+                } else {
+                    throw new Error(data.message || 'Failed to load event teams');
+                }
+            } catch (err: any) {
+                console.error('Error loading event teams:', err);
+                Swal.fire({
+                    title: 'Warning',
+                    text: 'Failed to load event teams. Team selection may be unavailable.',
+                    icon: 'warning'
+                });
+            }
+        };
+
+        // 获取分配的团队列表 - 用于检查团队是否已被分配
+        const getAssignedTeams = computed(() => {
+            const assignedTeams = new Set<number>();
+            
+            // 如果当前正在编辑，则跳过当前任务的团队
+            const currentEditingId = editingAssignment.value?.id;
+            
+            assignments.value.forEach(assignment => {
+                // 跳过当前正在编辑的任务，以便它可以保留其当前选择的团队
+                if (currentEditingId && assignment.id === currentEditingId) {
+                    return;
+                }
+                
+                if (assignment.assigned_team_numbers && Array.isArray(assignment.assigned_team_numbers)) {
+                    assignment.assigned_team_numbers.forEach((teamNumber: number) => {
+                        assignedTeams.add(teamNumber);
+                    });
+                }
+            });
+            
+            return assignedTeams;
+        });
+
+        // 筛选可用的未分配团队
+        const filteredAvailableTeams = computed(() => {
+            // 获取已分配的团队集合
+            const assignedTeams = getAssignedTeams.value;
+            
+            // 过滤掉已分配的团队，除非它们已经在当前表单中选择
+            let availableTeams = eventTeams.value.filter(team => 
+                !assignedTeams.has(team.team_number) && 
+                !formData.value.assigned_team_numbers.includes(team.team_number)
+            );
+            
+            // 如果有搜索查询，筛选匹配的团队
+            if (teamSearchQuery.value) {
+                const query = teamSearchQuery.value.toLowerCase();
+                availableTeams = availableTeams.filter(team =>
+                    team.team_number.toString().includes(query) ||
+                    (team.nickname && team.nickname.toLowerCase().includes(query))
+                );
+            }
+            
+            return availableTeams;
+        });
+        
+        // 检查团队是否为维修区团队
+        const isTeamPit = (teamNumber: number): boolean => {
+            const team = eventTeams.value.find(t => t.team_number === teamNumber);
+            return team ? team.is_pit : false;
+        };
+
+        // 添加选定的团队
+        const addSelectedTeam = (team: any) => {
+            // 检查团队是否已经被选中
+            if (!formData.value.assigned_team_numbers.includes(team.team_number)) {
+                formData.value.assigned_team_numbers.push(team.team_number);
+            }
+            teamSearchQuery.value = '';
+        };
+
+        // 移除选定的团队
+        const removeSelectedTeam = (teamNumber: number) => {
+            formData.value.assigned_team_numbers = formData.value.assigned_team_numbers.filter(
+                num => num !== teamNumber
+            );
+        };
+
+        // 获取团队昵称
+        const getTeamNickname = (teamNumber: number): string => {
+            const team = eventTeams.value.find(t => t.team_number === teamNumber);
+            return team ? team.nickname : '';
+        };
+
+        // 监听任务类型变化，清除不相关的字段
+        watch(() => formData.value.task_type, (newType) => {
+            if (newType === 'scouting') {
+                // 如果切换到比赛任务，清除团队号码
+                formData.value.assigned_team_numbers = [];
+            } else if (newType === 'pit-scouting') {
+                // 如果切换到维修区任务，清除联盟和比赛范围
+                formData.value.assigned_alliance = 'red';
+                formData.value.assigned_matches = '';
+            }
+        });
+
+        // 切换队伍的Pit状态
+        const toggleTeamPitStatus = async (teamNumber: number) => {
+            try {
+                const token = casdoorService.getToken();
+                if (!token) {
+                    throw new Error('Authentication token not found');
+                }
+
+                // 确定当前状态和新状态
+                const currentStatus = isTeamPit(teamNumber);
+                const newStatus = !currentStatus;
+                
+                // 发送API请求更新状态
+                const response = await fetch(`https://api.team695.com/team-matches/pit-status/${selectedEvent.value}/frc${teamNumber}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        is_pit: newStatus
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to update pit status: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                if (data.success) {
+                    // 更新本地团队数据
+                    const teamIndex = eventTeams.value.findIndex(t => t.team_number === teamNumber);
+                    if (teamIndex !== -1) {
+                        eventTeams.value[teamIndex].is_pit = newStatus;
+                    }
+
+                    // 显示成功消息
+                    Swal.fire({
+                        title: 'Success',
+                        text: `Team ${teamNumber} pit status ${newStatus ? 'confirmed' : 'removed'}`,
+                        icon: 'success',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                } else {
+                    throw new Error(data.message || 'Failed to update pit status');
+                }
+            } catch (err: any) {
+                console.error('Error updating pit status:', err);
+                Swal.fire({
+                    title: 'Error',
+                    text: err.message || 'Failed to update pit status. Please try again.',
+                    icon: 'error'
+                });
+            }
         };
 
         return {
@@ -1375,7 +1653,17 @@ export default defineComponent({
             addSelectedAssignee,
             removeSelectedAssignee,
             ensureSafeUserId,
-            getUserInitialsValue // 导出函数
+            getUserInitialsValue, // 导出函数
+            eventTeams,
+            teamSearchQuery,
+            showTeamDropdown,
+            filteredAvailableTeams,
+            addSelectedTeam,
+            removeSelectedTeam,
+            getTeamNickname,
+            loadEventTeams,
+            isTeamPit,
+            toggleTeamPitStatus,
         };
     }
 });
@@ -1428,5 +1716,22 @@ export default defineComponent({
 .user-dropdown {
     position: relative;
     z-index: 60;
+}
+
+/* 确保卡片底部操作区域对齐 */
+.grid > div {
+    display: flex;
+    flex-direction: column;
+}
+
+.grid > div > div {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.grid > div .mt-5 {
+    margin-top: auto;
+    padding-top: 1rem;
 }
 </style>

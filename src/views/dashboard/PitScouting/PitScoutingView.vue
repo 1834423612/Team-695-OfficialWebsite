@@ -9,7 +9,7 @@
     </div>
 
     <main class="-mt-32 w-full flex justify-center">
-      <div class="mx-auto md:mx-8 max-w-7xl px-4 pb-12 sm:px-6 lg:px-8 w-full">
+      <div class="mx-auto md:mx-8 max-w-7xl px-2 pb-12 sm:px-6 lg:px-8 w-full">
         <div class="bg-white rounded-lg shadow px-5 py-6 sm:px-6">
           <!-- Tabs -->
           <div class="mb-6 bg-gray-50 rounded-md p-4 border-2 border-dashed border-amber-500">
@@ -105,17 +105,40 @@
               </div>
             </Transition>
           </div>
-
           <!-- Event ID and Form ID -->
           <div
-            class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 bg-gray-50 p-4 rounded-md border-2 border-dotted border-pink-500">
-            <div class="mb-2 sm:mb-0">
-              <span class="text-sm font-medium text-gray-500">Event ID:</span>
-              <span class="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-sm">{{ eventId }}</span>
+            class="flex flex-col justify-start items-start mb-6 bg-gray-50 p-4 rounded-lg shadow-sm border-2 border-indigo-300">
+            <div class="w-full mb-3 flex flex-col sm:flex-row items-start sm:items-center">
+              <span
+                class="text-xs sm:text-base font-medium text-gray-600 mb-1 sm:mb-0 sm:mr-2 min-w-[50px] inline-block">
+                Event ID:
+              </span>
+              <div class="flex items-center w-full sm:w-auto">
+                <span
+                  class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-md text-xs sm:text-base font-medium shadow-sm border border-blue-200 overflow-hidden text-ellipsis whitespace-nowrap inline-block">
+                  {{ eventId }}
+                </span>
+                <button @click="copyToClipboard(eventId)"
+                  class="ml-1 text-gray-500 hover:text-indigo-600 focus:outline-none" title="Copy to clipboard">
+                  <Icon icon="mdi:content-copy" class="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
-            <div>
-              <span class="text-sm font-medium text-gray-500">Form ID:</span>
-              <span class="ml-2 px-2 py-1 bg-green-100 text-green-800 rounded-md text-sm">{{ currentFormId }}</span>
+            <div class="w-full flex flex-col sm:flex-row items-start sm:items-center">
+              <span
+                class="text-xs sm:text-base font-medium text-gray-600 mb-1 sm:mb-0 sm:mr-2 min-w-[50px] inline-block">
+                Form ID:
+              </span>
+              <div class="flex items-center w-full sm:w-auto">
+                <span
+                  class="px-2 py-0.5 bg-green-100 text-green-800 rounded-md text-xs sm:text-base font-medium shadow-sm border border-green-200 overflow-hidden text-ellipsis whitespace-nowrap inline-block">
+                  {{ currentFormId }}
+                </span>
+                <button @click="copyToClipboard(currentFormId)"
+                  class="ml-1 text-gray-500 hover:text-indigo-600 focus:outline-none" title="Copy to clipboard">
+                  <Icon icon="mdi:content-copy" class="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -284,7 +307,7 @@
                     <img :src="image.url" :alt="image.name" class="w-full h-32 object-cover rounded-lg" />
                     <div class="mt-2 text-xs text-gray-600 truncate">{{ image.name }}</div>
                     <div class="text-xs text-gray-500">{{ formatFileSize(image.size) }}</div>
-                    <button @click="confirmRemoveImage(imageType as 'fullRobot' | 'driveTrain', index)"
+                    <button @click.stop="confirmRemoveImage(imageType as 'fullRobot' | 'driveTrain', index)"
                       class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 focus:outline-none">
                       <Icon icon="mdi:close" />
                     </button>
@@ -828,7 +851,7 @@ const clearCurrentTab = () => {
       formFields.value.map((field) => ({
         ...field,
         value: field.type === "checkbox" ? [] : null,
-        otherValue: "",
+        otherValue: "", // Ensure otherValue is cleared
         error: undefined,
       }))
     )
@@ -1057,14 +1080,16 @@ const formatFileSize = (bytes: number): string => {
 
 // Escape special characters in input values to prevent JSON parsing issues
 const escapeInput = (input: string): string => {
+  // Don't escape these common characters that don't affect JSON structure
+  const needsEscape = /[\\"\{\}\[\]<>&]/g;
+  
+  if (!needsEscape.test(input)) {
+    return input; // No need to escape if no special characters
+  }
+  
   return input
     .replace(/\\/g, "\\\\") // Escape backslash
     .replace(/"/g, '\\"')   // Escape double quotes
-    .replace(/'/g, "\\'")   // Escape single quotes
-    .replace(/`/g, "\\`")   // Escape backticks
-    .replace(/\//g, "\\/")  // Escape forward slash
-    .replace(/\$/g, "\\$")  // Escape dollar sign
-    .replace(/%/g, "\\%")   // Escape percent sign
     .replace(/\{/g, "\\{")  // Escape left curly brace
     .replace(/\}/g, "\\}")  // Escape right curly brace
     .replace(/\[/g, "\\[")  // Escape left square bracket
@@ -1072,39 +1097,28 @@ const escapeInput = (input: string): string => {
     .replace(/</g, "&lt;")  // Escape less-than sign (HTML entity)
     .replace(/>/g, "&gt;")  // Escape greater-than sign (HTML entity)
     .replace(/&/g, "&amp;") // Escape ampersand (HTML entity)
-    .replace(/\(/g, "\\(")  // Escape left parenthesis
-    .replace(/\)/g, "\\)")  // Escape right parenthesis
-    .replace(/\*/g, "\\*")  // Escape asterisk
-    .replace(/\+/g, "\\+")  // Escape plus sign
-    .replace(/-/g, "\\-")   // Escape minus sign
-    .replace(/#/g, "\\#")   // Escape hash symbol
-    .replace(/@/g, "\\@")   // Escape at symbol
-    .replace(/\^/g, "\\^")  // Escape caret
-    .replace(/~/g, "\\~")   // Escape tilde
-    .replace(/\|/g, "\\|")  // Escape vertical bar
-    .replace(/:/g, "\\:")   // Escape colon
-    .replace(/;/g, "\\;")   // Escape semicolon
-    .replace(/,/g, "\\,")   // Escape comma
-    .replace(/\./g, "\\.")  // Escape period
-    .replace(/\?/g, "\\?")  // Escape question mark
-    .replace(/!/g, "\\!");  // Escape exclamation mark
 };
 
 const saveFormData = () => {
   // Deep copy the formFields to avoid directly modifying the reactive data
   const updatedFields = formFields.value.map(field => {
-    // Fix: Escape input values before saving to localStorage
-    if (field.type === "text" || field.type === "textarea" || field.type === "autocomplete") {
-      field.value = typeof field.value === "string" ? escapeInput(field.value) : field.value;
+    // Only escape string values
+    if (field.value && typeof field.value === "string" && 
+        (field.type === "text" || field.type === "textarea" || field.type === "autocomplete")) {
+      // Create a new field object with the escaped value
+      return { ...field, value: escapeInput(field.value) };
     }
 
     // Fix: Ensure checkbox options are saved in the order of the question
     if (field.type === "checkbox" && Array.isArray(field.value)) {
-      field.value = field.optionValues?.filter(option => field.value.includes(option)) || [];
+      return { 
+        ...field, 
+        value: field.optionValues?.filter(option => field.value.includes(option)) || [] 
+      };
     }
 
-    // Won't directly modify the field value, just return a new object with the processed value
-    return { ...field, value: processValue(field.value) };
+    // Return the field unmodified
+    return { ...field };
   });
 
   // Update the current tab's formData with the updated fields
@@ -1376,6 +1390,17 @@ const submitForm = async () => {
         confirmButtonText: "OK"
       }).then((result) => {
         if (result.isConfirmed) {
+          // Clear all form data and "Other" input values
+          formFields.value.forEach(field => {
+            if (field.otherValue) {
+              field.otherValue = "";
+            }
+            field.value = field.type === "checkbox" ? [] : null;
+          });
+          
+          // Save the cleared data
+          saveFormData();
+          
           // 删除当前标签页及其所有内容
           removeTab(currentTab.value);
           
@@ -1449,14 +1474,41 @@ onMounted(() => {
     project: '695_Web',
     title: 'Pit',
     // 移除不支持的logoStyle属性
-    logo: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgdmlld0JveD0iMCAwIDIwIDIwIj48cGF0aCBmaWxsPSIjNTM1MzUzIiBkPSJNMyA2YTMgMyAwIDAgMSAzLTNoOGEzIDMgMCAwIDEgMyAzdjIuMDNhNC41IDQuNSAwIDAgMC0xLS4wMDRWN0g0djdhMiAyIDAgMCAwIDIgMmgzLjQ5MmEyLjUgMi41IDAgMCAwLS40NDMgMUg2YTMgMyAwIDAgMS0zLTN6bTEwLjA0NCAzLjU4YTQuNTA1IDQuNTA1IDAgMCAwLTMuMDQ0LTEuNTggYTQuNSA0LjUgMCAxIDAgNC41IDQuNWE0LjQ4MSA0LjQ4MSAwIDAgMC0uMTE1LS45NzRsLS44OTEgLjg5MWExLjUgMS41IDAgMCAxLTIuMTIxIDIuMTIxbC0zLTNhMS41IDEuNSAwIDAgMSAyLjEyMS0yLjEybC44OTkuODk4YTMuNDg0IDMuNDg0IDAgMCAxIC43MDgtLjIybC44NDMtLjg0MnpNMTUgMTJhMiAyIDAgMSAxLTQgMCAyIDIgMCAwIDEgNCAweiIvPjwvc3ZnPg=='
+    logo: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgdmlld0JveD0iMCAwIDIwIDIwIj48cGF0aCBmaWxsPSIjNTM1MzUzIiBkPSJNMyA2YTMgMyAwIDAgMSAzLTNoOGEzIDMgMCAwIDEgMyAzdjIuMDNhNC41IDQuNSAwIDAgMC0xLS4wMDRWN0h2N2EyIDIgMCAwIDAgMiAyaDMuNDkyYTIuNSAyLjUgMCAwIDAtLjQ0MyAxSDZhMyAzIDAgMCAxLTMtM3ptMTAuMDQ0IDMuNThhNC41MDUgNC41MDUgMCAwIDAtMy4wNDQtMS41OCA0LjUgNC41IDAgMSAwIDQuNSA0LjVhNC40ODEgNC40ODEgMCAwIDAtLjExNS0uOTc0bC0uODkxIC44OTFhMS41IDEuNSAwIDAgMS0yLjEyMSAyLjEyMWwtMy0zYTEuNSAxLjUgMCAwIDEgMi4xMjEtMi4xMmwuODk5Ljg5OEEzLjQ4NCAzLjQ4NCAwIDAgMSA2LjcwOC0uMjJsLjg0My0uODQzek0xNSAxMmEyIDIgMCAxIDEtNCAwIDIgMiAwIDAgMSA0IDB6Ii8+PC9zdmc+'
   } as any); // 使用类型断言来绕过TypeScript检查
 });
 
-function processValue(value: any): any {
-  // 如果需要对值进行特殊处理，可以在这里实现逻辑
-  return value; // 默认直接返回原值
-}
+const copyToClipboard = (text: string) => {
+  navigator.clipboard.writeText(text).then(() => {
+    // 显示短暂的成功提示
+    Swal.fire({
+      title: "Copied!",
+      text: "ID has been copied to clipboard",
+      icon: "success",
+      toast: true,
+      position: "top-end",
+      showConfirmButton: false,
+      timer: 1500,
+      timerProgressBar: true
+    });
+  }).catch(err => {
+    console.error('Failed to copy: ', err);
+    Swal.fire({
+      title: "Error",
+      text: "Failed to copy to clipboard",
+      icon: "error",
+      toast: true,
+      position: "top-end",
+      showConfirmButton: false,
+      timer: 1500
+    });
+  });
+};
+
+// function processValue(value: any): any {
+//   // No special processing needed - we've already handled escaping elsewhere
+//   return value;
+// }
 </script>
 
 <style scoped>

@@ -1,38 +1,38 @@
 <template>
     <div class="flex flex-col h-full">
-        <!-- Sidebar header -->
-        <div class="flex items-center justify-between flex-shrink-0 p-2" :class="{ 'justify-center': !sidebarOpen }">
+        <!-- Sidebar header - Logo -->
+        <!-- <div class="flex items-center justify-between flex-shrink-0 p-2" :class="{ 'justify-center': !sidebarOpen }"> -->
+            <!-- 
             <router-link to="/" class="flex items-center space-x-2" :class="{ 'justify-center w-full': !sidebarOpen }">
                 <img v-if="orgData && orgData.logo" :src="orgData.logo" alt="Team 695 Logo" class="h-8 w-auto" />
                 <span v-if="sidebarOpen"
                     class="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Team
                     695</span>
             </router-link>
+            -->
             <!-- Only show close button in overlay mode and when sidebar is open -->
-            <button v-if="sidebarOpen" @click="$emit('close')" class="p-2 rounded-md lg:hidden hover:bg-gray-100">
+            <!-- <button v-if="sidebarOpen" @click="$emit('close')" class="p-2 rounded-md lg:hidden hover:bg-gray-100">
                 <Icon icon="mdi:close" class="w-6 h-6 text-gray-600" />
             </button>
-        </div>
+        </div> -->
 
-        <!-- User profile summary -->
-        <div class="p-2 border-b border-gray-200" v-if="sidebarOpen">
-            <div class="flex items-center space-x-3 p-2 rounded-lg bg-gray-50">
-                <CachedAvatar v-if="userData.id" :userId="userData.id" :src="userData.avatar" :name="userData.name"
-                    :firstName="userData.firstName" :lastName="userData.lastName" :displayName="userData.displayName"
-                    :size="40" class="h-10 w-10 rounded-full" />
-                <div v-else class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                    <Icon icon="mdi:account" class="h-6 w-6 text-blue-600" />
+        <!-- User details -->
+        <div class="flex-shrink-0 p-2 mt-4 sm:mt-2 mb-2">
+            <div class="flex items-center space-x-2 bg-gray-50 p-2 rounded-md" :class="{ 'justify-center': !sidebarOpen }">
+                <div class="relative">
+                    <CachedAvatar v-if="userData.id" :userId="userData.id" :src="userData.avatar" :name="userData.name"
+                        :firstName="userData.firstName" :lastName="userData.lastName" :displayName="userData.displayName"
+                        :size="32" class="h-8 w-8 rounded-full" />
+                    <div v-else class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                        <Icon icon="mdi:account" class="h-5 w-5 text-blue-600" />
+                    </div>
                 </div>
-                <div class="flex-1 min-w-0">
-                    <h2 class="text-sm font-medium text-gray-900 truncate">
-                        {{ userData.displayName || userData.name || 'Guest User' }}
-                    </h2>
-                    <p class="text-xs text-gray-500 truncate">
-                        {{ userData.isAdmin ? 'Administrator' : 'Team Member' }}
-                    </p>
+                <div v-if="sidebarOpen" class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-700 truncate">{{ userData.displayName || userData.name }}</p>
+                    <p class="text-xs text-gray-500 truncate">{{ userData.email }}</p>
                 </div>
-                <!-- 添加登出按钮 -->
-                <button @click="() => logout()" 
+                <!-- Logout button only visible when sidebar is expanded -->
+                <button v-if="sidebarOpen" @click="() => logout()" 
                     class="p-1.5 rounded-md text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors"
                     title="Sign out">
                     <Icon icon="mdi:logout" class="w-5 h-5" />
@@ -40,21 +40,61 @@
             </div>
         </div>
 
-        <!-- Sidebar content -->
-        <nav class="flex-1 overflow-auto p-2">
-            <!-- Dynamically generate navigation sections based on config -->
+        <!-- Sidebar navigation -->
+        <nav class="flex-1 overflow-y-auto py-2 px-2 relative z-30 max-sm:pt-0">
             <template v-for="section in ['main', 'scouting', 'user', 'external']" :key="section">
-                <div class="mb-4">
-                    <h3 v-if="sidebarOpen" class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        {{ getSectionTitle(section) }}
+                <div v-if="getNavItemsBySection(section).length > 0" class="mb-6">
+                    <h3 v-if="sidebarOpen" class="px-2 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        {{ section }}
                     </h3>
-                    <ul class="mt-2 space-y-1">
-                        <li v-for="item in getNavItemsBySection(section)" :key="item.path">
+                    <ul class="space-y-1">
+                        <li v-for="(item, index) in getNavItemsBySection(section)" :key="item.path || `${section}-${index}`">
+                            <!-- Handle items with submenus -->
+                            <div v-if="item.children && item.children.length > 0">
+                                <!-- Parent menu -->
+                                <div @click="toggleSubmenu(item)"
+                                    class="flex items-center p-2 text-gray-600 rounded-md hover:bg-gray-100 transition-colors duration-200 cursor-pointer relative z-10"
+                                    :class="{ 
+                                    'bg-blue-50 text-blue-600 font-medium': isParentActive(item),
+                                    'justify-center': !sidebarOpen 
+                                }">
+                                    <Icon :icon="item.icon" class="w-5 h-5 flex-shrink-0"
+                                        :class="{ 'mr-3': sidebarOpen }" />
+                                    <span v-if="sidebarOpen" class="text-sm flex-1">{{ item.text }}</span>
+                                    <Icon v-if="sidebarOpen" 
+                                        :icon="getSubmenuExpandedState(item) ? 'mdi:chevron-up' : 'mdi:chevron-down'" 
+                                        class="w-4 h-4" />
+                                </div>
+                                
+                                <!-- Submenu list -->
+                                <transition
+                                    enter-active-class="transition duration-200 ease-out"
+                                    enter-from-class="transform scale-y-0 opacity-0"
+                                    enter-to-class="transform scale-y-100 opacity-100"
+                                    leave-active-class="transition duration-200 ease-out"
+                                    leave-from-class="transform scale-y-100 opacity-100"
+                                    leave-to-class="transform scale-y-0 opacity-0"
+                                >
+                                    <ul v-if="sidebarOpen && getSubmenuExpandedState(item)" 
+                                        class="ml-6 mt-1 space-y-1 origin-top">
+                                        <li v-for="child in item.children" :key="child.path"
+                                            v-show="!child.adminOnly || userData.isAdmin">
+                                            <router-link :to="child.path"
+                                                class="flex items-center p-1.5 text-gray-600 rounded-md hover:bg-gray-100 transition-colors duration-200"
+                                                :class="{ 'bg-blue-50 text-blue-600 font-medium': isActive(child.path, child.exact) }">
+                                                <Icon :icon="child.icon" class="w-4 h-4 mr-2" />
+                                                <span class="text-xs">{{ child.text }}</span>
+                                            </router-link>
+                                        </li>
+                                    </ul>
+                                </transition>
+                            </div>
+
                             <!-- Handle router links -->
-                            <router-link v-if="!item.isExternalLink" :to="item.path"
-                                class="flex items-center p-2 text-gray-600 rounded-md hover:bg-gray-100 transition-colors duration-200"
+                            <router-link v-else-if="!item.isExternalLink" :to="item.path"
+                                class="flex items-center p-2 text-gray-600 rounded-md hover:bg-gray-100 transition-colors duration-200 relative z-10"
                                 :class="{ 
-                                    'bg-blue-50 text-blue-600 font-medium': isActive(item.path),
+                                    'bg-blue-50 text-blue-600 font-medium': isActive(item.path, item.exact),
                                     'justify-center': !sidebarOpen 
                                 }">
                                 <Icon :icon="item.icon" class="w-5 h-5 flex-shrink-0"
@@ -66,10 +106,10 @@
                                     {{ item.badge.text }}
                                 </span>
                             </router-link>
-
+                            
                             <!-- Handle external links -->
                             <a v-else :href="item.path" :target="item.targetBlank ? '_blank' : '_self'"
-                                class="flex items-center p-2 text-gray-600 rounded-md hover:bg-gray-100 transition-colors duration-200"
+                                class="flex items-center p-2 text-gray-600 rounded-md hover:bg-gray-100 transition-colors duration-200 relative z-10"
                                 :class="{ 'justify-center': !sidebarOpen }">
                                 <Icon :icon="item.icon" class="w-5 h-5 flex-shrink-0"
                                     :class="{ 'mr-3': sidebarOpen }" />
@@ -84,25 +124,32 @@
         </nav>
 
         <!-- Sidebar footer -->
-        <div class="flex-shrink-0 p-2 border-t max-h-14">
+        <div class="flex-shrink-0 p-2 border-t max-h-14 space-y-2">
+            <!-- Toggle sidebar button -->
             <button @click="toggleSidebar"
-                class="flex items-center justify-center w-full p-2 space-x-1 font-medium rounded-md bg-gray-100 hover:bg-gray-200">
+                class="flex items-center justify-center w-full p-2 space-x-1 font-medium rounded-md bg-gray-100 hover:bg-gray-200 mb-1">
                 <span>
                     <Icon :icon="sidebarOpen ? 'mdi:chevron-double-left' : 'mdi:chevron-double-right'"
                         class="w-5 h-5" />
                 </span>
                 <span v-if="sidebarOpen">Collapse</span>
             </button>
+            
+            <!-- Show logout button at bottom when sidebar is collapsed -->
+            <button v-if="!sidebarOpen" @click="() => logout()" 
+                class="flex items-center justify-center w-full p-2 text-red-600 hover:bg-red-50 rounded-md">
+                <Icon icon="mdi:logout" class="w-5 h-5" />
+            </button>
         </div>
     </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, ref, onMounted, watch, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import CachedAvatar from '@/components/common/CachedAvatar.vue';
-// 修改导入路径，使用相对路径而不是使用 @ 别名
+// Use relative path instead of @ alias
 import { navigationConfig, NavItem } from '../../config/navigation';
 
 export default defineComponent({
@@ -122,9 +169,8 @@ export default defineComponent({
         },
         orgData: {
             type: Object,
-            default: () => ({})
+            default: null
         },
-        // 添加logout方法作为prop
         logout: {
             type: Function,
             required: true
@@ -133,50 +179,236 @@ export default defineComponent({
     emits: ['close', 'toggle-sidebar'],
     setup(props, { emit }) {
         const route = useRoute();
-
-        // Check if route is active
-        const isActive = (path: string) => {
-            const currentPath = route.path.toLowerCase();
-            const checkPath = path.toLowerCase();
-
-            if (checkPath === '/dashboard' && currentPath === '/dashboard') {
-                return true;
+        
+        // Track current navigation mode
+        const navMode = ref(localStorage.getItem('dashboard_nav_mode') || 'overlay');
+        const isLargeScreen = ref(window.innerWidth >= 720);
+        
+        // Listen for navigation mode changes in localStorage
+        const handleStorageChange = (event: StorageEvent) => {
+            if (event.key === 'dashboard_nav_mode') {
+                navMode.value = event.newValue || 'overlay';
             }
-
-            return checkPath !== '/dashboard' && currentPath.startsWith(checkPath);
         };
+        
+        // Listen for custom navigation mode change events
+        const handleNavModeChanged = (event: CustomEvent) => {
+            navMode.value = event.detail.mode;
+            // console.log('Received nav mode change event:', event.detail);
+        };
+        
+        // Monitor window size changes
+        const handleResize = () => {
+            isLargeScreen.value = window.innerWidth >= 720;
+        };
+        
+        // Add event listeners on component mount
+        onMounted(() => {
+            window.addEventListener('storage', handleStorageChange);
+            window.addEventListener('nav-mode-changed', handleNavModeChanged as EventListener);
+            window.addEventListener('resize', handleResize);
+            initExpandedMenus();
+        });
+        
+        // Remove event listeners on component unmount
+        onUnmounted(() => {
+            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener('nav-mode-changed', handleNavModeChanged as EventListener);
+            window.removeEventListener('resize', handleResize);
+        });
 
-        // Get navigation items by section
-        const getNavItemsBySection = (section: string): NavItem[] => {
-            return navigationConfig.sidebarNavItems.filter((item: NavItem) => 
-                item.section === section && 
-                (!item.adminOnly || props.userData.isAdmin)
+        // Submenu expansion state management
+        const expandedMenus = ref<Record<string, boolean>>({});
+        
+        // Improved isActive function with smarter path matching and fixed submenu highlighting
+        const isActive = (path: string, exact?: boolean) => {
+            const currentPath = route.path.toLowerCase();
+            const targetPath = path.toLowerCase();
+            
+            // First identify if this is a parent or child menu item
+            let isParentMenu = false;
+            let isChildMenu = false;
+            
+            // Check if this is a parent menu with children
+            isParentMenu = navigationConfig.sidebarNavItems.some(item => 
+                item.path.toLowerCase() === targetPath && item.children && item.children.length > 0
             );
+            
+            // Check if this is a child menu and identify its parent
+            for (const item of navigationConfig.sidebarNavItems) {
+                if (item.children) {
+                    const childMatch = item.children.find(child => child.path.toLowerCase() === targetPath);
+                    if (childMatch) {
+                        isChildMenu = true;
+                        break;
+                    }
+                }
+            }
+            
+            // 如果是父菜单，应该只由isParentActive函数来判断高亮
+            if (isParentMenu) {
+                return false;
+            }
+            
+            // 子菜单项的高亮逻辑
+            if (isChildMenu) {
+                if (exact) {
+                    return currentPath === targetPath;
+                } else {
+                    return currentPath.startsWith(targetPath);
+                }
+            }
+            
+            // 普通菜单项的高亮逻辑
+            if (exact) {
+                return currentPath === targetPath;
+            } else {
+                return currentPath === targetPath || currentPath.startsWith(targetPath + '/');
+            }
+        };
+        
+        // 新增函数，专门处理父菜单的高亮状态
+        const isParentActive = (item: NavItem) => {
+            const currentPath = route.path.toLowerCase();
+            
+            // 如果父菜单没有路径
+            if (!item.path) {
+                // 检查当前路径是否匹配任何子菜单路径
+                if (item.children) {
+                    return item.children.some(child => {
+                        const childPath = child.path.toLowerCase();
+                        return currentPath === childPath || currentPath.startsWith(childPath + '/');
+                    });
+                }
+                return false;
+            }
+            
+            // 处理有路径的父菜单
+            const targetPath = item.path.toLowerCase();
+            
+            // 首先检查当前路径是否直接匹配父菜单路径
+            if (currentPath === targetPath) return true;
+            
+            // 检查是否匹配任何子菜单路径
+            if (item.children) {
+                return item.children.some(child => {
+                    const childPath = child.path.toLowerCase();
+                    return currentPath === childPath || currentPath.startsWith(childPath + '/');
+                });
+            }
+            
+            return false;
         };
 
-        // Get human-readable section title
-        const getSectionTitle = (section: string): string => {
-            const titles: Record<string, string> = {
-                main: 'Main',
-                scouting: 'Scouting',
-                user: 'User Settings',
-                external: 'External'
-            };
-            return titles[section] || section;
+        // Initialize submenu expansion state based on current path
+        const initExpandedMenus = () => {
+            const currentPath = route.path.toLowerCase();
+            
+            navigationConfig.sidebarNavItems.forEach((item, index) => {
+                if (item.children && item.children.length > 0) {
+                    // 创建一个可靠的键
+                    const menuKey = getMenuKey(item, index);
+                    
+                    // 检查是否应该展开
+                    const shouldExpand = item.children.some(child => {
+                        const childPath = child.path.toLowerCase();
+                        return currentPath === childPath || currentPath.startsWith(childPath + '/');
+                    });
+                    
+                    if (shouldExpand) {
+                        expandedMenus.value[menuKey] = true;
+                    }
+                }
+            });
+        };
+        
+        // Toggle submenu expansion state
+        const toggleSubmenu = (item: NavItem) => {
+            // 使用唯一标识符作为键
+            const menuKey = getMenuKey(item);
+            expandedMenus.value[menuKey] = !expandedMenus.value[menuKey];
+        };
+
+        // Get navigation items for specific section
+        const getNavItemsBySection = (section: string) => {
+            return navigationConfig.sidebarNavItems.filter(item => {
+                if (item.section !== section) return false;
+                if (item.adminOnly && !props.userData.isAdmin) return false;
+                return true;
+            });
         };
 
         // Toggle sidebar
         const toggleSidebar = () => {
+            // 修复: 无论当前模式如何，都允许切换sidebar状态
+            // 移除对于固定模式下的限制条件
             emit('toggle-sidebar');
         };
+        
+        // 创建一个更可靠的获取菜单唯一标识符的方法
+        const getMenuKey = (item: NavItem, index?: number): string => {
+            // 如果有路径且不为空，使用路径作为键
+            if (item.path) {
+                return item.path;
+            }
+            
+            // 否则使用节、文本和索引组合创建唯一键
+            return `${item.section}-${item.text}-${index || 0}`;
+        };
+        
+        // 获取子菜单展开状态
+        const getSubmenuExpandedState = (item: NavItem): boolean => {
+            // 为父菜单创建的唯一键
+            const menuKey = getMenuKey(item);
+            
+            // 检查这个键是否在expandedMenus中为true
+            return !!expandedMenus.value[menuKey];
+        };
+
+        // Update submenu state when route changes
+        watch(route, () => {
+            initExpandedMenus();
+        });
 
         return {
-            isActive,
-            toggleSidebar,
-            navigationConfig,
             getNavItemsBySection,
-            getSectionTitle
+            isActive,
+            isParentActive,
+            toggleSidebar,
+            expandedMenus,
+            toggleSubmenu,
+            getSubmenuExpandedState,
+            navMode,
+            isLargeScreen
         };
     }
 });
 </script>
+
+<style scoped>
+/* 为移动设备优化侧边栏导航 */
+@media (max-width: 720px) {
+    .mobile-nav {
+        position: relative;
+        z-index: 30; /* 确保与DashboardLayout的z-index值匹配 */
+    }
+    
+    /* 确保侧边栏内容在移动设备上正确显示 */
+    .flex-col.h-full {
+        z-index: 31; /* 比父容器高，确保内容可见 */
+        position: relative;
+        padding-top: 1rem; /* 移除顶部空白 */
+    }
+    
+    /* 调整用户信息区域，移除多余边距 */
+    .flex-shrink-0.p-2.mt-4 {
+        margin-top: 0;
+    }
+}
+
+/* 调整链接的样式以确保它们在移动设备上正确显示 */
+nav a, nav button, nav div.cursor-pointer {
+    position: relative;
+    z-index: 10;
+}
+</style>

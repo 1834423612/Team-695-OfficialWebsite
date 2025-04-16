@@ -1,8 +1,8 @@
 <template>
     <div class="min-h-screen bg-gray-50 flex">
-        <!-- Sidebar - Overlay Mode -->
+        <!-- Sidebar - Overlay Mode - 确保z-index值低于header，修复顶部间距 -->
         <aside v-if="navMode === 'overlay'"
-            class="fixed inset-y-0 z-20 flex flex-col flex-shrink-0 w-64 max-h-screen overflow-hidden transition-all transform bg-white border-r shadow-lg lg:z-auto"
+            class="fixed inset-y-0 z-[30] flex flex-col flex-shrink-0 w-64 max-h-screen overflow-hidden transition-all transform bg-white border-r shadow-lg pt-[60px] mobile-sidebar"
             :class="{
                 '-translate-x-full': !sidebarOpen,
                 'translate-x-0': sidebarOpen
@@ -13,7 +13,7 @@
 
         <!-- Sidebar - Fixed Mode -->
         <aside v-if="navMode === 'fixed'"
-            class="flex-shrink-0 flex flex-col transition-all duration-300 ease-in-out bg-white border-r shadow-sm h-screen sticky top-0"
+            class="flex-shrink-0 flex flex-col transition-all duration-300 ease-in-out bg-white border-r shadow-sm h-screen sticky top-0 pt-[60px]"
             :class="{
                 'w-64': sidebarOpen,
                 'w-20': !sidebarOpen
@@ -22,18 +22,15 @@
                 @toggle-sidebar="toggleSidebar" :logout="logout" />
         </aside>
 
-        <!-- Backdrop for overlay sidebar on mobile -->
-        <div v-if="sidebarOpen && navMode === 'overlay'" class="fixed inset-0 z-10 bg-black bg-opacity-30 lg:hidden"
+        <!-- Backdrop for overlay sidebar on mobile - 最低的z-index -->
+        <div v-if="sidebarOpen && navMode === 'overlay'" class="fixed inset-0 z-[20] bg-black bg-opacity-30"
             @click="closeSidebar"></div>
 
         <!-- Main content -->
-        <div class="flex flex-col flex-1 h-full overflow-hidden transition-all duration-300 ease-in-out" :class="{
-            'filter blur-sm': sidebarOpen && navMode === 'overlay' && !isLargeScreen
-        }">
-            <!-- Navbar -->
+        <div class="flex flex-col flex-1 h-full overflow-hidden transition-all duration-300 ease-in-out">
+            <!-- Navbar - 最高的z-index值 - 确保不受模糊影响 -->
             <header
-                class="flex-shrink-0 border-b bg-white shadow-sm sticky top-0 z-10 transition-all duration-300 ease-in-out"
-                :class="{ 'opacity-30': sidebarOpen && navMode === 'overlay' && !isLargeScreen }">
+                class="flex-shrink-0 border-b bg-white shadow-sm fixed top-0 left-0 right-0 z-[50] transition-all duration-300 ease-in-out w-full">
                 <div class="flex items-center justify-between p-2 px-4">
                     <!-- Navbar left -->
                     <div class="flex items-center space-x-3">
@@ -53,15 +50,40 @@
                     <!-- Navbar right (Header) -->
                     <div class="relative flex items-center space-x-3">
                         <div class="items-center hidden md:flex">
-                            <router-link to="/"
-                                class="hover:bg-gray-100 p-2 rounded-md text-gray-500 hover:text-gray-700">
-                                <Icon icon="mdi:home" class="w-5 h-5" />
-                            </router-link>
-                            <button @click="toggleNavMode"
-                                class="hover:bg-gray-100 p-2 rounded-md text-gray-500 hover:text-gray-700 ml-1">
-                                <Icon :icon="navMode === 'fixed' ? 'mdi:dock-left' : 'mdi:dock-window'"
-                                    class="w-5 h-5" />
-                            </button>
+                            <!-- Home icon with tooltip -->
+                            <div class="relative group">
+                                <router-link to="/"
+                                    class="hover:bg-gray-100 p-2 rounded-md text-gray-500 hover:text-gray-700 flex items-center justify-center"
+                                    @touchstart="handleTouchStart($event, 'home')" @touchend="handleTouchEnd">
+                                    <Icon icon="mdi:home" class="w-5 h-5" />
+                                </router-link>
+                                <!-- Desktop tooltip (hover) - set to show on bottom -->
+                                <div
+                                    class="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-max opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+                                    <div
+                                        class="bg-gray-800 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap">
+                                        Go to Home
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Navigation mode toggle with tooltip -->
+                            <div class="relative group ml-1">
+                                <button @click="toggleNavMode"
+                                    class="hover:bg-gray-100 p-2 rounded-md text-gray-500 hover:text-gray-700 flex items-center justify-center"
+                                    @touchstart="handleTouchStart($event, 'navMode')" @touchend="handleTouchEnd">
+                                    <Icon :icon="navMode === 'fixed' ? 'mdi:dock-left' : 'mdi:dock-window'"
+                                        class="w-5 h-5" />
+                                </button>
+                                <!-- Desktop tooltip (hover) - set to show on bottom -->
+                                <div
+                                    class="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-max opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+                                    <div
+                                        class="bg-gray-800 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap">
+                                        {{ navMode === 'fixed' ? 'Switch to Overlay Mode' : 'Switch to Fixed Mode' }}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- User dropdown -->
@@ -69,11 +91,11 @@
                             <button @click="toggleUserMenu" class="flex items-center p-2 rounded-md hover:bg-gray-100">
                                 <span class="sr-only">User menu</span>
                                 <div class="flex items-center space-x-2">
-                                    <div class="relative flex-shrink-0">
+                                    <div class="relative flex-shrink-0 flex items-center justify-center w-8 h-8">
                                         <CachedAvatar v-if="userData.id" :userId="userData.id" :src="userData.avatar"
                                             :name="userData.name" :firstName="userData.firstName"
                                             :lastName="userData.lastName" :displayName="userData.displayName" :size="32"
-                                            class="h-8 w-8 rounded-full" />
+                                            class="h-8 w-8 rounded-full object-cover" />
                                         <div v-else
                                             class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
                                             <Icon icon="mdi:account" class="h-5 w-5 text-blue-600" />
@@ -120,12 +142,17 @@
                 </div>
             </header>
 
-            <!-- Main content with scrollable area -->
-            <div class="flex-1 overflow-auto">
-                <main class="p-5 mx-auto w-full max-w-7xl">
+            <!-- Main content with scrollable area - add padding top to account for fixed header -->
+            <!-- 仅对内容区域应用模糊效果，而不是整个容器 -->
+            <div class="flex-1 overflow-auto pt-[60px]">
+                <main class="p-2 mb-4 mx-auto w-full max-w-7xl" :class="{
+                        'filter blur-sm pointer-events-none': sidebarOpen && navMode === 'overlay' && !isLargeScreen
+                    }">
                     <!-- Breadcrumb -->
-                    <div class="flex items-center mb-2 space-x-2 text-sm p-3 bg-white rounded-lg shadow-sm border border-gray-100 transition-all hover:shadow-md">
-                        <router-link to="/Dashboard" class="flex items-center text-gray-600 hover:text-blue-600 transition-colors duration-200">
+                    <div
+                        class="flex items-center mt-4 mb-2 mx-4 space-x-2 text-sm p-3 bg-white rounded-lg shadow-sm border border-gray-100 transition-all hover:shadow-md">
+                        <router-link to="/Dashboard"
+                            class="flex items-center text-gray-600 hover:text-blue-600 transition-colors duration-200">
                             <span class="flex items-center justify-center bg-blue-50 p-1.5 rounded-md">
                                 <Icon icon="mdi:view-dashboard" class="w-4 h-4 text-blue-500" />
                             </span>
@@ -137,7 +164,8 @@
                             </span>
                             <span class="flex items-center text-blue-600 font-medium">
                                 <span class="flex items-center justify-center bg-blue-50 p-1.5 rounded-md">
-                                    <Icon :icon="getBreadcrumbIcon(currentBreadcrumb.path)" class="w-4 h-4 text-blue-500" />
+                                    <Icon :icon="getBreadcrumbIcon(currentBreadcrumb.path)"
+                                        class="w-4 h-4 text-blue-500" />
                                 </span>
                                 <span class="ml-1.5">{{ currentBreadcrumb.name }}</span>
                             </span>
@@ -148,8 +176,10 @@
                     <slot></slot>
                 </main>
 
-                <!-- Footer -->
-                <footer class="flex items-center justify-between p-4 border-t">
+                <!-- Footer 也应该被模糊 -->
+                <footer class="flex items-center justify-between p-4 border-t" :class="{
+                        'filter blur-sm pointer-events-none': sidebarOpen && navMode === 'overlay' && !isLargeScreen
+                    }">
                     <div>
                         <p class="text-sm text-gray-500">
                             © {{ new Date().getFullYear() }} Team 695. All rights reserved.
@@ -168,6 +198,17 @@
                 </footer>
             </div>
         </div>
+
+        <!-- 移动设备工具提示 -->
+        <div v-if="activeTouchTooltip"
+            class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/80 text-white py-2 px-3 rounded-md z-[100] text-sm max-w-[280px] text-center">
+            <template v-if="activeTouchTooltip === 'home'">
+                Go to Home
+            </template>
+            <template v-else-if="activeTouchTooltip === 'navMode'">
+                {{ navMode === 'fixed' ? 'Switch to Overlay Mode' : 'Switch to Fixed Mode' }}
+            </template>
+        </div>
     </div>
 </template>
 
@@ -180,10 +221,10 @@ import { useUserStore } from '@/stores/userStore';
 import { storeToRefs } from 'pinia';
 import CachedAvatar from '@/components/common/CachedAvatar.vue';
 import SidebarContent from '@/components/dashboard/SidebarContent.vue';
-// 修改导入路径，使用相对路径而不是使用 @ 别名
+// Modify import path to use relative path instead of @ alias
 import { navigationConfig } from '../config/navigation';
 
-// 用户菜单项接口
+// User menu item interface
 interface UserMenuItem {
     text?: string;
     icon?: string;
@@ -208,10 +249,85 @@ export default defineComponent({
         const userMenuContainer = ref<HTMLElement | null>(null);
         const navMode = ref<'overlay' | 'fixed'>('overlay');
         const isLargeScreen = ref(false);
+        const showMobileWarning = ref(false);
+
+        // For mobile tooltip functionality
+        const activeTouchTooltip = ref<string | null>(null);
+        const touchTimer = ref<number | null>(null);
+        
+        // Handle long press on mobile devices
+        const handleTouchStart = (_event: TouchEvent, buttonType: string) => {
+            // Clear any existing timer
+            if (touchTimer.value) {
+                clearTimeout(touchTimer.value);
+            }
+            
+            // Set a timeout to trigger the tooltip after 500ms (long press)
+            touchTimer.value = window.setTimeout(() => {
+                activeTouchTooltip.value = buttonType;
+            }, 500);
+        };
+        
+        // Clear tooltip on touch end
+        const handleTouchEnd = () => {
+            // Clear timeout if touch ends before long press threshold
+            if (touchTimer.value) {
+                clearTimeout(touchTimer.value);
+                touchTimer.value = null;
+            }
+            
+            // Hide tooltip after a short delay to allow user to see it
+            setTimeout(() => {
+                activeTouchTooltip.value = null;
+            }, 1500);
+        };
 
         // Use Pinia store
         const userStore = useUserStore();
         const { userInfo, orgData } = storeToRefs(userStore);
+
+        // Initialize navigation mode, prioritize local storage
+        const initNavMode = () => {
+            console.log('Initializing navigation mode...');
+            
+            // Get navigation mode from localStorage
+            const savedNavMode = localStorage.getItem('dashboard_nav_mode');
+            const savedSidebarState = localStorage.getItem('sidebar_open');
+            
+            // console.log('Read from localStorage:', { savedNavMode, savedSidebarState });
+            
+            // First detect current screen size - Fixed to 720px instead of 800px to match checkScreenSize
+            const isMobileSize = window.innerWidth < 720;
+            
+            if (isMobileSize) {
+                // Always use overlay mode on small screen devices
+                navMode.value = 'overlay';
+                sidebarOpen.value = false;
+                // console.log('Mobile screen detected, forcing overlay mode');
+            } else if (savedNavMode === 'fixed' || savedNavMode === 'overlay') {
+                // Use saved settings on desktop
+                navMode.value = savedNavMode;
+                // console.log('Using saved navigation mode:', navMode.value);
+                
+                // Set sidebar state based on saved preferences
+                if (savedSidebarState) {
+                    sidebarOpen.value = savedSidebarState === 'true';
+                } else {
+                    // By default, open sidebar in fixed mode, close it in overlay mode
+                    sidebarOpen.value = navMode.value === 'fixed';
+                }
+                // console.log('Setting sidebar state based on preferences:', sidebarOpen.value);
+            } else {
+                // Default mode for desktop is fixed
+                navMode.value = 'fixed';
+                sidebarOpen.value = true;
+                // console.log('Setting default mode for desktop:', { navMode: 'fixed', sidebarOpen: true });
+            }
+            
+            // Save current state to localStorage
+            localStorage.setItem('dashboard_nav_mode', navMode.value);
+            localStorage.setItem('sidebar_open', sidebarOpen.value.toString());
+        };
 
         // User data computed property
         const userData = computed(() => userInfo.value || {});
@@ -242,10 +358,11 @@ export default defineComponent({
             if (path === '/dashboard') return 'Dashboard';
             if (path.includes('profile')) return 'User Profile';
             if (path.includes('api')) return 'API Management';
+            if (path.includes('assignments')) return 'Assignments';
             if (path.includes('pit-scouting/admin')) return 'Pit Scouting Admin';
             if (path.includes('pit-scouting')) return 'Pit Scouting';
             if (path.includes('calendar')) return 'Calendar';
-            if (path.includes('assignments')) return 'Assignments';
+            if (path.includes('system/version')) return 'System Version';
 
             return 'Dashboard';
         });
@@ -254,10 +371,11 @@ export default defineComponent({
         const breadcrumbMap: Record<string, { name: string; icon: string; path: string }> = {
             '/Dashboard/Profile': { name: 'Profile', icon: 'mdi:account-circle', path: '/Dashboard/Profile' },
             '/Dashboard/API': { name: 'API', icon: 'mdi:api', path: '/Dashboard/API' },
-            '/Dashboard/Pit-Scouting': { name: 'Pit Scouting', icon: 'mdi:clipboard-text', path: '/Dashboard/Pit-Scouting' },
+            '/Dashboard/Assignments': { name: 'Assignments', icon: 'mdi:calendar-check', path: '/Dashboard/Assignments' },
+            '/Dashboard/Pit-Scouting': { name: 'Pit Scouting Form', icon: 'mdi:clipboard-text', path: '/Dashboard/Pit-Scouting' },
             '/Dashboard/Pit-Scouting/Admin': { name: 'Pit Scouting Admin', icon: 'mdi:shield-account', path: '/Dashboard/Pit-Scouting/Admin' },
             '/Dashboard/Calendar': { name: 'Calendar', icon: 'mdi:calendar', path: '/Dashboard/Calendar' },
-            '/Dashboard/Assignments': { name: 'Assignments', icon: 'mdi:calendar-check', path: '/Dashboard/Assignments' },
+            '/Dashboard/System/Version': { name: 'System Version', icon: 'mdi:information-outline', path: '/Dashboard/System/Version' },
         };
 
         // Current breadcrumb
@@ -333,32 +451,49 @@ export default defineComponent({
         // Toggle sidebar
         const toggleSidebar = () => {
             sidebarOpen.value = !sidebarOpen.value;
+            // Save sidebar state to local storage
+            localStorage.setItem('sidebar_open', sidebarOpen.value.toString());
+            // console.log('Toggle sidebar state:', sidebarOpen.value);
         };
 
         // Close sidebar (for overlay mode and mobile)
         const closeSidebar = () => {
             if (navMode.value === 'overlay' || !isLargeScreen.value) {
                 sidebarOpen.value = false;
+                localStorage.setItem('sidebar_open', 'false');
             }
         };
 
         // Toggle navigation mode between fixed and overlay
         const toggleNavMode = () => {
-            // Close sidebar before changing mode
-            sidebarOpen.value = false;
-
-            // Change mode after a small delay to ensure smooth transition
-            setTimeout(() => {
-                navMode.value = navMode.value === 'fixed' ? 'overlay' : 'fixed';
-
-                // For fixed mode, open the sidebar by default
-                if (navMode.value === 'fixed' && isLargeScreen.value) {
-                    sidebarOpen.value = true;
-                }
-
-                // Save preference to localStorage
-                localStorage.setItem('dashboard_nav_mode', navMode.value);
-            }, 50);
+            // Only allow mode switching on large screens - Fixed to 720px to match checkScreenSize
+            if (window.innerWidth < 720) {
+                showMobileWarning.value = true;
+                
+                // Hide the warning after 2 seconds
+                setTimeout(() => {
+                    showMobileWarning.value = false;
+                }, 2000);
+                
+                console.log('Mobile devices cannot switch to fixed mode');
+                return;
+            }
+            
+            // Toggle mode
+            navMode.value = navMode.value === 'fixed' ? 'overlay' : 'fixed';
+            // console.log('Switching navigation mode to:', navMode.value);
+            
+            // Adjust sidebar state based on new mode
+            if (navMode.value === 'fixed') {
+                sidebarOpen.value = true;
+            } else {
+                sidebarOpen.value = false;
+            }
+            
+            // Save settings to localStorage
+            localStorage.setItem('dashboard_nav_mode', navMode.value);
+            localStorage.setItem('sidebar_open', sidebarOpen.value.toString());
+            console.log('Saved settings:', { navMode: navMode.value, sidebarOpen: sidebarOpen.value });
         };
 
         // Toggle user menu
@@ -375,15 +510,54 @@ export default defineComponent({
 
         // Check screen size
         const checkScreenSize = () => {
-            isLargeScreen.value = window.innerWidth >= 1024;
-
-            // On mobile, always use overlay mode
-            if (!isLargeScreen.value) {
-                navMode.value = 'overlay';
-                sidebarOpen.value = false;
-            } else if (navMode.value === 'fixed') {
-                // On desktop with fixed mode, ensure sidebar is open
-                sidebarOpen.value = true;
+            const wasLargeScreen = isLargeScreen.value;
+            isLargeScreen.value = window.innerWidth >= 720;
+            
+            // If screen size category changed
+            if (wasLargeScreen !== isLargeScreen.value) {
+                // console.log('Screen size changed:', isLargeScreen.value ? 'Desktop' : 'Mobile');
+                
+                if (!isLargeScreen.value) {
+                    // Small screen: force overlay mode and close sidebar
+                    navMode.value = 'overlay';
+                    sidebarOpen.value = false;
+                    localStorage.setItem('dashboard_nav_mode', navMode.value);
+                    localStorage.setItem('sidebar_open', 'false');
+                    // console.log('Switched to mobile view:', { navMode: 'overlay', sidebarOpen: false });
+                } else {
+                    // Large screen: restore user's saved settings
+                    const savedNavMode = localStorage.getItem('dashboard_nav_mode');
+                    const savedSidebarState = localStorage.getItem('sidebar_open');
+                    
+                    // If there were previously saved settings not forced by mobile view
+                    if (savedNavMode && (savedNavMode === 'fixed' || savedNavMode === 'overlay')) {
+                        navMode.value = savedNavMode as 'fixed' | 'overlay';
+                        // console.log('Restored saved navigation mode:', navMode.value);
+                    } else {
+                        // Default desktop mode is fixed
+                        navMode.value = 'fixed';
+                        localStorage.setItem('dashboard_nav_mode', 'fixed');
+                        // console.log('Set default desktop mode to fixed');
+                    }
+                    
+                    // Restore sidebar state
+                    if (navMode.value === 'fixed') {
+                        // In fixed mode, default to open sidebar
+                        sidebarOpen.value = savedSidebarState !== 'false';
+                        localStorage.setItem('sidebar_open', sidebarOpen.value.toString());
+                        // console.log('Restored sidebar state for fixed mode:', sidebarOpen.value);
+                    } else {
+                        // In overlay mode, default to closed sidebar
+                        sidebarOpen.value = savedSidebarState === 'true';
+                        localStorage.setItem('sidebar_open', sidebarOpen.value.toString());
+                        // console.log('Restored sidebar state for overlay mode:', sidebarOpen.value);
+                    }
+                }
+                
+                // Dispatch custom event to notify other components of mode change
+                window.dispatchEvent(new CustomEvent('nav-mode-changed', { 
+                    detail: { mode: navMode.value, sidebarOpen: sidebarOpen.value } 
+                }));
             }
         };
 
@@ -391,29 +565,27 @@ export default defineComponent({
         watch(() => route.path, () => {
             showUserMenu.value = false;
 
-            // On mobile, close sidebar on route change
-            if (!isLargeScreen.value) {
+            // Only close sidebar on mobile devices or in overlay mode
+            if (!isLargeScreen.value || navMode.value === 'overlay') {
                 sidebarOpen.value = false;
+                localStorage.setItem('sidebar_open', 'false');
             }
         });
 
         onMounted(() => {
+            console.log('Component mounted');
+            // Initialize navigation mode and sidebar state
+            initNavMode();
+            
             document.addEventListener('click', handleClickOutside);
             window.addEventListener('resize', checkScreenSize);
+            // Run checkScreenSize once to set initial state correctly
+            checkScreenSize();
 
             // Initialize user store
             if (casdoorService.isLoggedIn()) {
                 userStore.initializeStore();
             }
-
-            // Load nav mode preference from localStorage
-            const savedNavMode = localStorage.getItem('dashboard_nav_mode');
-            if (savedNavMode === 'fixed' || savedNavMode === 'overlay') {
-                navMode.value = savedNavMode;
-            }
-
-            // Set initial screen size and sidebar state
-            checkScreenSize();
         });
 
         onUnmounted(() => {
@@ -424,6 +596,7 @@ export default defineComponent({
         return {
             sidebarOpen,
             showUserMenu,
+            showMobileWarning,
             userMenuContainer,
             userData,
             orgData,
@@ -440,7 +613,10 @@ export default defineComponent({
             logout,
             getBreadcrumbIcon,
             userMenuItems,
-            navigationConfig
+            navigationConfig,
+            handleTouchStart,
+            handleTouchEnd,
+            activeTouchTooltip
         };
     }
 });
@@ -460,5 +636,34 @@ export default defineComponent({
 ::-webkit-scrollbar-thumb {
     background-color: rgba(156, 163, 175, 0.5);
     border-radius: 3px;
+}
+
+/* 移动设备特定样式 */
+@media (max-width: 720px) {
+    /* 确保sidebar始终位于header下方，并调整顶部间距 */
+    aside.fixed, .mobile-sidebar {
+        top: 60px; /* 匹配header高度 */
+    }
+    
+    /* 移除sidebar上方的空白区域 */
+    .mobile-sidebar {
+        padding-top: 0 !important; /* 覆盖pt-[60px]类 */
+    }
+    
+    /* 优化背景模糊效果 */
+    .filter.blur-sm {
+        backdrop-filter: blur(4px);
+    }
+}
+
+/* 淡入淡出过渡效果 */
+.tooltip-fade-enter-active,
+.tooltip-fade-leave-active {
+    transition: opacity 0.3s ease;
+}
+
+.tooltip-fade-enter-from,
+.tooltip-fade-leave-to {
+    opacity: 0;
 }
 </style>

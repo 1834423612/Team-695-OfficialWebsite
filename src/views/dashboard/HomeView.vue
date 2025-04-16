@@ -1,7 +1,7 @@
 <template>
-    <div class="min-h-screen bg-gray-50">
+    <div class="px-2 py-2 md:px-6 min-h-screen bg-gray-50">
         <!-- Welcome Banner -->
-        <div class="px-4 py-6 sm:px-0 mb-6">
+        <div class="px-2 py-6 sm:px-0 mb-6">
             <div class="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg shadow-lg overflow-hidden">
                 <div class="px-6 py-8 md:p-10 md:flex md:items-center md:justify-between">
                     <div>
@@ -27,17 +27,17 @@
         </div>
 
         <!-- Information Section -->
-        <div class="px-4 sm:px-0 mb-8">
+        <!-- <div class="px-4 sm:px-0 mb-8">
             <h2 class="text-xl font-semibold text-gray-800 mb-4">Version Info</h2>
             <div
                 class="bg-rose-50 border-rose-200 border-2 overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300">
-                <div class="p-5 flex items-start sm:items-center">
+                <div class="p-5 flex items-start sm:items-center"> -->
                     <!-- Icon -->
-                    <div class="flex-shrink-0 sm:p-2">
+                    <!-- <div class="flex-shrink-0 sm:p-2">
                         <Icon icon="line-md:bell-filled" class="h-6 w-6 text-rose-500 sm:h-8 sm:w-8" />
-                    </div>
+                    </div> -->
                     <!-- Text Content -->
-                    <div class="flex flex-col">
+                    <!-- <div class="flex flex-col">
                         <div class="ml-3 flex-1">
                             <h3 class="text-sm font-medium text-gray-900 sm:text-lg">
                                 <span class="block text-md sm:text-lg font-semibold">Current Version:</span>
@@ -55,7 +55,8 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> -->
+        <VersionInfo />
 
         <!-- Team Tools Section -->
         <div class="px-4 sm:px-0 mb-8">
@@ -545,11 +546,13 @@ import { computed, defineComponent } from 'vue';
 import { useUserStore } from '@/stores/userStore';
 import { Icon } from '@iconify/vue';
 import { storeToRefs } from 'pinia';
+import VersionInfo from '@/components/common/VersionInfo.vue';
 
 export default defineComponent({
     name: 'HomeView',
     components: {
-        Icon
+        Icon,
+        VersionInfo
     },
     setup() {
         // 使用 Pinia 存储

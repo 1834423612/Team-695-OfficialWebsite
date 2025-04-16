@@ -1,6 +1,7 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-4xl mx-auto">
+  <!-- <div class="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8"> -->
+  <div class="min-h-screen bg-gray-50">
+    <div class="px-4 py-6 max-w-4xl mx-auto">
       <!-- Page Header -->
       <div class="mb-8">
         <h1 class="text-2xl font-bold text-gray-900">My Profile</h1>
