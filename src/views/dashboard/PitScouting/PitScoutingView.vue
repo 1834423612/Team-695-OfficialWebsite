@@ -140,6 +140,37 @@
                 </button>
               </div>
             </div>
+            <!-- 2025/04/15 Feat: Shows the current user's assignment task -->
+            <div v-if="userAssignments.length > 0" class="w-full mt-3">
+              <span class="text-xs sm:text-base font-medium text-gray-600 mb-1 inline-block">
+                Your Assigned Teams:
+              </span>
+              <div class="flex flex-wrap gap-2 mt-1">
+                <div v-for="assignment in filteredPitAssignments" :key="assignment.id" class="bg-blue-50 p-2 rounded-lg border border-blue-200">
+                  <h4 class="text-sm font-medium text-gray-700">{{ assignment.task_type === 'pit-scouting' ? 'Pit Scouting' : 'Match Scouting' }}</h4>
+                  <div v-if="assignment.assigned_team_numbers && assignment.assigned_team_numbers.length > 0" class="mt-1 flex flex-wrap gap-1">
+                    <span v-for="teamNumber in assignment.assigned_team_numbers" :key="teamNumber" 
+                      :class="[
+                        'px-3 py-1 text-xs font-medium rounded-full flex items-center transition-all duration-200 cursor-pointer transform hover:scale-105', 
+                        teamNumber.toString() === formFields[0]?.value 
+                          ? 'bg-green-100 text-green-800 border border-green-300 shadow-sm' 
+                          : 'bg-gray-100 text-gray-800 hover:bg-blue-50 hover:text-blue-700 hover:border hover:border-blue-200'
+                      ]"
+                      @click="selectAssignedTeam(teamNumber)">
+                      <Icon icon="mdi:robot" class="h-3.5 w-3.5 mr-1" />
+                      Team {{ teamNumber }}
+                      <span v-if="isPitCompleted(teamNumber)" class="ml-1 text-green-600 flex items-center">
+                        <Icon icon="mdi:check-circle" class="h-3.5 w-3.5" />
+                      </span>
+                      <Icon v-else icon="mdi:arrow-right-circle" class="ml-1 h-3.5 w-3.5 text-blue-500" />
+                    </span>
+                  </div>
+                  <div v-else class="text-xs text-gray-500 mt-1">
+                    No teams assigned for pit scouting
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- User Info Display -->
@@ -168,7 +199,7 @@
           </div>
 
           <!-- Form Fields -->
-          <form @submit.prevent="confirmSubmitForm">
+          <form @submit.prevent="submitForm">
             <div v-for="(field, index) in formFields" :key="index" class="mb-6">
               <label :for="'field-' + index" class="block text-sm font-medium text-gray-700 mb-1">
                 {{ field.question }}
@@ -746,7 +777,7 @@ const filteredTeamSuggestions = computed(() => {
 
 const loadEventId = async () => {
   try {
-    // 获取访问令牌
+    // Get the access token
     const token = casdoorService.getToken();
     
     const response = await fetch("https://api.frc695.com/api/event/event-id", {
@@ -900,7 +931,7 @@ const selectTeam = (team: Team) => {
 
 const loadTeams = async (query: string) => {
   try {
-    // 获取访问令牌
+    // Get the access token
     const token = casdoorService.getToken();
     
     const response = await fetch(`https://api.frc695.com/api/team/teams?query=${query}&limit=20`, {
@@ -975,7 +1006,7 @@ const uploadImage = async (type: "fullRobot" | "driveTrain", file: File) => {
   formData.append("type", type);
 
   try {
-    // 获取访问令牌
+    // Get the access token
     const token = casdoorService.getToken();
     
     const response = await fetch("https://api.frc695.com/api/upload/upload", {
@@ -1033,7 +1064,7 @@ const removeImage = async (type: "fullRobot" | "driveTrain", index: number) => {
   try {
     const imageId = type === "fullRobot" ? fullRobotImages.value[index].id : driveTrainImages.value[index].id;
     
-    // 获取访问令牌
+    // Get the access token
     const token = casdoorService.getToken();
     
     await axios.delete(`https://api.frc695.com/api/images/${imageId}`, {
@@ -1261,15 +1292,15 @@ const validateField = (field: FormField) => {
   return true;
 };
 
-const validateForm = (): boolean => {
-  let isValid = true;
-  formFields.value.forEach((field) => {
-    if (!validateField(field)) {
-      isValid = false;
-    }
-  });
-  return isValid;
-};
+// const validateForm = (): boolean => {
+//   let isValid = true;
+//   formFields.value.forEach((field) => {
+//     if (!validateField(field)) {
+//       isValid = false;
+//     }
+//   });
+//   return isValid;
+// };
 
 const deviceInfo = ref({
   userAgent: navigator.userAgent,
@@ -1284,8 +1315,11 @@ const submitForm = async () => {
   try {
     isSubmitting.value = true;
     
-    // 获取访问令牌
+    // Get the access token
     const token = casdoorService.getToken();
+    
+    // Get the team number from the first field in the form
+    const teamNumber = formFields.value[0]?.value;
     
     // Get user info including avatar
     let userAvatar = userData.value.avatar || "";
@@ -1301,21 +1335,21 @@ const submitForm = async () => {
       }
     }
     
-    // 按照originalIndex排序表单字段
+    // Format the form fields to ensure they are in the correct order
     const sortedFields = [...formFields.value].sort((a, b) => 
       (a.originalIndex || 0) - (b.originalIndex || 0)
     );
     
-    // 创建一个有序的表单数据对象
+    // Create a sorted form data object
     const processedFormData = sortedFields.map(field => {
       const processedField = { ...field };
       
-      // 处理单选按钮的"Other"选项
+      // Process the "Other" option for radio buttons
       if (field.type === "radio" && field.value === "Other" && field.otherValue) {
         processedField.value = field.otherValue;
       }
       
-      // 处理复选框的"Other"选项
+      // Process the "Other" option for checkboxes
       if (field.type === "checkbox" && Array.isArray(field.value)) {
         if (field.value.includes("Other") && field.otherValue) {
           processedField.value = field.value.map(val => 
@@ -1327,13 +1361,13 @@ const submitForm = async () => {
       return processedField;
     });
 
-    // 创建提交对象
+    // Create the submission object
     const submissionData = {
       eventId: eventId.value,
       tabs: [
         {
           name: tabs.value[currentTab.value].name,
-          formData: processedFormData, // 使用已排序的表单数据
+          formData: processedFormData, // Use the processed form data
           formId: currentFormId.value
         }
       ],
@@ -1354,7 +1388,7 @@ const submitForm = async () => {
 
     console.log("Submitting with avatar:", userAvatar);
 
-    // 上传日志并获取URL
+    // Upload the log and get the URL
     const url = await window.$harbor.upload();
     submissionData.tabs[0].formData.push({
       question: "Log URL",
@@ -1376,13 +1410,23 @@ const submitForm = async () => {
     const data = await response.json();
     if (response.ok) {
       console.log("Form submitted:", data);
+      
+      // If a team number is provided, update the pit status
+      if (teamNumber) {
+        try {
+          await updatePitStatus(parseInt(teamNumber), true);
+        } catch (pitError) {
+          console.error("Error updating pit status:", pitError);
+          // Continue processing, do not block form submission success
+        }
+      }
 
-      // 清除本地存储
+      // Clear localStorage for the current form ID
       localStorage.removeItem(`formData_${currentFormId.value}`);
       localStorage.removeItem(`fullRobotImages_${currentFormId.value}`);
       localStorage.removeItem(`driveTrainImages_${currentFormId.value}`);
 
-      // 显示成功消息，并在用户点击确定后再刷新页面
+      // Show success message and refresh the page after user confirmation
       Swal.fire({
         title: "Success!",
         text: "Form submitted successfully!",
@@ -1401,10 +1445,10 @@ const submitForm = async () => {
           // Save the cleared data
           saveFormData();
           
-          // 删除当前标签页及其所有内容
+          // Delete the current tab and all its content
           removeTab(currentTab.value);
           
-          // 刷新页面以确保没有本地存储缓存
+          // Reload the page to ensure no local storage cache
           location.reload();
         }
       });
@@ -1423,28 +1467,187 @@ const submitForm = async () => {
   }
 };
 
-const confirmSubmitForm = () => {
-  if (validateForm()) {
-    Swal.fire({
-      title: "Submit Form",
-      text: "Are you sure you want to submit this form?",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, submit it!",
-      reverseButtons: true,
-    }).then((result) => {
-      if (result.isConfirmed) {
-        submitForm();
+// Added to ensure the store is initialized and data is loaded correctly
+onMounted(async () => {
+  // Initialize the store to get user data
+  userStore.initializeStore();
+  
+  await loadTeams('');
+  await loadEventId();
+  
+  // Load user assignments
+  await loadUserAssignments();
+  
+  // Load data from localStorage
+  loadFromLocalStorage();
+  
+  // Ensure form fields exist after loading
+  ensureFormFieldsExist();
+  
+  // Check if form version has changed
+  const storedVersion = localStorage.getItem(FORM_VERSION_KEY);
+  if (storedVersion !== FORM_VERSION) {
+    resetReason.value = "version-change";
+    showResetModal.value = true;
+  }
+});
+
+// Added to manage user assignments and pit completion status
+const userAssignments = ref<any[]>([]);
+const pitCompletedTeams = ref<Set<number>>(new Set());
+
+// Filter out pit-scouting tasks from user assignments
+const filteredPitAssignments = computed(() => {
+  return userAssignments.value.filter(assignment => 
+    assignment.task_type === 'pit-scouting' && 
+    assignment.assigned_team_numbers && 
+    assignment.assigned_team_numbers.length > 0
+  );
+});
+
+// Check if the team has completed pit-scouting
+const isPitCompleted = (teamNumber: number): boolean => {
+  return pitCompletedTeams.value.has(teamNumber);
+};
+
+// Add method to select an assigned team
+const selectAssignedTeam = (teamNumber: number) => {
+  // Set the team number in the first field (team number field)
+  if (formFields.value[0]) {
+    formFields.value[0].value = teamNumber.toString();
+    // Save the form data after setting the team number
+    debouncedSaveFormData();
+  }
+};
+
+// This function loads user assignments from the server
+const loadUserAssignments = async () => {
+  try {
+    const token = casdoorService.getToken();
+    if (!token) {
+      throw new Error('Authentication token not found');
+    }
+
+    // Transform eventId format from 2025_JOHNSON to 2025johnson
+    const formattedEventId = eventId.value.replace('_', '').toLowerCase();
+
+    const response = await fetch(`https://api.team695.com/assignments/user/${formattedEventId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
       }
     });
-  } else {
-    Swal.fire(
-      "Validation Error",
-      "Please fill in all required fields before submitting.",
-      "error"
-    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to load user assignments: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    if (data.success) {
+      userAssignments.value = data.data || [];
+      
+      // 检查哪些团队已经完成了pit-scouting
+      checkCompletedPitTeams();
+    } else {
+      throw new Error(data.message || 'Failed to load user assignments');
+    }
+  } catch (error) {
+    console.error('Error loading user assignments:', error);
+  }
+};
+
+// 检查已完成pit-scouting的团队
+const checkCompletedPitTeams = async () => {
+  try {
+    // 从所有pit-scouting任务中提取团队号码
+    const teamNumbers: number[] = [];
+    filteredPitAssignments.value.forEach(assignment => {
+      if (assignment.assigned_team_numbers && Array.isArray(assignment.assigned_team_numbers)) {
+        teamNumbers.push(...assignment.assigned_team_numbers);
+      }
+    });
+
+    // 如果没有团队号码，不需要继续检查
+    if (teamNumbers.length === 0) return;
+
+    const token = casdoorService.getToken();
+    if (!token) return;
+
+    // 转换eventId格式
+    const formattedEventId = eventId.value.replace('_', '').toLowerCase();
+
+    // 对每个团队号码检查pit状态
+    const promises = teamNumbers.map(async (teamNumber) => {
+      try {
+        const response = await fetch(`https://api.team695.com/team-matches/event/${formattedEventId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (data.success && data.data) {
+          const teams = data.data;
+          const team = teams.find((t: any) => t.team_number === teamNumber);
+          if (team && team.is_pit) {
+            pitCompletedTeams.value.add(teamNumber);
+          }
+        }
+      } catch (err) {
+        console.error(`Error checking pit status for team ${teamNumber}:`, err);
+      }
+    });
+
+    await Promise.all(promises);
+  } catch (error) {
+    console.error('Error checking completed pit teams:', error);
+  }
+};
+
+// 更新pit状态
+const updatePitStatus = async (teamNumber: number, isPit: boolean) => {
+  try {
+    const token = casdoorService.getToken();
+    if (!token) {
+      throw new Error('Authentication token not found');
+    }
+
+    // 转换eventId格式
+    const formattedEventId = eventId.value.replace('_', '').toLowerCase();
+
+    // 发送API请求更新状态
+    const response = await fetch(`https://api.team695.com/team-matches/pit-status/${formattedEventId}/frc${teamNumber}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        is_pit: isPit
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to update pit status: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    if (data.success) {
+      console.log(`Pit status for team ${teamNumber} updated to ${isPit}`);
+      
+      // 更新本地状态
+      if (isPit) {
+        pitCompletedTeams.value.add(teamNumber);
+      } else {
+        pitCompletedTeams.value.delete(teamNumber);
+      }
+    } else {
+      throw new Error(data.message || 'Failed to update pit status');
+    }
+  } catch (error) {
+    console.error('Error updating pit status:', error);
+    throw error; // 重新抛出错误以便调用者处理
   }
 };
 
