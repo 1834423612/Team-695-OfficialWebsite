@@ -445,7 +445,7 @@ const currentFormId = computed(() => tabs.value[currentTab.value].formId);
 
 
 // Form versioning control
-const FORM_VERSION = "2025.4.5_PROD_ED2"; // Update this when you want to force a form reset
+const FORM_VERSION = "2025.4.15_PROD_ED6"; // Update this when you want to force a form reset
 const FORM_VERSION_KEY = "pit-scouting-form-version";
 
 
@@ -574,6 +574,17 @@ const initializeDefaultFormFields = () => {
       originalIndex: 3
     },
     {
+      question: "Coral Acquisition(Scoring Method):",
+      type: "radio",
+      options: ["None", "Coral Station Only", "Floor Only", "Coral Station and Floor"],
+      optionValues: ["None", "Coral Station Only", "Floor Only", "Coral Station and Floor"],
+      value: null,
+      required: true,
+      showOtherInput: false,
+      otherValue: "",
+      originalIndex: 4
+    },
+    {
       question: "Scoring Locations:",
       type: "checkbox",
       options: ["L1", "L2", "L3", "L4", "Algae in Processor", "Algae in Net", "Other"],
@@ -582,7 +593,29 @@ const initializeDefaultFormFields = () => {
       required: true,
       showOtherInput: false,
       otherValue: "",
-      originalIndex: 4
+      originalIndex: 5
+    },
+    {
+      question: "Algae Acquisition(Scoring Method):",
+      type: "radio",
+      options: ["None", "Reef Only", "Floor Only", "Reef and Floor"],
+      optionValues: ["None", "Reef Only", "Floor Only", "Reef and Floor"],
+      value: null,
+      required: true,
+      showOtherInput: false,
+      otherValue: "",
+      originalIndex: 6
+    },
+    {
+      question: "Algae Scoring:",
+      type: "radio",
+      options: ["None", "Processor Only", "Net Only", "Processor and Net"],
+      optionValues: ["None", "Processor Only", "Net Only", "Processor and Net"],
+      value: null,
+      required: true,
+      showOtherInput: false,
+      otherValue: "",
+      originalIndex: 7
     },
     {
       question: "Cage Climbing:",
@@ -591,7 +624,7 @@ const initializeDefaultFormFields = () => {
       optionValues: ["Deep Climb", "Shallow Climb", "No Climb"],
       value: [],
       required: true,
-      originalIndex: 5
+      originalIndex: 8
     },
     {
       question: "Robot leaves their Starting Zone during autonomous?",
@@ -602,31 +635,39 @@ const initializeDefaultFormFields = () => {
       required: true,
       showOtherInput: false,
       otherValue: "",
-      originalIndex: 6
+      originalIndex: 9
     },
     {
-      question: "Robot Weight",
+      question: "Robot Weight (without Bumpers)",
       description: "Enter the weight of the robot in pounds.",
       type: "number",
       required: true,
       value: null,
-      originalIndex: 7
+      originalIndex: 10
     },
     {
-      question: "Robot Length",
+      question: "Bumpers Weight",
+      description: "Enter the weight of the bumpers in pounds.",
+      type: "number",
+      required: true,
+      value: null,
+      originalIndex: 11
+    },
+    {
+      question: "Robot Length (without Bumpers)",
       description: "Enter the length of the robot in inches without bumpers(front to back).",
       type: "number",
       required: true,
       value: null,
-      originalIndex: 8
+      originalIndex: 12
     },
     {
-      question: "Robot Width",
+      question: "Robot Width (without Bumpers)",
       description: "Enter the width of the robot in inches without bumpers(left to right).",
       type: "number",
       required: true,
       value: null,
-      originalIndex: 9
+      originalIndex: 13
     },
     {
       question: "Robot Height",
@@ -634,7 +675,7 @@ const initializeDefaultFormFields = () => {
       type: "number",
       required: true,
       value: null,
-      originalIndex: 10
+      originalIndex: 14
     },
     {
       question: "Height when fully extended",
@@ -642,7 +683,7 @@ const initializeDefaultFormFields = () => {
       type: "number",
       required: true,
       value: null,
-      originalIndex: 11
+      originalIndex: 15
     },
     {
       question: "Drive Team Members",
@@ -659,21 +700,21 @@ const initializeDefaultFormFields = () => {
       required: true,
       showOtherInput: false,
       otherValue: "",
-      originalIndex: 12
+      originalIndex: 16
     },
     {
       question: "Hours/Weeks of Practice",
       type: "text",
       required: true,
       value: null,
-      originalIndex: 13
+      originalIndex: 17
     },
     {
       question: "Additional Comments",
       type: "textarea",
       required: false,
       value: null,
-      originalIndex: 14
+      originalIndex: 18
     },
   ];
   
