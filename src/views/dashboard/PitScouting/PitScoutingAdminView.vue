@@ -1167,7 +1167,7 @@ const fetchData = async () => {
         const token = casdoorService.getToken();
         
         // 添加授权请求头
-        const response = await axios.get<SurveyData[]>("https://api.frc695.com/api/survey/query", {
+        const response = await axios.get<SurveyData[]>("https://api.team695.com/survey/query", {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
