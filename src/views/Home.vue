@@ -21,17 +21,19 @@
                 class="inline-flex h-10 items-center justify-center rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50">
                 Team Documentation
               </a>-->
-              <a href="https://scoutify.team695.com/" target="_blank"
-                class="rounded-md bg-blue-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-                Scoutify Website
-              </a>
+              <router-link to="/sponsors" class="inline-flex h-10 items-center justify-center rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50">
+                Sponsorships
+              </router-link>
+              <router-link to="/Dashboard" class="rounded-md bg-blue-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                Team Dashboard
+              </router-link>
             </div>
           </div>
 
           <!-- 单图展示 -->
           <img
-            src="https://r2.fastbirdcdn.online/Robotics/Robots/66ac2099b1841-20240802_Screenshot%202024-08-01%20193902.png"
-            alt="Robotics Picture"
+            src="https://r2.fastbirdcdn.online/Robotics/Robots/2025-695-Robot_Gold-Fish.jpeg"
+            alt="2025 695 Robot - Gold Fish"
             class="my-10 aspect-[8/7] w-full max-w-lg rounded-2xl object-cover sm:mt-16 lg:mt-0 lg:max-w-none " />
 
           <!-- 图片瀑布样式 -->

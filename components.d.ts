@@ -8,9 +8,12 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    ApiErrorHandler: typeof import('./src/components/global/ApiErrorHandler.vue')['default']
+    AuthManager: typeof import('./src/components/global/AuthManager.vue')['default']
     Avatar: typeof import('./src/components/Avatar.vue')['default']
     AvatarFallback: typeof import('./src/components/AvatarFallback.vue')['default']
     AvatarImage: typeof import('./src/components/AvatarImage.vue')['default']
+    CachedAvatar: typeof import('./src/components/common/CachedAvatar.vue')['default']
     Card: typeof import('./src/components/Card.vue')['default']
     CardContent: typeof import('./src/components/CardContent.vue')['default']
     CardDescription: typeof import('./src/components/CardDescription.vue')['default']
@@ -23,6 +26,7 @@ declare module 'vue' {
     FeedBack: typeof import('./src/components/Form/FeedBack.vue')['default']
     Footer: typeof import('./src/components/Footer.vue')['default']
     GalleryCard: typeof import('./src/components/Cards/GalleryCard.vue')['default']
+    GlobalNotification: typeof import('./src/components/common/GlobalNotification.vue')['default']
     Header: typeof import('./src/components/Header.vue')['default']
     HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
     MasonryGallery: typeof import('./src/components/Gallery/MasonryGallery.vue')['default']
@@ -30,11 +34,12 @@ declare module 'vue' {
     MenuIcon: typeof import('./src/components/MenuIcon.vue')['default']
     MobileDropdownMenu: typeof import('./src/components/Header/MobileDropdownMenu.vue')['default']
     NotFound: typeof import('./src/components/NotFound.vue')['default']
-    PitScoutingDashboard: typeof import('./src/components/PitScoutingDashboard.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SidebarContent: typeof import('./src/components/dashboard/SidebarContent.vue')['default']
     TeamMember: typeof import('./src/components/Member/TeamMember.vue')['default']
     TeamSection: typeof import('./src/components/Member/TeamSection.vue')['default']
+    VersionInfo: typeof import('./src/components/common/VersionInfo.vue')['default']
     WinnerBanner: typeof import('./src/components/Cards/WinnerBanner.vue')['default']
   }
 }

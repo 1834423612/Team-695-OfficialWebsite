@@ -31,6 +31,7 @@ const menuItems: Array<MenuItem> = [
   { name: 'Gallery', link: '/gallery' },
   { name: 'Resources', link: '/resources' },
   { name: 'Contact', link: '/contact' },
+  { name: 'Dashboard', link: '/dashboard' }
 ];
 
 export default defineComponent({
