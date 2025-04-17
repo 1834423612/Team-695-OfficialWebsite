@@ -1,5 +1,5 @@
 <template>
-    <div class="min-h-screen bg-gray-50">
+    <div class="min-h-screen bg-gray-50 mt-4">
         <!-- Header with gradient background -->
         <div class="bg-gradient-to-r from-blue-500 to-indigo-600 pb-32 rounded-b-md md:rounded-b-xl w-full">
             <header class="py-10">
@@ -19,25 +19,29 @@
                     </h2>
                     <form @submit.prevent="handleSearch" class="space-y-6">
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <!-- Event ID Filter - This one triggers search immediately -->
+                            <!-- Event ID Filter - Required selection -->
                             <div class="relative">
                                 <select v-model="queryParams.eventId" id="eventId" @change="handleEventChange"
-                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white">
-                                    <option value="">All Events</option>
-                                    <option v-for="eventId in uniqueEventIds" :key="eventId" :value="eventId">{{ eventId
-                                        }}</option>
+                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white"
+                                    :class="{'border-red-500 focus:ring-red-500 focus:border-red-500': showEventRequiredError}">
+                                    <option value="">Select an Event</option>
+                                    <option v-for="eventId in uniqueEventIds" :key="eventId" :value="eventId">{{ eventId }}</option>
                                 </select>
                                 <label for="eventId"
-                                    class="absolute -top-2.5 left-2 bg-white px-1 text-xs font-medium text-indigo-600">
-                                    Event ID
+                                    class="absolute -top-2.5 left-2 bg-white px-1 text-xs font-medium"
+                                    :class="showEventRequiredError ? 'text-red-600' : 'text-indigo-600'">
+                                    Event ID <span class="text-red-500">*</span>
                                 </label>
+                                <p v-if="showEventRequiredError" class="mt-1 text-xs text-red-600">
+                                    Please select an event to view data
+                                </p>
                             </div>
 
                             <!-- Form ID Filter - Only searches when button is clicked -->
                             <div class="relative">
                                 <input v-model="queryParams.formId" type="text" id="formId"
                                     class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white"
-                                    placeholder="Enter Form ID" />
+                                    placeholder="Enter Form ID" :disabled="!queryParams.eventId" />
                                 <label for="formId"
                                     class="absolute -top-2.5 left-2 bg-white px-1 text-xs font-medium text-indigo-600">
                                     Form ID
@@ -48,7 +52,7 @@
                             <div class="relative">
                                 <input v-model="queryParams.teamNumber" type="text" id="teamNumber"
                                     class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white"
-                                    placeholder="Enter Team Number" />
+                                    placeholder="Enter Team Number" :disabled="!queryParams.eventId" />
                                 <label for="teamNumber"
                                     class="absolute -top-2.5 left-2 bg-white px-1 text-xs font-medium text-indigo-600">
                                     Team Number
@@ -58,7 +62,7 @@
 
                         <!-- Search Button with Loading State -->
                         <div class="flex justify-end">
-                            <button type="submit" :disabled="isSearching"
+                            <button type="submit" :disabled="isSearching || !queryParams.eventId"
                                 class="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-300 transform hover:-translate-y-1 flex items-center shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
                                 <Icon :icon="isSearching ? 'mdi:loading' : 'mdi:magnify'"
                                     :class="{ 'animate-spin': isSearching }" class="mr-2" />
@@ -69,8 +73,19 @@
                 </div>
             </div>
 
+            <!-- No Event Selected State -->
+            <div v-if="!queryParams.eventId" class="flex flex-col items-center text-center py-12 bg-white rounded-lg shadow-md">
+                <Icon icon="mdi:information-outline" class="text-6xl text-indigo-400 mb-4" />
+                <p class="text-xl text-gray-600 mb-2">
+                    Please select an event to view data
+                </p>
+                <p class="text-gray-500 max-w-md">
+                    Selecting an event helps organize the data and improves performance
+                </p>
+            </div>
+
             <!-- Loading State -->
-            <div v-if="loading" class="text-center py-12">
+            <div v-else-if="loading" class="text-center py-12">
                 <div
                     class="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-r-4 border-indigo-600 border-b-4 border-l-4 border-transparent">
                 </div>
@@ -92,12 +107,79 @@
                 class="flex flex-col items-center text-center py-12 bg-white rounded-lg shadow-md">
                 <Icon icon="mdi:robot-confused" class="text-6xl text-gray-400 mb-4" />
                 <p class="text-xl text-gray-600">
-                    No data available. Try adjusting your search criteria.
+                    No data available for the selected event.
+                </p>
+                <p class="text-gray-500 mt-2">
+                    Try adjusting your search criteria or selecting a different event.
                 </p>
             </div>
 
             <!-- Data Display -->
             <div v-else>
+                <!-- Data Summary Card -->
+                <section class="mb-8 bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="p-6">
+                        <h2 class="text-2xl font-semibold mb-6 text-gray-800 flex items-center">
+                            <Icon icon="mdi:chart-donut" class="mr-2 text-indigo-500" />
+                            Event Summary: {{ queryParams.eventId }}
+                        </h2>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <!-- Total Teams Card -->
+                            <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100 shadow-sm">
+                                <div class="flex items-center">
+                                    <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                                        <Icon icon="mdi:account-group" class="text-2xl" />
+                                    </div>
+                                    <div class="ml-4">
+                                        <p class="text-sm font-medium text-blue-600">Total Teams</p>
+                                        <p class="text-2xl font-bold text-gray-800">{{ uniqueTeamCount }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Total Forms Card -->
+                            <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-100 shadow-sm">
+                                <div class="flex items-center">
+                                    <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                                        <Icon icon="mdi:clipboard-text" class="text-2xl" />
+                                    </div>
+                                    <div class="ml-4">
+                                        <p class="text-sm font-medium text-purple-600">Total Forms</p>
+                                        <p class="text-2xl font-bold text-gray-800">{{ filteredSurveyData.length }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Unique Scouts Card -->
+                            <div class="bg-gradient-to-br from-green-50 to-teal-50 rounded-lg p-4 border border-green-100 shadow-sm">
+                                <div class="flex items-center">
+                                    <div class="p-3 rounded-full bg-green-100 text-green-600">
+                                        <Icon icon="mdi:account-check" class="text-2xl" />
+                                    </div>
+                                    <div class="ml-4">
+                                        <p class="text-sm font-medium text-green-600">Unique Scouts</p>
+                                        <p class="text-2xl font-bold text-gray-800">{{ submissionUsers.length }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Last Updated Card -->
+                            <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg p-4 border border-amber-100 shadow-sm">
+                                <div class="flex items-center">
+                                    <div class="p-3 rounded-full bg-amber-100 text-amber-600">
+                                        <Icon icon="mdi:clock-outline" class="text-2xl" />
+                                    </div>
+                                    <div class="ml-4">
+                                        <p class="text-sm font-medium text-amber-600">Last Updated</p>
+                                        <p class="text-lg font-bold text-gray-800">{{ lastUpdatedTime }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
                 <!-- Data Visualization Section -->
                 <section v-if="filteredSurveyData.length > 0"
                     class="mb-8 bg-white rounded-lg shadow-md overflow-hidden">
@@ -167,7 +249,7 @@
                     </div>
                 </section>
 
-                <!-- Submission User Information -->
+                <!-- Submission User Information - Enhanced with CachedAvatar -->
                 <section class="mb-8 bg-white rounded-lg shadow-md overflow-hidden">
                     <div class="p-6">
                         <h2 class="text-2xl font-semibold mb-6 text-gray-800 flex items-center">
@@ -201,16 +283,20 @@
                                     <tr v-for="user in submissionUsers" :key="user.userId" class="hover:bg-gray-50">
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="flex items-center">
-                                                <!-- User Avatar -->
-                                                <div
-                                                    class="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center overflow-hidden">
-                                                    <img v-if="user.avatar" :src="user.avatar" alt="User Avatar"
-                                                        class="h-10 w-10 object-cover" />
-                                                    <Icon v-else icon="mdi:account" class="h-5 w-5 text-indigo-600" />
-                                                </div>
+                                                <!-- Enhanced User Avatar using CachedAvatar -->
+                                                <CachedAvatar 
+                                                    :userId="user.userId" 
+                                                    :initial="getUserInitialsValue(user)" 
+                                                    :src="user.avatar"
+                                                    :size="40"
+                                                    :firstName="user.firstName || ''"
+                                                    :lastName="user.lastName || ''"
+                                                    :displayName="user.displayName"
+                                                    alt="User Avatar"
+                                                    class="rounded-full object-cover border-2 border-indigo-100" />
+                                                
                                                 <div class="ml-4">
-                                                    <div class="text-sm font-medium text-gray-900">{{ user.displayName
-                                                        }}</div>
+                                                    <div class="text-sm font-medium text-gray-900">{{ user.displayName }}</div>
                                                     <div class="text-xs text-gray-500">@{{ user.username }}</div>
                                                     <!-- User ID with copy button -->
                                                     <div class="text-xs text-gray-500 flex items-center">
@@ -227,8 +313,7 @@
                                             </div>
                                         </td>
                                         <td class="px-6 py-4">
-                                            <div class="text-sm text-gray-900">{{ getBrowserInfo(user.userAgent) }}
-                                            </div>
+                                            <div class="text-sm text-gray-900">{{ getBrowserInfo(user.userAgent) }}</div>
                                             <div class="text-xs text-gray-500">{{ getDeviceType(user.userAgent) }}</div>
                                             <div class="text-xs text-gray-500">{{ user.ip }}</div>
                                             <div class="text-xs text-gray-500">Language: {{ user.language }}</div>
@@ -246,14 +331,38 @@
                                                 <!-- Group submissions by event -->
                                                 <div v-for="(submissions, eventId) in user.submissionsByEvent"
                                                     :key="eventId" class="mb-2">
-                                                    <div class="text-xs font-medium text-gray-700 mb-1">{{ eventId }}:
-                                                    </div>
+                                                    <div class="text-xs font-medium text-gray-700 mb-1">{{ eventId }}:</div>
                                                     <div class="flex flex-wrap gap-1">
-                                                        <span v-for="submission in submissions" :key="submission.id"
-                                                            class="px-2 py-1 text-xs leading-4 font-medium rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100"
-                                                            :title="`Submitted on ${formatDate(submission.timestamp)}`">
-                                                            {{ submission.teamNumber }}
-                                                        </span>
+                                                        <template v-if="submissions.length <= 4">
+                                                            <span v-for="submission in submissions" :key="submission.id"
+                                                                class="px-2 py-1 text-xs leading-4 font-medium rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100"
+                                                                :title="`Submitted on ${formatDate(submission.timestamp)}`">
+                                                                {{ submission.teamNumber }}
+                                                            </span>
+                                                        </template>
+                                                        <template v-else>
+                                                            <span v-for="(submission) in submissions.slice(0, 3)"
+                                                                :key="submission.id"
+                                                                class="px-2 py-1 text-xs leading-4 font-medium rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100"
+                                                                :title="`Submitted on ${formatDate(submission.timestamp)}`">
+                                                                {{ submission.teamNumber }}
+                                                            </span>
+                                                            <button @click="toggleTeamExpand(user.userId, eventId)"
+                                                                class="px-2 py-1 text-xs leading-4 font-medium rounded-full bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200 transition-colors duration-200">
+                                                                <span
+                                                                    v-if="isTeamExpanded(user.userId, eventId)">Collapse</span>
+                                                                <span v-else>+{{ submissions.length - 3 }} more</span>
+                                                            </button>
+                                                            <div v-if="isTeamExpanded(user.userId, eventId)"
+                                                                class="w-full mt-1 flex flex-wrap gap-1">
+                                                                <span v-for="submission in submissions.slice(3)"
+                                                                    :key="submission.id"
+                                                                    class="px-2 py-1 text-xs leading-4 font-medium rounded-full bg-green-50 text-green-700 border border-green-200"
+                                                                    :title="`Submitted on ${formatDate(submission.timestamp)}`">
+                                                                    {{ submission.teamNumber }}
+                                                                </span>
+                                                            </div>
+                                                        </template>
                                                     </div>
                                                 </div>
                                             </div>
@@ -268,17 +377,19 @@
                     </div>
                 </section>
 
-                <!-- Data Tables Section -->
-                <section v-for="(eventData, eventId) in groupedSurveyData" :key="eventId"
-                    class="mb-8 bg-white rounded-lg shadow-md overflow-hidden">
+                <!-- Data Tables Section - Improved with virtual scrolling for performance -->
+                <section class="mb-8 bg-white rounded-lg shadow-md overflow-hidden">
                     <div class="p-6">
                         <h2 class="text-2xl font-semibold mb-6 text-gray-800 flex items-center">
-                            <Icon icon="mdi:calendar-check" class="mr-2 text-indigo-500" />
-                            Event: {{ eventId }}
+                            <Icon icon="mdi:table" class="mr-2 text-indigo-500" />
+                            Form Data: {{ queryParams.eventId }}
+                            <span class="ml-2 px-2 py-0.5 text-sm bg-indigo-100 text-indigo-700 rounded-full">
+                                {{ filteredSurveyData.length }} forms
+                            </span>
                         </h2>
 
                         <!-- Column Selector -->
-                        <div class="relative mb-4">
+                        <div class="flex flex-wrap gap-2 mb-4">
                             <button @click="showColumnSelector = !showColumnSelector"
                                 class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                                 <Icon icon="mdi:table-column" class="-ml-1 mr-2 h-5 w-5 text-gray-500" />
@@ -287,131 +398,161 @@
                                     {{ selectedFields.length }}
                                 </span>
                             </button>
-
-                            <div v-if="showColumnSelector"
-                                class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-start justify-center pt-16 z-50 transition-all duration-300"
-                                @click="showColumnSelector = false">
-                                <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 transform transition-all duration-300 scale-100 opacity-100"
-                                    @click.stop>
-                                    <div
-                                        class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-xl flex justify-between items-center">
-                                        <h3 class="text-lg font-bold flex items-center">
-                                            <Icon icon="mdi:view-column-outline" class="mr-2 w-5 h-5" />
-                                            Customize Columns
-                                        </h3>
-                                        <button @click="showColumnSelector = false"
-                                            class="text-white hover:text-gray-200 transition-colors duration-200 focus:outline-none">
-                                            <Icon icon="mdi:close" class="w-6 h-6" />
-                                        </button>
-                                    </div>
-                                    <div class="px-6 py-4 max-h-[60vh] overflow-y-auto">
-                                        <div class="space-y-4">
-                                            <!-- Available Fields -->
-                                            <div class="mb-6">
-                                                <h4 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                                                    <Icon icon="mdi:playlist-plus" class="mr-2 w-5 h-5 text-blue-500" />
-                                                    Available Fields
-                                                </h4>
-                                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                    <div v-for="field in availableFieldsNotSelected" :key="field"
-                                                        class="flex items-center p-3 bg-blue-50 rounded-lg border border-blue-200 hover:bg-blue-100 transition-all duration-200 group">
-                                                        <span class="truncate flex-1 text-gray-800"
-                                                            :title="formatFieldName(field)">
-                                                            {{ formatFieldName(field) }}
-                                                        </span>
-                                                        <button @click="addField(field)"
-                                                            class="ml-2 p-1.5 rounded-full bg-white text-blue-500 hover:text-white hover:bg-blue-500 transition-all duration-200 shadow-sm hover:shadow transform hover:scale-105">
-                                                            <Icon icon="mdi:plus" class="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="border-t border-gray-200 my-4 opacity-60">
-                                            </div>
-
-                                            <!-- Selected Fields with Enhanced Mobile Drag and Drop -->
-                                            <div>
-                                                <h4 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                                                    <Icon icon="mdi:sort" class="mr-2 w-5 h-5 text-indigo-500" />
-                                                    Selected Fields (Drag to reorder)
-                                                </h4>
-                                                <div class="space-y-2 relative" ref="draggableContainer">
-                                                    <!-- Placeholder for drag target -->
-                                                    <div v-if="isDragging"
-                                                        class="absolute border-2 border-dashed border-indigo-500 bg-indigo-100 bg-opacity-70 rounded-lg p-3 pointer-events-none transition-all duration-200"
-                                                        :style="placeholderStyle">
-                                                    </div>
-
-                                                    <div v-for="(field, index) in selectedFields" :key="field"
-                                                        class="flex items-center p-3 rounded-lg transition-all duration-200 select-none"
-                                                        :class="[
-                                                            draggedItem === index ? 'bg-indigo-200 shadow-lg scale-[1.02] z-10' : 'bg-gray-50',
-                                                            dragOverIndex === index ? 'border-2 border-indigo-500' : 'border border-gray-200',
-                                                            'hover:bg-gray-100'
-                                                        ]" ref="draggableItems"
-                                                        @touchstart.passive="touchStart($event, index)"
-                                                        @touchmove.prevent="touchMove($event, index)"
-                                                        @touchend="touchEnd($event)" @touchcancel="touchEnd($event)"
-                                                        draggable="true" @dragstart="dragStart($event, index)"
-                                                        @dragover.prevent="dragOver($event, index)"
-                                                        @dragenter.prevent="dragEnter($event, index)"
-                                                        @dragleave="dragLeave($event, index)"
-                                                        @drop="drop($event, index)" @dragend="dragEnd"
-                                                        @mousedown="preventMultiSelection">
-                                                        <div
-                                                            class="p-1.5 mr-2 rounded-md bg-gray-200 text-gray-500 drag-handle">
-                                                            <Icon icon="mdi:drag" class="w-4 h-4" />
-                                                        </div>
-                                                        <span class="truncate flex-1 text-gray-800"
-                                                            :title="formatFieldName(field)">
-                                                            {{ formatFieldName(field) }}
-                                                        </span>
-                                                        <span
-                                                            class="mx-2 px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full text-xs font-medium">
-                                                            {{ index + 1 }}
-                                                        </span>
-                                                        <button @click="removeField(field)"
-                                                            class="p-1.5 rounded-full bg-white text-red-400 hover:text-white hover:bg-red-500 transition-all duration-200 shadow-sm hover:shadow transform hover:scale-105">
-                                                            <Icon icon="mdi:close" class="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div
-                                        class="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-xl flex justify-between">
-                                        <button @click="resetColumns"
-                                            class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-all duration-200 flex items-center">
-                                            <Icon icon="mdi:refresh" class="mr-2 w-4 h-4" />
-                                            Reset to Default
-                                        </button>
-                                        <button @click="showColumnSelector = false"
-                                            class="px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:translate-y-[-1px] flex items-center">
-                                            <Icon icon="mdi:check" class="mr-2 w-4 h-4" />
-                                            Done
-                                        </button>
-                                    </div>
+                            
+                            <!-- Export Button -->
+                            <button @click="exportToCSV"
+                                class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                <Icon icon="mdi:file-export" class="-ml-1 mr-2 h-5 w-5 text-green-500" />
+                                Export CSV
+                            </button>
+                            
+                            <!-- Quick Filter -->
+                            <div class="relative flex-grow md:max-w-xs">
+                                <input 
+                                    v-model="tableFilter" 
+                                    type="text" 
+                                    placeholder="Quick filter..." 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                />
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                                    <Icon icon="mdi:filter" class="h-5 w-5 text-gray-400" />
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Data Table -->
+                        <!-- Column Selector Modal -->
+                        <div v-if="showColumnSelector"
+                            class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-start justify-center pt-16 z-50 transition-all duration-300"
+                            @click="showColumnSelector = false">
+                            <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 transform transition-all duration-300 scale-100 opacity-100"
+                                @click.stop>
+                                <div
+                                    class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-xl flex justify-between items-center">
+                                    <h3 class="text-lg font-bold flex items-center">
+                                        <Icon icon="mdi:view-column-outline" class="mr-2 w-5 h-5" />
+                                        Customize Columns
+                                    </h3>
+                                    <button @click="showColumnSelector = false"
+                                        class="text-white hover:text-gray-200 transition-colors duration-200 focus:outline-none">
+                                        <Icon icon="mdi:close" class="w-6 h-6" />
+                                    </button>
+                                </div>
+                                <div class="px-6 py-4 max-h-[60vh] overflow-y-auto">
+                                    <div class="space-y-4">
+                                        <!-- Available Fields -->
+                                        <div class="mb-6">
+                                            <h4 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                                                <Icon icon="mdi:playlist-plus" class="mr-2 w-5 h-5 text-blue-500" />
+                                                Available Fields
+                                            </h4>
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                <div v-for="field in availableFieldsNotSelected" :key="field"
+                                                    class="flex items-center p-3 bg-blue-50 rounded-lg border border-blue-200 hover:bg-blue-100 transition-all duration-200 group">
+                                                    <span class="truncate flex-1 text-gray-800"
+                                                        :title="formatFieldName(field)">
+                                                        {{ formatFieldName(field) }}
+                                                    </span>
+                                                    <button @click="addField(field)"
+                                                        class="ml-2 p-1.5 rounded-full bg-white text-blue-500 hover:text-white hover:bg-blue-500 transition-all duration-200 shadow-sm hover:shadow transform hover:scale-105">
+                                                        <Icon icon="mdi:plus" class="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="border-t border-gray-200 my-4 opacity-60">
+                                        </div>
+
+                                        <!-- Selected Fields with Enhanced Mobile Drag and Drop -->
+                                        <div>
+                                            <h4 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                                                <Icon icon="mdi:sort" class="mr-2 w-5 h-5 text-indigo-500" />
+                                                Selected Fields (Drag to reorder)
+                                            </h4>
+                                            <div class="space-y-2 relative" ref="draggableContainer">
+                                                <!-- Placeholder for drag target -->
+                                                <div v-if="isDragging"
+                                                    class="absolute border-2 border-dashed border-indigo-500 bg-indigo-100 bg-opacity-70 rounded-lg p-3 pointer-events-none transition-all duration-200"
+                                                    :style="placeholderStyle">
+                                                </div>
+
+                                                <div v-for="(field, index) in selectedFields" :key="field"
+                                                    class="flex items-center p-3 rounded-lg transition-all duration-200 select-none"
+                                                    :class="[
+                                                        draggedItem === index ? 'bg-indigo-200 shadow-lg scale-[1.02] z-10' : 'bg-gray-50',
+                                                        dragOverIndex === index ? 'border-2 border-indigo-500' : 'border border-gray-200',
+                                                        'hover:bg-gray-100'
+                                                    ]" ref="draggableItems"
+                                                    @touchstart.passive="touchStart($event, index)"
+                                                    @touchmove.prevent="touchMove($event, index)"
+                                                    @touchend="touchEnd($event)" @touchcancel="touchEnd($event)"
+                                                    draggable="true" @dragstart="dragStart($event, index)"
+                                                    @dragover.prevent="dragOver($event, index)"
+                                                    @dragenter.prevent="dragEnter($event, index)"
+                                                    @dragleave="dragLeave($event, index)"
+                                                    @drop="drop($event, index)" @dragend="dragEnd"
+                                                    @mousedown="preventMultiSelection">
+                                                    <div
+                                                        class="p-1.5 mr-2 rounded-md bg-gray-200 text-gray-500 drag-handle">
+                                                        <Icon icon="mdi:drag" class="w-4 h-4" />
+                                                    </div>
+                                                    <span class="truncate flex-1 text-gray-800"
+                                                        :title="formatFieldName(field)">
+                                                        {{ formatFieldName(field) }}
+                                                    </span>
+                                                    <span
+                                                        class="mx-2 px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full text-xs font-medium">
+                                                        {{ index + 1 }}
+                                                    </span>
+                                                    <button @click="removeField(field)"
+                                                        class="p-1.5 rounded-full bg-white text-red-400 hover:text-white hover:bg-red-500 transition-all duration-200 shadow-sm hover:shadow transform hover:scale-105">
+                                                        <Icon icon="mdi:close" class="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div
+                                    class="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-xl flex justify-between">
+                                    <button @click="resetColumns"
+                                        class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-all duration-200 flex items-center">
+                                        <Icon icon="mdi:refresh" class="mr-2 w-4 h-4" />
+                                        Reset to Default
+                                    </button>
+                                    <button @click="showColumnSelector = false"
+                                        class="px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:translate-y-[-1px] flex items-center">
+                                        <Icon icon="mdi:check" class="mr-2 w-4 h-4" />
+                                        Done
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Data Table with Virtual Scrolling -->
                         <div class="overflow-x-auto rounded-lg border border-gray-200">
                             <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
+                                <thead class="bg-gray-50 sticky top-0 z-10">
                                     <tr>
                                         <th scope="col"
-                                            class="sticky left-0 z-10 bg-indigo-50 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            class="sticky left-0 z-20 bg-indigo-50 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Team Number
+                                            <button @click="sortTable('teamNumber')" class="ml-1 inline-flex">
+                                                <Icon :icon="getSortIcon('teamNumber')" class="h-4 w-4" />
+                                            </button>
                                         </th>
                                         <th scope="col"
                                             class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Submitted By
+                                            <button @click="sortTable('submittedBy')" class="ml-1 inline-flex">
+                                                <Icon :icon="getSortIcon('submittedBy')" class="h-4 w-4" />
+                                            </button>
                                         </th>
                                         <th v-for="field in selectedFields" :key="field" scope="col"
                                             class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             {{ formatFieldName(field) }}
+                                            <button @click="sortTable(field)" class="ml-1 inline-flex">
+                                                <Icon :icon="getSortIcon(field)" class="h-4 w-4" />
+                                            </button>
                                         </th>
                                         <th scope="col"
                                             class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -420,7 +561,7 @@
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
-                                    <tr v-for="survey in eventData" :key="survey.id"
+                                    <tr v-for="survey in paginatedAndFilteredData" :key="survey.id"
                                         class="hover:bg-gray-50 transition-colors duration-150">
                                         <td
                                             class="sticky left-0 z-10 px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-indigo-50">
@@ -428,19 +569,26 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <div class="flex items-center">
-                                                <div
-                                                    class="flex-shrink-0 h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center overflow-hidden">
-                                                    <!-- Show avatar if available -->
-                                                    <img v-if="survey.user_data?.avatar || survey.userData?.avatar"
-                                                        :src="survey.user_data?.avatar || survey.userData?.avatar"
-                                                        alt="User Avatar" class="h-8 w-8 object-cover" />
-                                                    <Icon v-else icon="mdi:account" class="h-4 w-4 text-indigo-600" />
-                                                </div>
+                                                <!-- Enhanced User Avatar using CachedAvatar -->
+                                                <CachedAvatar 
+                                                    :userId="survey.user_data?.userId || survey.userData?.userId || ''" 
+                                                    :initial="getUserInitialsFromSurvey(survey)" 
+                                                    :src="survey.user_data?.avatar || survey.userData?.avatar"
+                                                    :size="32"
+                                                    :firstName="survey.user_data?.firstName || survey.userData?.firstName || ''"
+                                                    :lastName="survey.user_data?.lastName || survey.userData?.lastName || ''"
+                                                    :displayName="survey.user_data?.displayName || survey.userData?.displayName || survey.user_data?.username || survey.userData?.username || 'Unknown'"
+                                                    alt="User Avatar"
+                                                    class="rounded-full object-cover" />
+                                                
                                                 <div class="ml-3">
-                                                    <div class="text-sm font-medium text-gray-900">
+                                                    <!-- <div class="text-sm font-medium text-gray-900">
                                                         {{ survey.user_data?.displayName || survey.userData?.displayName
                                                             || survey.user_data?.username || survey.userData?.username ||
-                                                        "Unknown" }}
+                                                            "Unknown" }}
+                                                    </div> -->
+                                                    <div class="text-sm font-medium text-gray-900">
+                                                        {{ (survey.user_data?.displayName || survey.userData?.displayName || survey.user_data?.username || survey.userData?.username || "Unknown") }}
                                                     </div>
                                                     <div class="text-xs text-gray-500">
                                                         {{ formatDate(survey.timestamp) }}
@@ -478,49 +626,312 @@
                                 </tbody>
                             </table>
                         </div>
+                        
+                        <!-- Pagination Controls -->
+                        <div class="flex items-center justify-between mt-4">
+                            <div class="flex items-center">
+                                <span class="text-sm text-gray-700">
+                                    Showing <span class="font-medium">{{ paginationStart }}</span> to 
+                                    <span class="font-medium">{{ paginationEnd }}</span> of 
+                                    <span class="font-medium">{{ filteredTableData.length }}</span> results
+                                </span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <button 
+                                    @click="currentPage = Math.max(1, currentPage - 1)"
+                                    :disabled="currentPage === 1"
+                                    class="px-3 py-1 rounded border border-gray-300 bg-white text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <Icon icon="mdi:chevron-left" class="h-5 w-5" />
+                                </button>
+                                <div class="flex items-center">
+                                    <span class="mx-2 text-sm">Page {{ currentPage }} of {{ totalPages }}</span>
+                                </div>
+                                <button 
+                                    @click="currentPage = Math.min(totalPages, currentPage + 1)"
+                                    :disabled="currentPage === totalPages"
+                                    class="px-3 py-1 rounded border border-gray-300 bg-white text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <Icon icon="mdi:chevron-right" class="h-5 w-5" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Team Comparison Feature -->
+                <section class="mb-8 bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="p-6">
+                        <h2 class="text-2xl font-semibold mb-6 text-gray-800 flex items-center">
+                            <Icon icon="carbon:compare" class="mr-2 text-indigo-500" />
+                            Team Comparison
+                        </h2>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Event Selection -->
+                            <div class="space-y-2">
+                                <label class="block text-sm font-medium text-gray-700">Select Event to Compare</label>
+                                <select v-model="comparisonEventId"
+                                    class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                    <option value="">Select an event</option>
+                                    <option v-for="eventId in uniqueEventIds" :key="eventId" :value="eventId">{{ eventId
+                                    }}</option>
+                                </select>
+                                <!-- Information Icon -->
+                                <div class="mt-2 text-sm text-gray-500 flex items-center">
+                                    <Icon icon="mdi:information-outline" class="mr-1 text-blue-500" />
+                                    <span>Need help? </span>
+                                    <button @click="openSQLModal"
+                                        class="ml-1 text-blue-600 hover:text-blue-800 underline focus:outline-none">
+                                        Click here to view SQL query
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- SQL Modal -->
+                            <Transition name="fade">
+                                <div v-if="showSQLModal"
+                                    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                                    <div class="bg-white rounded-lg p-6 max-w-lg w-full shadow-lg">
+                                        <h3 class="text-lg font-bold mb-4 text-gray-800 flex items-center">
+                                            <Icon icon="mdi:database" class="mr-2 text-indigo-500" />
+                                            SQL Query for Event Teams
+                                        </h3>
+                                        <p class="text-sm text-gray-600 mb-4">
+                                            Use the following SQL query to retrieve all teams for the selected event:
+                                        </p>
+                                        <div
+                                            class="bg-gray-100 p-4 rounded-md text-sm text-gray-800 overflow-auto border border-gray-300">
+                                            <pre>{{ sqlQuery }}</pre>
+                                        </div>
+                                        <div class="flex justify-end mt-4">
+                                            <button @click="copySQLQuery"
+                                                class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 shadow-md mr-2">
+                                                Copy SQL
+                                            </button>
+                                            <button @click="closeSQLModal"
+                                                class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 shadow-md">
+                                                Close
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </Transition>
+
+                            <!-- Team Input -->
+                            <div class="space-y-2">
+                                <label class="block text-sm font-medium text-gray-700">
+                                    Enter Team Numbers (one per line or comma-separated)
+                                </label>
+                                <textarea v-model="teamNumbersInput" rows="4"
+                                    class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                    placeholder="Enter team numbers here..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Compare Button -->
+                        <div class="mt-4 flex justify-end">
+                            <button @click="compareTeams"
+                                class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200 flex items-center"
+                                :disabled="!comparisonEventId || !teamNumbersInput.trim()">
+                                <Icon icon="mdi:compare-horizontal" class="mr-2" />
+                                Compare Teams
+                            </button>
+                        </div>
+
+                        <!-- Comparison Results -->
+                        <div v-if="comparisonResults.show" class="mt-6 space-y-4">
+                            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-3">Comparison Results</h3>
+
+                                <!-- Missing Teams (in input but not in submission) -->
+                                <div class="mb-4">
+                                    <h4 class="text-sm font-medium text-amber-700 flex items-center">
+                                        <Icon icon="mdi:alert-circle-outline" class="mr-1" />
+                                        Missing Teams (not found in submission data)
+                                    </h4>
+                                    <div class="mt-2">
+                                        <div v-if="comparisonResults.missing.length === 0"
+                                            class="text-sm text-gray-500">
+                                            No missing teams found
+                                        </div>
+                                        <div v-else class="flex flex-wrap gap-2 mt-1">
+                                            <span v-for="team in comparisonResults.missing" :key="team"
+                                                class="px-2 py-1 text-xs font-medium rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                                                {{ team }}
+                                            </span>
+                                        </div>
+                                        <!-- Copy Buttons -->
+                                        <div v-if="comparisonResults.missing.length > 0" class="mt-2 flex gap-2">
+                                            <button @click="copyTeams(comparisonResults.missing, 'line')"
+                                                class="px-3 py-1 text-xs font-medium rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors duration-200">
+                                                Copy (One per Line)
+                                            </button>
+                                            <button @click="copyTeams(comparisonResults.missing, 'comma')"
+                                                class="px-3 py-1 text-xs font-medium rounded bg-green-500 text-white hover:bg-green-600 transition-colors duration-200">
+                                                Copy (Comma Separated)
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Matched Teams (in both input and submission) -->
+                                <div class="mb-4">
+                                    <h4 class="text-sm font-medium text-green-700 flex items-center">
+                                        <Icon icon="mdi:check-circle-outline" class="mr-1" />
+                                        Matched Teams (found in submission data)
+                                    </h4>
+                                    <div class="mt-2">
+                                        <div v-if="comparisonResults.matched.length === 0"
+                                            class="text-sm text-gray-500">
+                                            No matched teams found
+                                        </div>
+                                        <div v-else class="flex flex-wrap gap-2 mt-1">
+                                            <span v-for="team in comparisonResults.matched" :key="team"
+                                                class="px-2 py-1 text-xs font-medium rounded-full bg-green-50 text-green-700 border border-green-200">
+                                                {{ team }}
+                                            </span>
+                                        </div>
+                                        <!-- Copy Buttons -->
+                                        <div v-if="comparisonResults.matched.length > 0" class="mt-2 flex gap-2">
+                                            <button @click="copyTeams(comparisonResults.matched, 'line')"
+                                                class="px-3 py-1 text-xs font-medium rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors duration-200">
+                                                Copy (One per Line)
+                                            </button>
+                                            <button @click="copyTeams(comparisonResults.matched, 'comma')"
+                                                class="px-3 py-1 text-xs font-medium rounded bg-green-500 text-white hover:bg-green-600 transition-colors duration-200">
+                                                Copy (Comma Separated)
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Extra Teams (in submission but not in input) -->
+                                <div>
+                                    <h4 class="text-sm font-medium text-blue-700 flex items-center">
+                                        <Icon icon="mdi:information-outline" class="mr-1" />
+                                        Additional Teams (in submission but not in your input list)
+                                    </h4>
+                                    <div class="mt-2">
+                                        <div v-if="comparisonResults.extra.length === 0" class="text-sm text-gray-500">
+                                            No additional teams found
+                                        </div>
+                                        <div v-else class="flex flex-wrap gap-2 mt-1">
+                                            <span v-for="team in comparisonResults.extra" :key="team"
+                                                class="px-2 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                                                {{ team }}
+                                            </span>
+                                        </div>
+                                        <!-- Copy Buttons -->
+                                        <div v-if="comparisonResults.extra.length > 0" class="mt-2 flex gap-2">
+                                            <button @click="copyTeams(comparisonResults.extra, 'line')"
+                                                class="px-3 py-1 text-xs font-medium rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors duration-200">
+                                                Copy (One per Line)
+                                            </button>
+                                            <button @click="copyTeams(comparisonResults.extra, 'comma')"
+                                                class="px-3 py-1 text-xs font-medium rounded bg-green-500 text-white hover:bg-green-600 transition-colors duration-200">
+                                                Copy (Comma Separated)
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </section>
             </div>
         </main>
+    </div>
 
-        <!-- Image Modal -->
-        <Transition name="fade">
-            <div v-if="showImageModal"
-                class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
-                @click="closeImageModal">
-                <div class="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" @click.stop>
-                    <div class="flex justify-between items-center p-4 border-b border-gray-200">
-                        <h3 class="text-xl font-semibold text-gray-800">Robot Images</h3>
-                        <button @click="closeImageModal"
-                            class="text-gray-500 hover:text-gray-700 transition-colors duration-150 rounded-full p-1 hover:bg-gray-100">
-                            <Icon icon="mdi:close" class="text-2xl" />
-                        </button>
-                    </div>
-                    <div class="p-6">
-                        <div v-if="modalImages.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div v-for="(image, index) in modalImages" :key="index"
-                                class="flex flex-col items-center bg-gray-50 p-4 rounded-lg">
-                                <h4 class="font-semibold mb-2 text-indigo-700">{{ image.category }}</h4>
-                                <img :src="image.url" :alt="image.name"
-                                    class="max-w-full max-h-[40vh] object-contain rounded-lg shadow-md" />
-                                <p class="mt-2 text-center text-gray-700">{{ image.name }}</p>
-                                <p class="text-sm text-gray-500">{{ formatFileSize(image.size) }}</p>
-                            </div>
+    <!-- Image Modal -->
+    <Transition name="fade">
+        <div v-if="showImageModal"
+            class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+            @click="closeImageModal">
+            <div class="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" @click.stop>
+                <div class="flex justify-between items-center p-4 border-b border-gray-200">
+                    <h3 class="text-xl font-semibold text-gray-800">Robot Images</h3>
+                    <button @click="closeImageModal"
+                        class="text-gray-500 hover:text-gray-700 transition-colors duration-150 rounded-full p-1 hover:bg-gray-100">
+                        <Icon icon="mdi:close" class="text-2xl" />
+                    </button>
+                </div>
+                <div class="p-6">
+                    <div v-if="modalImages.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div v-for="(image, index) in modalImages" :key="index"
+                            class="flex flex-col items-center bg-gray-50 p-4 rounded-lg">
+                            <h4 class="font-semibold mb-2 text-indigo-700">{{ image.category }}</h4>
+                            <img :src="image.url" :alt="image.name"
+                                class="max-w-full max-h-[40vh] object-contain rounded-lg shadow-md" />
+                            <p class="mt-2 text-center text-gray-700">{{ image.name }}</p>
+                            <p class="text-sm text-gray-500">{{ formatFileSize(image.size) }}</p>
                         </div>
-                        <p v-else class="text-center text-gray-500 my-4">No images available</p>
                     </div>
+                    <p v-else class="text-center text-gray-500 my-4">No images available</p>
                 </div>
             </div>
-        </Transition>
-    </div>
+        </div>
+    </Transition>
+
+    <!-- Copy Confirmation Modal -->
+    <Transition name="fade">
+        <div v-if="showCopyModal"
+            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-6 max-w-md w-full shadow-lg border-t-4 border-indigo-500">
+                <h3 class="text-xl font-bold mb-4 text-indigo-600 flex items-center">
+                    <Icon icon="mdi:check-circle" class="mr-2 text-indigo-600" />
+                    Copied Teams
+                </h3>
+
+                <p class="mb-4 text-gray-600">
+                    The following teams have been copied to your clipboard:
+                </p>
+
+                <div class="bg-gray-100 p-4 rounded-md text-sm text-gray-800 overflow-auto max-h-40 border border-gray-300">
+                    <pre>{{ copiedText }}</pre>
+                </div>
+
+                <div class="flex justify-end mt-4">
+                    <button @click="closeCopyModal"
+                        class="px-4 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600 shadow-md">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </Transition>
+
+    <!-- Error Modal -->
+    <Transition name="fade">
+        <div v-if="showErrorModal"
+            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-6 max-w-md w-full shadow-lg border-t-4 border-red-500">
+                <h3 class="text-xl font-bold mb-4 text-red-600 flex items-center">
+                    <Icon icon="mdi:alert-circle" class="mr-2 text-red-600" />
+                    Error
+                </h3>
+
+                <p class="mb-4 text-gray-600">
+                    {{ errorMessage }}
+                </p>
+
+                <div class="flex justify-end">
+                    <button @click="closeErrorModal"
+                        class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 shadow-md">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </Transition>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, onUnmounted } from "vue";
+import { ref, onMounted, computed, onUnmounted, watch } from "vue";
 import axios from "axios";
 import { Icon } from "@iconify/vue";
 import { Bar } from "vue-chartjs";
 import { throttle } from "lodash";
+import { casdoorService } from "@/services/auth";
+import CachedAvatar from "@/components/common/CachedAvatar.vue";
 import {
     Chart as ChartJS,
     Title,
@@ -535,9 +946,7 @@ ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
 
 // Define interfaces
 interface SurveyData {
-    [x: string]:
-    /// <reference types="../../../../node_modules/.vue-global-types/vue_3.5_0_0_0.d.ts" />
-    any;
+    [x: string]: any;
     id: number;
     event_id: string;
     form_id: string;
@@ -553,6 +962,17 @@ interface SurveyData {
         userId: string;
         avatar: string;
         email: string;
+        firstName?: string;
+        lastName?: string;
+    };
+    userData?: {
+        username: string;
+        displayName: string;
+        userId: string;
+        avatar: string;
+        email: string;
+        firstName?: string;
+        lastName?: string;
     };
     user_agent?: string;
     ip?: string;
@@ -615,6 +1035,8 @@ interface SubmissionUser {
     username: string;
     displayName: string;
     userId: string;
+    firstName?: string;
+    lastName?: string;
     avatar?: string;
     count: number;
     lastSubmission: string;
@@ -639,6 +1061,7 @@ const queryParams = ref<QueryParams>({
 });
 const showImageModal = ref(false);
 const modalImages = ref<ModalImage[]>([]);
+const showEventRequiredError = ref(false);
 
 // Dynamic field selection
 const selectedFields = ref<string[]>([
@@ -680,10 +1103,24 @@ const touchScrolling = ref(false);
 const touchDragging = ref(false);
 const touchStartTime = ref(0);
 
+// Table sorting and pagination
+const sortField = ref('');
+const sortDirection = ref<'asc' | 'desc'>('asc');
+const currentPage = ref(1);
+const pageSize = ref(10);
+const tableFilter = ref('');
+
 // Throttled search function
 const handleSearch = throttle(async () => {
     if (isSearching.value) return;
-
+    
+    // Check if event is selected
+    if (!queryParams.value.eventId) {
+        showEventRequiredError.value = true;
+        return;
+    }
+    
+    showEventRequiredError.value = false;
     isSearching.value = true;
     try {
         await fetchData();
@@ -694,6 +1131,7 @@ const handleSearch = throttle(async () => {
 
 // Search throttling
 const handleEventChange = () => {
+    showEventRequiredError.value = false;
     handleSearch();
 };
 
@@ -725,7 +1163,16 @@ const fetchData = async () => {
     loading.value = true;
     error.value = "";
     try {
-        const response = await axios.get<SurveyData[]>("https://api.frc695.com/api/survey/query");
+        // 获取访问令牌
+        const token = casdoorService.getToken();
+        
+        // 添加授权请求头
+        const response = await axios.get<SurveyData[]>("https://api.team695.com/survey/query", {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
         surveyData.value = response.data.map(item => {
             // Parse JSON strings if needed
             if (typeof item.data === 'string') {
@@ -744,7 +1191,14 @@ const fetchData = async () => {
         });
     } catch (err: any) {
         console.error("Error fetching data:", err);
-        error.value = err.message || "Failed to fetch data. Please try again later.";
+        // 检查是否为授权错误
+        if (err.response && err.response.status === 401) {
+            error.value = "Authentication error. Please login again.";
+            // 可以选择重定向到登录页面
+            // window.location.href = '/login';
+        } else {
+            error.value = err.message || "Failed to fetch data. Please try again later.";
+        }
         surveyData.value = [];
     } finally {
         loading.value = false;
@@ -797,6 +1251,251 @@ const filteredSurveyData = computed(() => {
     });
 });
 
+// Get unique team count for the selected event
+const uniqueTeamCount = computed(() => {
+    const teams = new Set();
+    filteredSurveyData.value.forEach(survey => {
+        const teamNumber = getFieldValue(survey.data, "Team number");
+        if (teamNumber) {
+            teams.add(teamNumber);
+        }
+    });
+    return teams.size;
+});
+
+// Get last updated time
+const lastUpdatedTime = computed(() => {
+    if (filteredSurveyData.value.length === 0) return 'N/A';
+    
+    const timestamps = filteredSurveyData.value.map(survey => new Date(survey.timestamp).getTime());
+    const latestTimestamp = Math.max(...timestamps);
+    return formatDate(new Date(latestTimestamp).toISOString());
+});
+
+// Table filtering and sorting
+const filteredTableData = computed(() => {
+    if (!tableFilter.value.trim()) return filteredSurveyData.value;
+    
+    const searchTerm = tableFilter.value.toLowerCase();
+    return filteredSurveyData.value.filter(survey => {
+        // Search in team number
+        const teamNumber = getFieldValue(survey.data, "Team number")?.toString().toLowerCase() || '';
+        if (teamNumber.includes(searchTerm)) return true;
+        
+        // Search in user data - Use optional chaining and default values for object property access to avoid type errors
+        const userData = (survey.user_data || survey.userData || {}) as {
+            username?: string;
+            displayName?: string;
+        };
+        const username = userData.username?.toLowerCase() || '';
+        const displayName = userData.displayName?.toLowerCase() || '';
+        if (username.includes(searchTerm) || displayName.includes(searchTerm)) return true;
+        
+        // Search in selected fields
+        for (const field of selectedFields.value) {
+            const value = formatFieldValue(survey.data, field).toLowerCase();
+            if (value.includes(searchTerm)) return true;
+        }
+        
+        return false;
+    });
+});
+// Sort table data
+const sortTable = (field: string) => {
+    if (sortField.value === field) {
+        // Toggle direction if same field
+        sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
+    } else {
+        // New field, default to ascending
+        sortField.value = field;
+        sortDirection.value = 'asc';
+    }
+    
+    // Reset to first page when sorting
+    currentPage.value = 1;
+};
+
+// Get sort icon based on current sort state
+const getSortIcon = (field: string) => {
+    if (sortField.value !== field) return 'mdi:sort';
+    return sortDirection.value === 'asc' ? 'mdi:sort-ascending' : 'mdi:sort-descending';
+};
+
+// Sorted and filtered data
+const sortedTableData = computed(() => {
+    const data = [...filteredTableData.value];
+    
+    if (!sortField.value) return data;
+    
+    return data.sort((a, b) => {
+        let valueA, valueB;
+        
+        if (sortField.value === 'teamNumber') {
+            valueA = getFieldValue(a.data, "Team number") || '';
+            valueB = getFieldValue(b.data, "Team number") || '';
+        } else if (sortField.value === 'submittedBy') {
+            // Make sure to use optional chaining and default values for object property access to avoid type errors
+            const userDataA = (a.user_data || a.userData || {}) as { displayName?: string; username?: string };
+            const userDataB = (b.user_data || b.userData || {}) as { displayName?: string; username?: string };
+            
+            valueA = userDataA.displayName || userDataA.username || '';
+            valueB = userDataB.displayName || userDataB.username || '';
+        } else {
+            valueA = getFieldValue(a.data, sortField.value) || '';
+            valueB = getFieldValue(b.data, sortField.value) || '';
+        }
+        
+        // Process numbers and strings differently
+        if (typeof valueA === 'number' && typeof valueB === 'number') {
+            return sortDirection.value === 'asc' ? valueA - valueB : valueB - valueA;
+        }
+        
+        // Transform to string for comparison
+        const strA = String(valueA).toLowerCase();
+        const strB = String(valueB).toLowerCase();
+        
+        return sortDirection.value === 'asc' 
+            ? strA.localeCompare(strB) 
+            : strB.localeCompare(strA);
+    });
+});
+
+// Pagination
+const totalPages = computed(() => {
+    return Math.max(1, Math.ceil(sortedTableData.value.length / pageSize.value));
+});
+
+// Reset page when filter changes
+watch(tableFilter, () => {
+    currentPage.value = 1;
+});
+
+// Paginated data
+const paginatedAndFilteredData = computed(() => {
+    const startIndex = (currentPage.value - 1) * pageSize.value;
+    return sortedTableData.value.slice(startIndex, startIndex + pageSize.value);
+});
+
+// Pagination display values
+const paginationStart = computed(() => {
+    if (sortedTableData.value.length === 0) return 0;
+    return (currentPage.value - 1) * pageSize.value + 1;
+});
+
+const paginationEnd = computed(() => {
+    if (sortedTableData.value.length === 0) return 0;
+    return Math.min(currentPage.value * pageSize.value, sortedTableData.value.length);
+});
+
+// Export to CSV
+const exportToCSV = () => {
+    if (filteredSurveyData.value.length === 0) {
+        showError('No data to export');
+        return;
+    }
+    
+    try {
+        // 创建表头
+        const headers = ['Team Number', 'Submitted By', 'Timestamp', ...selectedFields.value];
+        
+        // 创建数据行
+        const rows = filteredSurveyData.value.map(survey => {
+            // 使用类型断言确保访问安全
+            const userData = (survey.user_data || survey.userData || {}) as {
+                displayName?: string;
+                username?: string;
+            };
+            
+            const row = [
+                getFieldValue(survey.data, "Team number") || 'N/A',
+                userData.displayName || userData.username || 'Unknown',
+                formatDate(survey.timestamp)
+            ];
+            
+            // 为每个选定的字段添加数据
+            selectedFields.value.forEach(field => {
+                row.push(formatFieldValue(survey.data, field));
+            });
+            
+            return row;
+        });
+        
+        // Combine headers and rows
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+        ].join('\n');
+        
+        // Create download link
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `${queryParams.value.eventId || 'pit-scouting'}_export_${new Date().toISOString().slice(0,10)}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    } catch (err) {
+        console.error('Error exporting CSV:', err);
+        showError('Failed to export data');
+    }
+};
+
+// Get initials for user avatar
+const getUserInitialsValue = (user: SubmissionUser): string => {
+    if (user.firstName && user.lastName) {
+        return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
+    }
+    
+    if (user.displayName) {
+        const parts = user.displayName.trim().split(/\s+/);
+        if (parts.length >= 2) {
+            return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+        }
+        return user.displayName.substring(0, 2).toUpperCase();
+    }
+    
+    if (user.username) {
+        return user.username.substring(0, 2).toUpperCase();
+    }
+    
+    return user.userId.substring(0, 2).toUpperCase();
+};
+
+// Get initials from survey user data
+const getUserInitialsFromSurvey = (survey: SurveyData): string => {
+    // Make sure userData is a valid object by providing a default value to avoid empty object access issues
+    const userData = (survey.user_data || survey.userData || {}) as {
+        firstName?: string;
+        lastName?: string;
+        displayName?: string;
+        username?: string;
+        userId?: string;
+    };
+    
+    if (userData.firstName && userData.lastName) {
+        return `${userData.firstName[0]}${userData.lastName[0]}`.toUpperCase();
+    }
+    
+    if (userData.displayName) {
+        const parts = userData.displayName.trim().split(/\s+/);
+        if (parts.length >= 2) {
+            return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+        }
+        return userData.displayName.substring(0, 2).toUpperCase();
+    }
+    
+    if (userData.username) {
+        return userData.username.substring(0, 2).toUpperCase();
+    }
+    
+    return (userData.userId || 'XX').substring(0, 2).toUpperCase();
+};
+
+// Add comment to indicate this is intentionally unused variable
+// @ts-ignore
+// eslint-disable-next-line no-unused-vars
 const groupedSurveyData = computed(() => {
     const grouped: Record<string, SurveyData[]> = {};
     filteredSurveyData.value.forEach(survey => {
@@ -853,6 +1552,28 @@ const filteredChartFields = computed(() => {
     const measurementRegex = /height|width|weight|length/i;
     return availableChartFields.value.filter(field => !measurementRegex.test(field));
 });
+
+
+// For team number expansion in Submission Users
+const expandedTeams = ref<Record<string, string[]>>({});
+
+const toggleTeamExpand = (userId: string, eventId: string) => {
+    const key = `${userId}-${eventId}`;
+    if (!expandedTeams.value[key]) {
+        expandedTeams.value[key] = [];
+    }
+
+    if (expandedTeams.value[key].includes(eventId)) {
+        expandedTeams.value[key] = expandedTeams.value[key].filter(id => id !== eventId);
+    } else {
+        expandedTeams.value[key].push(eventId);
+    }
+};
+
+const isTeamExpanded = (userId: string, eventId: string): boolean => {
+    const key = `${userId}-${eventId}`;
+    return expandedTeams.value[key]?.includes(eventId) || false;
+};
 
 
 // ------ Data Table Functions ------ //
@@ -920,6 +1641,8 @@ const submissionUsers = computed(() => {
                     userId,
                     username: survey.user_data.username || 'Unknown',
                     displayName: survey.user_data.displayName || survey.user_data.username || 'Unknown',
+                    firstName: survey.user_data.firstName,
+                    lastName: survey.user_data.lastName,
                     avatar: survey.user_data.avatar || '',
                     count: 0,
                     lastSubmission: survey.timestamp,
@@ -1480,6 +2203,126 @@ const resetColumns = () => {
         "Additional Comments"
     ];
     savePreferences();
+};
+
+// ----- Team Comparison Functions ------ //
+const comparisonEventId = ref('');
+const teamNumbersInput = ref('');
+const comparisonResults = ref({
+    show: false,
+    matched: [] as string[],
+    missing: [] as string[],
+    extra: [] as string[]
+});
+
+const compareTeams = () => {
+    if (!comparisonEventId.value || !teamNumbersInput.value.trim()) {
+        return;
+    }
+
+    // Parse input team numbers (support both comma-separated and newline-separated)
+    const inputTeams = teamNumbersInput.value
+        .split(/[\n,]+/)
+        .map(team => team.trim())
+        .filter(team => team !== '')
+        .sort((a, b) => {
+            // Sort numerically if possible
+            const numA = parseInt(a);
+            const numB = parseInt(b);
+            if (!isNaN(numA) && !isNaN(numB)) {
+                return numA - numB;
+            }
+            return a.localeCompare(b);
+        });
+
+    // Get all team numbers from the selected event
+    const eventTeams = surveyData.value
+        .filter(survey => survey.event_id === comparisonEventId.value)
+        .map(survey => getFieldValue(survey.data, "Team number"))
+        .filter(team => team !== undefined && team !== null)
+        .sort((a, b) => {
+            // Sort numerically if possible
+            const numA = parseInt(a);
+            const numB = parseInt(b);
+            if (!isNaN(numA) && !isNaN(numB)) {
+                return numA - numB;
+            }
+            return a.localeCompare(b);
+        });
+
+    // Find matches, missing, and extra teams
+    const matched = inputTeams.filter(team => eventTeams.includes(team));
+    const missing = inputTeams.filter(team => !eventTeams.includes(team));
+    const extra = eventTeams.filter(team => !inputTeams.includes(team));
+
+    // Update results
+    comparisonResults.value = {
+        show: true,
+        matched,
+        missing,
+        extra
+    };
+};
+
+const showSQLModal = ref(false);
+const sqlQuery = computed(() => {
+    // Get the year and event code from the comparisonEventId
+    // Default to 'your_event_code' if not provided
+    const [year, eventCodeRaw] = (comparisonEventId.value || 'your_event_code').split('_');
+    const currentYear = parseInt(year) || new Date().getFullYear(); // If year is not valid, use current year
+    const eventCode = eventCodeRaw?.toLowerCase() || 'your_event_code'; // Transform to lowercase
+
+    return `SELECT DISTINCT team_master_tm_number FROM game_matchup WHERE frc_season_master_sm_year = ${currentYear} AND competition_master_cm_event_code = '${eventCode}'`;
+});
+
+const openSQLModal = () => {
+    if (!comparisonEventId.value) {
+        showError('Please select an event first.');
+        return;
+    }
+    showSQLModal.value = true;
+};
+
+const closeSQLModal = () => {
+    showSQLModal.value = false;
+};
+
+const copySQLQuery = () => {
+    navigator.clipboard.writeText(sqlQuery.value).then(() => {
+        showCopyModal.value = true;
+        copiedText.value = sqlQuery.value;
+    }).catch(() => {
+        showError('Failed to copy SQL query.');
+    });
+};
+
+const showErrorModal = ref(false);
+const errorMessage = ref('');
+const showCopyModal = ref(false);
+const copiedText = ref('');
+
+const showError = (message: string) => {
+    errorMessage.value = message;
+    showErrorModal.value = true;
+};
+
+const closeCopyModal = () => {
+    showCopyModal.value = false;
+};
+
+const closeErrorModal = () => {
+    showErrorModal.value = false;
+};
+
+const copyTeams = (teams: string[], format: 'line' | 'comma') => {
+    const text = format === 'line' ? teams.join('\n') : teams.join(', ');
+    navigator.clipboard.writeText(text).then(() => {
+        copiedText.value = text;
+        showCopyModal.value = true;
+    }).catch((err) => {
+        console.error('Failed to copy text:', err);
+        showError('Failed to copy teams to clipboard.');
+    });
 };
 </script>
 

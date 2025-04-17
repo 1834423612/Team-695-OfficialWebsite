@@ -9,7 +9,7 @@
     </div>
 
     <main class="-mt-32 w-full flex justify-center">
-      <div class="mx-auto md:mx-8 max-w-7xl px-4 pb-12 sm:px-6 lg:px-8 w-full">
+      <div class="mx-auto md:mx-8 max-w-7xl px-2 pb-12 sm:px-6 lg:px-8 w-full">
         <div class="bg-white rounded-lg shadow px-5 py-6 sm:px-6">
           <!-- Tabs -->
           <div class="mb-6 bg-gray-50 rounded-md p-4 border-2 border-dashed border-amber-500">
@@ -49,7 +49,7 @@
               </button>
             </div>
             <p class="mt-2 text-sm text-gray-600">Use the debug tools to inspect and modify form data.</p> -->
-            <div class="flex justify-between items-center space-x-2">
+            <div class="flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
               <!-- Reset Form Button (left side) -->
               <button @click="showResetModal = true; resetReason = 'manual';"
                 class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors duration-200 flex items-center">
@@ -64,8 +64,8 @@
                 </span>
               </div>
 
-              <!-- Debug Tools (right side) -->
-              <div class="flex space-x-2">
+              <!-- Debug Tools (right side, moved to a new row on mobile) -->
+              <div class="w-full sm:w-auto flex justify-end">
                 <DebugTools />
               </div>
             </div>
@@ -105,17 +105,71 @@
               </div>
             </Transition>
           </div>
-
           <!-- Event ID and Form ID -->
           <div
-            class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 bg-gray-50 p-4 rounded-md border-2 border-dotted border-pink-500">
-            <div class="mb-2 sm:mb-0">
-              <span class="text-sm font-medium text-gray-500">Event ID:</span>
-              <span class="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-sm">{{ eventId }}</span>
+            class="flex flex-col justify-start items-start mb-6 bg-gray-50 p-4 rounded-lg shadow-sm border-2 border-indigo-300">
+            <div class="w-full mb-3 flex flex-col sm:flex-row items-start sm:items-center">
+              <span
+                class="text-xs sm:text-base font-medium text-gray-600 mb-1 sm:mb-0 sm:mr-2 min-w-[50px] inline-block">
+                Event ID:
+              </span>
+              <div class="flex items-center w-full sm:w-auto">
+                <span
+                  class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-md text-xs sm:text-base font-medium shadow-sm border border-blue-200 overflow-hidden text-ellipsis whitespace-nowrap inline-block">
+                  {{ eventId }}
+                </span>
+                <button @click="copyToClipboard(eventId)"
+                  class="ml-1 text-gray-500 hover:text-indigo-600 focus:outline-none" title="Copy to clipboard">
+                  <Icon icon="mdi:content-copy" class="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
-            <div>
-              <span class="text-sm font-medium text-gray-500">Form ID:</span>
-              <span class="ml-2 px-2 py-1 bg-green-100 text-green-800 rounded-md text-sm">{{ currentFormId }}</span>
+            <div class="w-full flex flex-col sm:flex-row items-start sm:items-center">
+              <span
+                class="text-xs sm:text-base font-medium text-gray-600 mb-1 sm:mb-0 sm:mr-2 min-w-[50px] inline-block">
+                Form ID:
+              </span>
+              <div class="flex items-center w-full sm:w-auto">
+                <span
+                  class="px-2 py-0.5 bg-green-100 text-green-800 rounded-md text-xs sm:text-base font-medium shadow-sm border border-green-200 overflow-hidden text-ellipsis whitespace-nowrap inline-block">
+                  {{ currentFormId }}
+                </span>
+                <button @click="copyToClipboard(currentFormId)"
+                  class="ml-1 text-gray-500 hover:text-indigo-600 focus:outline-none" title="Copy to clipboard">
+                  <Icon icon="mdi:content-copy" class="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+            <!-- 2025/04/15 Feat: Shows the current user's assignment task -->
+            <div v-if="userAssignments.length > 0" class="w-full mt-3">
+              <span class="text-xs sm:text-base font-medium text-gray-600 mb-1 inline-block">
+                Your Assigned Teams:
+              </span>
+              <div class="flex flex-wrap gap-2 mt-1">
+                <div v-for="assignment in filteredPitAssignments" :key="assignment.id" class="bg-blue-50 p-2 rounded-lg border border-blue-200">
+                  <h4 class="text-sm font-medium text-gray-700">{{ assignment.task_type === 'pit-scouting' ? 'Pit Scouting' : 'Match Scouting' }}</h4>
+                  <div v-if="assignment.assigned_team_numbers && assignment.assigned_team_numbers.length > 0" class="mt-1 flex flex-wrap gap-1">
+                    <span v-for="teamNumber in assignment.assigned_team_numbers" :key="teamNumber" 
+                      :class="[
+                        'px-3 py-1 text-xs font-medium rounded-full flex items-center transition-all duration-200 cursor-pointer transform hover:scale-105', 
+                        teamNumber.toString() === formFields[0]?.value 
+                          ? 'bg-green-100 text-green-800 border border-green-300 shadow-sm' 
+                          : 'bg-gray-100 text-gray-800 hover:bg-blue-50 hover:text-blue-700 hover:border hover:border-blue-200'
+                      ]"
+                      @click="selectAssignedTeam(teamNumber)">
+                      <Icon icon="mdi:robot" class="h-3.5 w-3.5 mr-1" />
+                      Team {{ teamNumber }}
+                      <span v-if="isPitCompleted(teamNumber)" class="ml-1 text-green-600 flex items-center">
+                        <Icon icon="mdi:check-circle" class="h-3.5 w-3.5" />
+                      </span>
+                      <Icon v-else icon="mdi:arrow-right-circle" class="ml-1 h-3.5 w-3.5 text-blue-500" />
+                    </span>
+                  </div>
+                  <div v-else class="text-xs text-gray-500 mt-1">
+                    No teams assigned for pit scouting
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -145,7 +199,7 @@
           </div>
 
           <!-- Form Fields -->
-          <form @submit.prevent="confirmSubmitForm">
+          <form @submit.prevent="submitForm">
             <div v-for="(field, index) in formFields" :key="index" class="mb-6">
               <label :for="'field-' + index" class="block text-sm font-medium text-gray-700 mb-1">
                 {{ field.question }}
@@ -182,7 +236,7 @@
               <!-- Input fields -->
               <div v-if="field.type === 'text' || field.type === 'number'" class="relative rounded-md shadow-sm">
                 <input :id="'field-' + index" :type="field.type" v-model="field.value" :required="field.required"
-                  :class="[
+                  :step="field.type === 'number' ? 'any' : undefined" :class="[
                     'block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6',
                     'px-3',
                     field.error ? 'ring-red-300 placeholder:text-red-300 focus:ring-red-500' : 'ring-gray-300 placeholder:text-gray-400 focus:ring-indigo-600'
@@ -284,7 +338,7 @@
                     <img :src="image.url" :alt="image.name" class="w-full h-32 object-cover rounded-lg" />
                     <div class="mt-2 text-xs text-gray-600 truncate">{{ image.name }}</div>
                     <div class="text-xs text-gray-500">{{ formatFileSize(image.size) }}</div>
-                    <button @click="confirmRemoveImage(imageType as 'fullRobot' | 'driveTrain', index)"
+                    <button @click.stop="confirmRemoveImage(imageType as 'fullRobot' | 'driveTrain', index)"
                       class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 focus:outline-none">
                       <Icon icon="mdi:close" />
                     </button>
@@ -383,14 +437,17 @@ const formatEventId = (id: string): string => {
 };
 
 const tabs = ref<Tab[]>([{ name: "Tab 1", formData: [], formId: uuidv4() }]);
+const formFields = ref<FormField[]>([]);
 const currentTab = ref(0);
 const eventId = ref("");
 
 const currentFormId = computed(() => tabs.value[currentTab.value].formId);
 
+
 // Form versioning control
-const FORM_VERSION = "2025.4.3"; // Update this when you want to force a form reset
+const FORM_VERSION = "2025.4.15_PROD_ED6"; // Update this when you want to force a form reset
 const FORM_VERSION_KEY = "pit-scouting-form-version";
+
 
 // For reset modal
 const showResetModal = ref(false);
@@ -445,167 +502,268 @@ const cancelReset = () => {
 };
 
 // Form Questions and Fields info
-const formFields = ref<FormField[]>([
-  {
-    question: "Team number",
-    type: "autocomplete",
-    required: true,
-    value: null,
-    originalIndex: 0
-  },
-  {
-    i: "https://lh7-us.googleusercontent.com/pUWvHrPDa5IfrQcFalk4lO0e4PhD3sLMP0jyLJU8PTWWGfw5r-Wa4qDQNHhbu0byYLzXScP5lfTSUCsvbNI-FlwDY2L7Ra0-TgYqf5Eabw0INSFE3ah4QCqCqHFrsaPKyCOt8m2Yo-H2ie9E7apzh6c8AO147A",
-    w: "50%",
-    question: "Type of drive train",
-    description: "Select the type of drive train used in your robot design.",
-    type: "radio",
-    options: [
-      'Tank Drive ("skid steer", plates on both sides of wheels)',
-      "West Coast Drive (wheels mounted off one side of tube)",
-      "Swerve Drive",
-      "Other",
-    ],
-    optionValues: [
-      'Tank Drive',
-      "West Coast Drive",
-      "Swerve Drive",
-      "Other",
-    ],
-    value: null,
-    required: true,
-    showOtherInput: false,
-    otherValue: "",
-    showDescription: false,
-    originalIndex: 1
-  },
-  {
-    i: "https://lh7-us.googleusercontent.com/PCI7CaG88MiY50L7AM0CVTs9dRd3NQgqW4B2rd64vmjHaNDMEHR0EkWYqv-rzHBnGBC08NzWtr7W97lIk226Q9WVCPuTKuOSZcpb6eyNC5Q3HGmFQwp8005gRcxiS09RjeWUJQJTK-vQGDWd0QAbpSipLSkExw",
-    w: "100%",
-    question: "Type of wheels used",
-    description: "Choose the type of wheels used on your robot.",
-    type: "radio",
-    options: [
-      "Traction",
-      "Mecanum (rollers at 45° angle)",
-      "Omni (rollers at 90° angle)",
-      "Other",
-    ],
-    optionValues: [
-      "Traction",
-      "Mecanum",
-      "Omni",
-      "Other",
-    ],
-    value: null,
-    required: true,
-    showOtherInput: false,
-    otherValue: "",
-    showDescription: false,
-    originalIndex: 2
-  },
-  {
-    question: "Intake Use:",
-    type: "checkbox",
-    options: ["Ground", "Station", "None", "Other"],
-    optionValues: ["Ground", "Station", "None", "Other"],
-    value: [],
-    required: true,
-    showOtherInput: false,
-    otherValue: "",
-    originalIndex: 3
-  },
-  {
-    question: "Scoring Locations:",
-    type: "checkbox",
-    options: ["L1", "L2", "L3", "L4", "Algae in Processor", "Algae in Net", "Other"],
-    optionValues: ["L1", "L2", "L3", "L4", "Algae in Processor", "Algae in Net", "Other"],
-    value: [],
-    required: true,
-    showOtherInput: false,
-    otherValue: "",
-    originalIndex: 4
-  },
-  {
-    question: "Cage Climbing:",
-    type: "checkbox",
-    options: ["Deep Climb", "Shallow Climb", "No Climb"],
-    optionValues: ["Deep Climb", "Shallow Climb", "No Climb"],
-    value: [],
-    required: true,
-    originalIndex: 5
-  },
-  {
-    question: "Robot Weight",
-    description: "Enter the weight of the robot in pounds.",
-    type: "number",
-    required: true,
-    value: null,
-    originalIndex: 6
-  },
-  {
-    question: "Robot Length",
-    description: "Enter the length of the robot in inches without bumpers(front to back).",
-    type: "number",
-    required: true,
-    value: null,
-    originalIndex: 7
-  },
-  {
-    question: "Robot Width",
-    description: "Enter the width of the robot in inches without bumpers(left to right).",
-    type: "number",
-    required: true,
-    value: null,
-    originalIndex: 8
-  },
-  {
-    question: "Robot Height",
-    description: "Enter the height of the robot in inches from the floor to the highest point on the robot at the start of the match.",
-    type: "number",
-    required: true,
-    value: null,
-    originalIndex: 9
-  },
-  {
-    question: "Height when fully extended",
-    description: "In inches.",
-    type: "number",
-    required: true,
-    value: null,
-    originalIndex: 10
-  },
-  {
-    question: "Drive Team Members",
-    type: "radio",
-    options: [
-      "One person driving and operating the robot during a match",
-      "Other",
-    ],
-    optionValues: [
-      "One person driving and operating the robot during a match",
-      "Other",
-    ],
-    value: null,
-    required: true,
-    showOtherInput: false,
-    otherValue: "",
-    originalIndex: 11
-  },
-  {
-    question: "Hours/Weeks of Practice",
-    type: "text",
-    required: true,
-    value: null,
-    originalIndex: 12
-  },
-  {
-    question: "Additional Comments",
-    type: "textarea",
-    required: false,
-    value: null,
-    originalIndex: 13
-  },
-]);
+const initializeDefaultFormFields = () => {
+  // Make sure we're working with the original form field definitions
+  const defaultFields = [
+    {
+      question: "Team number",
+      type: "autocomplete",
+      required: true,
+      value: null,
+      originalIndex: 0
+    },
+    {
+      i: "https://lh7-us.googleusercontent.com/pUWvHrPDa5IfrQcFalk4lO0e4PhD3sLMP0jyLJU8PTWWGfw5r-Wa4qDQNHhbu0byYLzXScP5lfTSUCsvbNI-FlwDY2L7Ra0-TgYqf5Eabw0INSFE3ah4QCqCqHFrsaPKyCOt8m2Yo-H2ie9E7apzh6c8AO147A",
+      w: "50%",
+      question: "Type of drive train",
+      description: "Select the type of drive train used in your robot design.",
+      type: "radio",
+      options: [
+        'Tank Drive ("skid steer", plates on both sides of wheels)',
+        "West Coast Drive (wheels mounted off one side of tube)",
+        "Swerve Drive",
+        "Other",
+      ],
+      optionValues: [
+        'Tank Drive',
+        "West Coast Drive",
+        "Swerve Drive",
+        "Other",
+      ],
+      value: null,
+      required: true,
+      showOtherInput: false,
+      otherValue: "",
+      showDescription: false,
+      originalIndex: 1
+    },
+    {
+      i: "https://lh7-us.googleusercontent.com/PCI7CaG88MiY50L7AM0CVTs9dRd3NQgqW4B2rd64vmjHaNDMEHR0EkWYqv-rzHBnGBC08NzWtr7W97lIk226Q9WVCPuTKuOSZcpb6eyNC5Q3HGmFQwp8005gRcxiS09RjeWUJQJTK-vQGDWd0QAbpSipLSkExw",
+      w: "100%",
+      question: "Type of wheels used",
+      description: "Choose the type of wheels used on your robot.",
+      type: "radio",
+      options: [
+        "Traction",
+        "Mecanum (rollers at 45° angle)",
+        "Omni (rollers at 90° angle)",
+        "Other",
+      ],
+      optionValues: [
+        "Traction",
+        "Mecanum",
+        "Omni",
+        "Other",
+      ],
+      value: null,
+      required: true,
+      showOtherInput: false,
+      otherValue: "",
+      showDescription: false,
+      originalIndex: 2
+    },
+    {
+      question: "Intake Use:",
+      type: "checkbox",
+      options: ["Ground", "Station", "None", "Other"],
+      optionValues: ["Ground", "Station", "None", "Other"],
+      value: [],
+      required: true,
+      showOtherInput: false,
+      otherValue: "",
+      originalIndex: 3
+    },
+    {
+      question: "Coral Acquisition(Scoring Method):",
+      type: "radio",
+      options: ["None", "Coral Station Only", "Floor Only", "Coral Station and Floor"],
+      optionValues: ["None", "Coral Station Only", "Floor Only", "Coral Station and Floor"],
+      value: null,
+      required: true,
+      showOtherInput: false,
+      otherValue: "",
+      originalIndex: 4
+    },
+    {
+      question: "Scoring Locations:",
+      type: "checkbox",
+      options: ["L1", "L2", "L3", "L4", "Algae in Processor", "Algae in Net", "Other"],
+      optionValues: ["L1", "L2", "L3", "L4", "Algae in Processor", "Algae in Net", "Other"],
+      value: [],
+      required: true,
+      showOtherInput: false,
+      otherValue: "",
+      originalIndex: 5
+    },
+    {
+      question: "Algae Acquisition(Scoring Method):",
+      type: "radio",
+      options: ["None", "Reef Only", "Floor Only", "Reef and Floor"],
+      optionValues: ["None", "Reef Only", "Floor Only", "Reef and Floor"],
+      value: null,
+      required: true,
+      showOtherInput: false,
+      otherValue: "",
+      originalIndex: 6
+    },
+    {
+      question: "Algae Scoring:",
+      type: "radio",
+      options: ["None", "Processor Only", "Net Only", "Processor and Net"],
+      optionValues: ["None", "Processor Only", "Net Only", "Processor and Net"],
+      value: null,
+      required: true,
+      showOtherInput: false,
+      otherValue: "",
+      originalIndex: 7
+    },
+    {
+      question: "Cage Climbing:",
+      type: "checkbox",
+      options: ["Deep Climb", "Shallow Climb", "No Climb"],
+      optionValues: ["Deep Climb", "Shallow Climb", "No Climb"],
+      value: [],
+      required: true,
+      originalIndex: 8
+    },
+    {
+      question: "Robot leaves their Starting Zone during autonomous?",
+      type: "radio",
+      options: ["Yes", "No"],
+      optionValues: ["Yes", "No"],
+      value: null,
+      required: true,
+      showOtherInput: false,
+      otherValue: "",
+      originalIndex: 9
+    },
+    {
+      question: "Robot Weight (without Bumpers)",
+      description: "Enter the weight of the robot in pounds.",
+      type: "number",
+      required: true,
+      value: null,
+      originalIndex: 10
+    },
+    {
+      question: "Bumpers Weight",
+      description: "Enter the weight of the bumpers in pounds.",
+      type: "number",
+      required: true,
+      value: null,
+      originalIndex: 11
+    },
+    {
+      question: "Robot Length (without Bumpers)",
+      description: "Enter the length of the robot in inches without bumpers(front to back).",
+      type: "number",
+      required: true,
+      value: null,
+      originalIndex: 12
+    },
+    {
+      question: "Robot Width (without Bumpers)",
+      description: "Enter the width of the robot in inches without bumpers(left to right).",
+      type: "number",
+      required: true,
+      value: null,
+      originalIndex: 13
+    },
+    {
+      question: "Robot Height",
+      description: "Enter the height of the robot in inches from the floor to the highest point on the robot at the start of the match.",
+      type: "number",
+      required: true,
+      value: null,
+      originalIndex: 14
+    },
+    {
+      question: "Height when fully extended",
+      description: "In inches.",
+      type: "number",
+      required: true,
+      value: null,
+      originalIndex: 15
+    },
+    {
+      question: "Drive Team Members",
+      type: "radio",
+      options: [
+        "One person driving and operating the robot during a match",
+        "Other",
+      ],
+      optionValues: [
+        "One person driving and operating the robot during a match",
+        "Other",
+      ],
+      value: null,
+      required: true,
+      showOtherInput: false,
+      otherValue: "",
+      originalIndex: 16
+    },
+    {
+      question: "Hours/Weeks of Practice",
+      type: "text",
+      required: true,
+      value: null,
+      originalIndex: 17
+    },
+    {
+      question: "Additional Comments",
+      type: "textarea",
+      required: false,
+      value: null,
+      originalIndex: 18
+    },
+  ];
+  
+  // Set formFields to the default fields
+  formFields.value = JSON.parse(JSON.stringify(defaultFields));
+  
+  // Create a new tab with these default fields
+  tabs.value = [
+    {
+      name: "Tab 1",
+      formData: JSON.parse(JSON.stringify(defaultFields)),
+      formId: uuidv4(),
+    },
+  ];
+  
+  currentTab.value = 0;
+  
+  // Save to localStorage to ensure persistence
+  saveToLocalStorage();
+};
+
+// Ensure form fields are always available
+const ensureFormFieldsExist = () => {
+  if (!formFields.value || formFields.value.length === 0) {
+    // If formFields is empty, reinitialize with default values
+    initializeDefaultFormFields();
+  }
+};
+
+onMounted(async () => {
+  // Initialize the store to get user data
+  userStore.initializeStore();
+  
+  await loadTeams('');
+  await loadEventId();
+  
+  // Load data from localStorage
+  loadFromLocalStorage();
+  
+  // Ensure form fields exist after loading
+  ensureFormFieldsExist();
+  
+  // Check if form version has changed
+  const storedVersion = localStorage.getItem(FORM_VERSION_KEY);
+  if (storedVersion !== FORM_VERSION) {
+    resetReason.value = "version-change";
+    showResetModal.value = true;
+  }
+});
 
 const fullRobotImages = ref<ImageData[]>([]);
 const driveTrainImages = ref<ImageData[]>([]);
@@ -660,7 +818,14 @@ const filteredTeamSuggestions = computed(() => {
 
 const loadEventId = async () => {
   try {
-    const response = await fetch("https://api.frc695.com/api/event/event-id");
+    // Get the access token
+    const token = casdoorService.getToken();
+    
+    const response = await fetch("https://api.team695.com/api/event/event-id", {
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : ''
+      }
+    });
     const data = await response.json();
     eventId.value = data.eventId;
   } catch (error) {
@@ -758,7 +923,7 @@ const clearCurrentTab = () => {
       formFields.value.map((field) => ({
         ...field,
         value: field.type === "checkbox" ? [] : null,
-        otherValue: "",
+        otherValue: "", // Ensure otherValue is cleared
         error: undefined,
       }))
     )
@@ -807,7 +972,14 @@ const selectTeam = (team: Team) => {
 
 const loadTeams = async (query: string) => {
   try {
-    const response = await fetch(`https://api.frc695.com/api/team/teams?query=${query}&limit=20`);
+    // Get the access token
+    const token = casdoorService.getToken();
+    
+    const response = await fetch(`https://api.team695.com/api/team/teams?query=${query}&limit=20`, {
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : ''
+      }
+    });
     const data = await response.json();
     teamSuggestions.value = data;
   } catch (error) {
@@ -875,8 +1047,14 @@ const uploadImage = async (type: "fullRobot" | "driveTrain", file: File) => {
   formData.append("type", type);
 
   try {
-    const response = await fetch("https://api.frc695.com/api/upload/upload", {
+    // Get the access token
+    const token = casdoorService.getToken();
+    
+    const response = await fetch("https://api.team695.com/api/upload/upload", {
       method: "POST",
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : ''
+      },
       body: formData,
     });
     const data = await response.json();
@@ -926,7 +1104,15 @@ const confirmRemoveImage = (
 const removeImage = async (type: "fullRobot" | "driveTrain", index: number) => {
   try {
     const imageId = type === "fullRobot" ? fullRobotImages.value[index].id : driveTrainImages.value[index].id;
-    await axios.delete(`https://api.frc695.com/api/images/${imageId}`);
+    
+    // Get the access token
+    const token = casdoorService.getToken();
+    
+    await axios.delete(`https://api.team695.com/api/images/${imageId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
 
     if (type === "fullRobot") {
       fullRobotImages.value.splice(index, 1);
@@ -966,14 +1152,16 @@ const formatFileSize = (bytes: number): string => {
 
 // Escape special characters in input values to prevent JSON parsing issues
 const escapeInput = (input: string): string => {
+  // Don't escape these common characters that don't affect JSON structure
+  const needsEscape = /[\\"\{\}\[\]<>&]/g;
+  
+  if (!needsEscape.test(input)) {
+    return input; // No need to escape if no special characters
+  }
+  
   return input
     .replace(/\\/g, "\\\\") // Escape backslash
     .replace(/"/g, '\\"')   // Escape double quotes
-    .replace(/'/g, "\\'")   // Escape single quotes
-    .replace(/`/g, "\\`")   // Escape backticks
-    .replace(/\//g, "\\/")  // Escape forward slash
-    .replace(/\$/g, "\\$")  // Escape dollar sign
-    .replace(/%/g, "\\%")   // Escape percent sign
     .replace(/\{/g, "\\{")  // Escape left curly brace
     .replace(/\}/g, "\\}")  // Escape right curly brace
     .replace(/\[/g, "\\[")  // Escape left square bracket
@@ -981,39 +1169,28 @@ const escapeInput = (input: string): string => {
     .replace(/</g, "&lt;")  // Escape less-than sign (HTML entity)
     .replace(/>/g, "&gt;")  // Escape greater-than sign (HTML entity)
     .replace(/&/g, "&amp;") // Escape ampersand (HTML entity)
-    .replace(/\(/g, "\\(")  // Escape left parenthesis
-    .replace(/\)/g, "\\)")  // Escape right parenthesis
-    .replace(/\*/g, "\\*")  // Escape asterisk
-    .replace(/\+/g, "\\+")  // Escape plus sign
-    .replace(/-/g, "\\-")   // Escape minus sign
-    .replace(/#/g, "\\#")   // Escape hash symbol
-    .replace(/@/g, "\\@")   // Escape at symbol
-    .replace(/\^/g, "\\^")  // Escape caret
-    .replace(/~/g, "\\~")   // Escape tilde
-    .replace(/\|/g, "\\|")  // Escape vertical bar
-    .replace(/:/g, "\\:")   // Escape colon
-    .replace(/;/g, "\\;")   // Escape semicolon
-    .replace(/,/g, "\\,")   // Escape comma
-    .replace(/\./g, "\\.")  // Escape period
-    .replace(/\?/g, "\\?")  // Escape question mark
-    .replace(/!/g, "\\!");  // Escape exclamation mark
 };
 
 const saveFormData = () => {
   // Deep copy the formFields to avoid directly modifying the reactive data
   const updatedFields = formFields.value.map(field => {
-    // Fix: Escape input values before saving to localStorage
-    if (field.type === "text" || field.type === "textarea" || field.type === "autocomplete") {
-      field.value = typeof field.value === "string" ? escapeInput(field.value) : field.value;
+    // Only escape string values
+    if (field.value && typeof field.value === "string" && 
+        (field.type === "text" || field.type === "textarea" || field.type === "autocomplete")) {
+      // Create a new field object with the escaped value
+      return { ...field, value: escapeInput(field.value) };
     }
 
     // Fix: Ensure checkbox options are saved in the order of the question
     if (field.type === "checkbox" && Array.isArray(field.value)) {
-      field.value = field.optionValues?.filter(option => field.value.includes(option)) || [];
+      return { 
+        ...field, 
+        value: field.optionValues?.filter(option => field.value.includes(option)) || [] 
+      };
     }
 
-    // Won't directly modify the field value, just return a new object with the processed value
-    return { ...field, value: processValue(field.value) };
+    // Return the field unmodified
+    return { ...field };
   });
 
   // Update the current tab's formData with the updated fields
@@ -1078,21 +1255,49 @@ const saveToLocalStorage = () => {
 const loadFromLocalStorage = () => {
   const savedTabs = localStorage.getItem("surveyTabs");
   const savedCurrentTab = localStorage.getItem("currentTab");
+
   if (savedTabs) {
-    tabs.value = JSON.parse(savedTabs);
-    currentTab.value = savedCurrentTab ? parseInt(savedCurrentTab) : 0;
-    
-    // 确保所有表单字段都有otherValue属性
-    formFields.value = tabs.value[currentTab.value].formData.map(field => {
-      if ((field.type === 'radio' || field.type === 'checkbox') && field.options?.includes('Other')) {
-        return {
-          ...field,
-          otherValue: field.otherValue || ""
-        };
+    try {
+      // Parse stored tab data
+      tabs.value = JSON.parse(savedTabs);
+      currentTab.value = savedCurrentTab ? parseInt(savedCurrentTab) : 0;
+
+      // Ensure current tab exists
+      if (currentTab.value >= tabs.value.length) {
+        currentTab.value = 0;
       }
-      return field;
-    });
+
+      // Load form data for the current tab
+      const savedFormData = localStorage.getItem(`formData_${tabs.value[currentTab.value].formId}`);
+      
+      if (savedFormData) {
+        // If we have saved form data, use it
+        formFields.value = JSON.parse(savedFormData);
+      } else {
+        // If no saved form data exists for this tab, use the default form fields
+        // This ensures we always have form fields even after a refresh
+        formFields.value = JSON.parse(JSON.stringify(
+          formFields.value.map(field => ({
+            ...field,
+            value: field.type === "checkbox" ? [] : null,
+            error: undefined,
+          }))
+        ));
+        
+        // Save these default fields to the tab
+        tabs.value[currentTab.value].formData = formFields.value;
+        saveFormData();
+      }
+    } catch (error) {
+      console.error("Error parsing saved tabs from localStorage:", error);
+      initializeDefaultFormFields();
+    }
+  } else {
+    // If no saved tabs exist, initialize default form fields
+    initializeDefaultFormFields();
   }
+
+  // Load images
   loadImagesFromLocalStorage();
 };
 
@@ -1128,15 +1333,15 @@ const validateField = (field: FormField) => {
   return true;
 };
 
-const validateForm = (): boolean => {
-  let isValid = true;
-  formFields.value.forEach((field) => {
-    if (!validateField(field)) {
-      isValid = false;
-    }
-  });
-  return isValid;
-};
+// const validateForm = (): boolean => {
+//   let isValid = true;
+//   formFields.value.forEach((field) => {
+//     if (!validateField(field)) {
+//       isValid = false;
+//     }
+//   });
+//   return isValid;
+// };
 
 const deviceInfo = ref({
   userAgent: navigator.userAgent,
@@ -1150,6 +1355,12 @@ const isSubmitting = ref(false);
 const submitForm = async () => {
   try {
     isSubmitting.value = true;
+    
+    // Get the access token
+    const token = casdoorService.getToken();
+    
+    // Get the team number from the first field in the form
+    const teamNumber = formFields.value[0]?.value;
     
     // Get user info including avatar
     let userAvatar = userData.value.avatar || "";
@@ -1165,21 +1376,21 @@ const submitForm = async () => {
       }
     }
     
-    // 按照originalIndex排序表单字段
+    // Format the form fields to ensure they are in the correct order
     const sortedFields = [...formFields.value].sort((a, b) => 
       (a.originalIndex || 0) - (b.originalIndex || 0)
     );
     
-    // 创建一个有序的表单数据对象
+    // Create a sorted form data object
     const processedFormData = sortedFields.map(field => {
       const processedField = { ...field };
       
-      // 处理单选按钮的"Other"选项
+      // Process the "Other" option for radio buttons
       if (field.type === "radio" && field.value === "Other" && field.otherValue) {
         processedField.value = field.otherValue;
       }
       
-      // 处理复选框的"Other"选项
+      // Process the "Other" option for checkboxes
       if (field.type === "checkbox" && Array.isArray(field.value)) {
         if (field.value.includes("Other") && field.otherValue) {
           processedField.value = field.value.map(val => 
@@ -1191,13 +1402,13 @@ const submitForm = async () => {
       return processedField;
     });
 
-    // 创建提交对象
+    // Create the submission object
     const submissionData = {
       eventId: eventId.value,
       tabs: [
         {
           name: tabs.value[currentTab.value].name,
-          formData: processedFormData, // 使用已排序的表单数据
+          formData: processedFormData, // Use the processed form data
           formId: currentFormId.value
         }
       ],
@@ -1218,7 +1429,7 @@ const submitForm = async () => {
 
     console.log("Submitting with avatar:", userAvatar);
 
-    // 上传日志并获取URL
+    // Upload the log and get the URL
     const url = await window.$harbor.upload();
     submissionData.tabs[0].formData.push({
       question: "Log URL",
@@ -1228,10 +1439,11 @@ const submitForm = async () => {
       originalIndex: processedFormData.length
     });
 
-    const response = await fetch("https://api.frc695.com/api/survey/submit", {
+    const response = await fetch("https://api.team695.com/survey/submit", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
       },
       body: JSON.stringify(submissionData),
     });
@@ -1239,13 +1451,23 @@ const submitForm = async () => {
     const data = await response.json();
     if (response.ok) {
       console.log("Form submitted:", data);
+      
+      // If a team number is provided, update the pit status
+      if (teamNumber) {
+        try {
+          await updatePitStatus(parseInt(teamNumber), true);
+        } catch (pitError) {
+          console.error("Error updating pit status:", pitError);
+          // Continue processing, do not block form submission success
+        }
+      }
 
-      // 清除本地存储
+      // Clear localStorage for the current form ID
       localStorage.removeItem(`formData_${currentFormId.value}`);
       localStorage.removeItem(`fullRobotImages_${currentFormId.value}`);
       localStorage.removeItem(`driveTrainImages_${currentFormId.value}`);
 
-      // 显示成功消息，并在用户点击确定后再刷新页面
+      // Show success message and refresh the page after user confirmation
       Swal.fire({
         title: "Success!",
         text: "Form submitted successfully!",
@@ -1253,10 +1475,21 @@ const submitForm = async () => {
         confirmButtonText: "OK"
       }).then((result) => {
         if (result.isConfirmed) {
-          // 删除当前标签页及其所有内容
+          // Clear all form data and "Other" input values
+          formFields.value.forEach(field => {
+            if (field.otherValue) {
+              field.otherValue = "";
+            }
+            field.value = field.type === "checkbox" ? [] : null;
+          });
+          
+          // Save the cleared data
+          saveFormData();
+          
+          // Delete the current tab and all its content
           removeTab(currentTab.value);
           
-          // 刷新页面以确保没有本地存储缓存
+          // Reload the page to ensure no local storage cache
           location.reload();
         }
       });
@@ -1275,28 +1508,187 @@ const submitForm = async () => {
   }
 };
 
-const confirmSubmitForm = () => {
-  if (validateForm()) {
-    Swal.fire({
-      title: "Submit Form",
-      text: "Are you sure you want to submit this form?",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, submit it!",
-      reverseButtons: true,
-    }).then((result) => {
-      if (result.isConfirmed) {
-        submitForm();
+// Added to ensure the store is initialized and data is loaded correctly
+onMounted(async () => {
+  // Initialize the store to get user data
+  userStore.initializeStore();
+  
+  await loadTeams('');
+  await loadEventId();
+  
+  // Load user assignments
+  await loadUserAssignments();
+  
+  // Load data from localStorage
+  loadFromLocalStorage();
+  
+  // Ensure form fields exist after loading
+  ensureFormFieldsExist();
+  
+  // Check if form version has changed
+  const storedVersion = localStorage.getItem(FORM_VERSION_KEY);
+  if (storedVersion !== FORM_VERSION) {
+    resetReason.value = "version-change";
+    showResetModal.value = true;
+  }
+});
+
+// Added to manage user assignments and pit completion status
+const userAssignments = ref<any[]>([]);
+const pitCompletedTeams = ref<Set<number>>(new Set());
+
+// Filter out pit-scouting tasks from user assignments
+const filteredPitAssignments = computed(() => {
+  return userAssignments.value.filter(assignment => 
+    assignment.task_type === 'pit-scouting' && 
+    assignment.assigned_team_numbers && 
+    assignment.assigned_team_numbers.length > 0
+  );
+});
+
+// Check if the team has completed pit-scouting
+const isPitCompleted = (teamNumber: number): boolean => {
+  return pitCompletedTeams.value.has(teamNumber);
+};
+
+// Add method to select an assigned team
+const selectAssignedTeam = (teamNumber: number) => {
+  // Set the team number in the first field (team number field)
+  if (formFields.value[0]) {
+    formFields.value[0].value = teamNumber.toString();
+    // Save the form data after setting the team number
+    debouncedSaveFormData();
+  }
+};
+
+// This function loads user assignments from the server
+const loadUserAssignments = async () => {
+  try {
+    const token = casdoorService.getToken();
+    if (!token) {
+      throw new Error('Authentication token not found');
+    }
+
+    // Transform eventId format from 2025_JOHNSON to 2025johnson
+    const formattedEventId = eventId.value.replace('_', '').toLowerCase();
+
+    const response = await fetch(`https://api.team695.com/assignments/user/${formattedEventId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
       }
     });
-  } else {
-    Swal.fire(
-      "Validation Error",
-      "Please fill in all required fields before submitting.",
-      "error"
-    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to load user assignments: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    if (data.success) {
+      userAssignments.value = data.data || [];
+      
+      // 检查哪些团队已经完成了pit-scouting
+      checkCompletedPitTeams();
+    } else {
+      throw new Error(data.message || 'Failed to load user assignments');
+    }
+  } catch (error) {
+    console.error('Error loading user assignments:', error);
+  }
+};
+
+// 检查已完成pit-scouting的团队
+const checkCompletedPitTeams = async () => {
+  try {
+    // 从所有pit-scouting任务中提取团队号码
+    const teamNumbers: number[] = [];
+    filteredPitAssignments.value.forEach(assignment => {
+      if (assignment.assigned_team_numbers && Array.isArray(assignment.assigned_team_numbers)) {
+        teamNumbers.push(...assignment.assigned_team_numbers);
+      }
+    });
+
+    // 如果没有团队号码，不需要继续检查
+    if (teamNumbers.length === 0) return;
+
+    const token = casdoorService.getToken();
+    if (!token) return;
+
+    // 转换eventId格式
+    const formattedEventId = eventId.value.replace('_', '').toLowerCase();
+
+    // 对每个团队号码检查pit状态
+    const promises = teamNumbers.map(async (teamNumber) => {
+      try {
+        const response = await fetch(`https://api.team695.com/team-matches/event/${formattedEventId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (data.success && data.data) {
+          const teams = data.data;
+          const team = teams.find((t: any) => t.team_number === teamNumber);
+          if (team && team.is_pit) {
+            pitCompletedTeams.value.add(teamNumber);
+          }
+        }
+      } catch (err) {
+        console.error(`Error checking pit status for team ${teamNumber}:`, err);
+      }
+    });
+
+    await Promise.all(promises);
+  } catch (error) {
+    console.error('Error checking completed pit teams:', error);
+  }
+};
+
+// 更新pit状态
+const updatePitStatus = async (teamNumber: number, isPit: boolean) => {
+  try {
+    const token = casdoorService.getToken();
+    if (!token) {
+      throw new Error('Authentication token not found');
+    }
+
+    // 转换eventId格式
+    const formattedEventId = eventId.value.replace('_', '').toLowerCase();
+
+    // 发送API请求更新状态
+    const response = await fetch(`https://api.team695.com/team-matches/pit-status/${formattedEventId}/frc${teamNumber}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        is_pit: isPit
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to update pit status: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    if (data.success) {
+      console.log(`Pit status for team ${teamNumber} updated to ${isPit}`);
+      
+      // 更新本地状态
+      if (isPit) {
+        pitCompletedTeams.value.add(teamNumber);
+      } else {
+        pitCompletedTeams.value.delete(teamNumber);
+      }
+    } else {
+      throw new Error(data.message || 'Failed to update pit status');
+    }
+  } catch (error) {
+    console.error('Error updating pit status:', error);
+    throw error; // 重新抛出错误以便调用者处理
   }
 };
 
@@ -1325,20 +1717,42 @@ onMounted(() => {
     enableSSL: true,
     project: '695_Web',
     title: 'Pit',
-    logo: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgdmlld0JveD0iMCAwIDIwIDIwIj48cGF0aCBmaWxsPSIjNTM1MzUzIiBkPSJNMyA2YTMgMyAwIDAgMSAzLTNoOGEzIDMgMCAwIDEgMyAzdjIuMDNhNC41IDQuNSAwIDAgMC0xLS4wMDRWN0g0djdhMiAyIDAgMCAwIDIgMmgzLjQ5MmEyLjUgMi41IDAgMCAwLS40NDMgMUg2YTMgMyAwIDAgMS0zLTN6bTEwLjA0NCAzLjU4N2wtMS40NC0xLjQ0YS41LjUgMCAwIDAtLjcwOC43MDdsMS41NzggMS41NzdxLjIzMi0uNDQ3LjU3LS44NDRtLTMuOTQtLjczM2EuNS41IDAgMSAwLS43MDgtLjcwOGwtMi41IDIuNWEuNS41IDAgMCAwIDAgLjcwOGwyLjUgMi41YS41LjUgMCAwIDAgLjcwOC0uNzA4TDYuOTU3IDExem03Ljc4OC4xN2MuMzY2LjA0Mi40NzEuNDguMjEuNzQybC0uOTc1Ljk3NWExLjUwNyAxLjUwNyAwIDEgMCAyLjEzMiAyLjEzMmwuOTc1LS45NzVjLjI2MS0uMjYxLjctLjE1Ni43NDIuMjFhMy41MTggMy41MTggMCAwIDEtNC42NzYgMy43MjNsLTIuNzI2IDIuNzI3YTEuNTA3IDEuNTA3IDAgMSAxLTIuMTMyLTIuMTMybDIuNzI2LTIuNzI2YTMuNTE4IDMuNTE4IDAgMCAxIDMuNzI0LTQuNjc2Ii8+PC9zdmc+',
-    logoStyle: {
-      width: '10%',
-      height: '10%',
-    },
-  });
-
-  // window.$pageSpy.render();
+    // 移除不支持的logoStyle属性
+    logo: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgdmlld0JveD0iMCAwIDIwIDIwIj48cGF0aCBmaWxsPSIjNTM1MzUzIiBkPSJNMyA2YTMgMyAwIDAgMSAzLTNoOGEzIDMgMCAwIDEgMyAzdjIuMDNhNC41IDQuNSAwIDAgMC0xLS4wMDRWN0h2N2EyIDIgMCAwIDAgMiAyaDMuNDkyYTIuNSAyLjUgMCAwIDAtLjQ0MyAxSDZhMyAzIDAgMCAxLTMtM3ptMTAuMDQ0IDMuNThhNC41MDUgNC41MDUgMCAwIDAtMy4wNDQtMS41OCA0LjUgNC41IDAgMSAwIDQuNSA0LjVhNC40ODEgNC40ODEgMCAwIDAtLjExNS0uOTc0bC0uODkxIC44OTFhMS41IDEuNSAwIDAgMS0yLjEyMSAyLjEyMWwtMy0zYTEuNSAxLjUgMCAwIDEgMi4xMjEtMi4xMmwuODk5Ljg5OEEzLjQ4NCAzLjQ4NCAwIDAgMSA2LjcwOC0uMjJsLjg0My0uODQzek0xNSAxMmEyIDIgMCAxIDEtNCAwIDIgMiAwIDAgMSA0IDB6Ii8+PC9zdmc+'
+  } as any); // 使用类型断言来绕过TypeScript检查
 });
 
-function processValue(value: any): any {
-  // 如果需要对值进行特殊处理，可以在这里实现逻辑
-  return value; // 默认直接返回原值
-}
+const copyToClipboard = (text: string) => {
+  navigator.clipboard.writeText(text).then(() => {
+    // 显示短暂的成功提示
+    Swal.fire({
+      title: "Copied!",
+      text: "ID has been copied to clipboard",
+      icon: "success",
+      toast: true,
+      position: "top-end",
+      showConfirmButton: false,
+      timer: 1500,
+      timerProgressBar: true
+    });
+  }).catch(err => {
+    console.error('Failed to copy: ', err);
+    Swal.fire({
+      title: "Error",
+      text: "Failed to copy to clipboard",
+      icon: "error",
+      toast: true,
+      position: "top-end",
+      showConfirmButton: false,
+      timer: 1500
+    });
+  });
+};
+
+// function processValue(value: any): any {
+//   // No special processing needed - we've already handled escaping elsewhere
+//   return value;
+// }
 </script>
 
 <style scoped>
