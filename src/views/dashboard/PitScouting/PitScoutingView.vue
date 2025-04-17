@@ -821,7 +821,7 @@ const loadEventId = async () => {
     // Get the access token
     const token = casdoorService.getToken();
     
-    const response = await fetch("https://api.frc695.com/api/event/event-id", {
+    const response = await fetch("https://api.team695.com/api/event/event-id", {
       headers: {
         'Authorization': token ? `Bearer ${token}` : ''
       }
@@ -975,7 +975,7 @@ const loadTeams = async (query: string) => {
     // Get the access token
     const token = casdoorService.getToken();
     
-    const response = await fetch(`https://api.frc695.com/api/team/teams?query=${query}&limit=20`, {
+    const response = await fetch(`https://api.team695.com/api/team/teams?query=${query}&limit=20`, {
       headers: {
         'Authorization': token ? `Bearer ${token}` : ''
       }
@@ -1050,7 +1050,7 @@ const uploadImage = async (type: "fullRobot" | "driveTrain", file: File) => {
     // Get the access token
     const token = casdoorService.getToken();
     
-    const response = await fetch("https://api.frc695.com/api/upload/upload", {
+    const response = await fetch("https://api.team695.com/api/upload/upload", {
       method: "POST",
       headers: {
         'Authorization': token ? `Bearer ${token}` : ''
@@ -1108,7 +1108,7 @@ const removeImage = async (type: "fullRobot" | "driveTrain", index: number) => {
     // Get the access token
     const token = casdoorService.getToken();
     
-    await axios.delete(`https://api.frc695.com/api/images/${imageId}`, {
+    await axios.delete(`https://api.team695.com/api/images/${imageId}`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -1439,7 +1439,7 @@ const submitForm = async () => {
       originalIndex: processedFormData.length
     });
 
-    const response = await fetch("https://api.frc695.com/api/survey/submit", {
+    const response = await fetch("https://api.team695.com/survey/submit", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
