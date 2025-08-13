@@ -46,6 +46,9 @@ jobs:
           exit 1
         fi
 
+        # Temporarily move dist out of working directory
+        mv dist ../dist-temp
+
         # Fetch the existing webpage branch if it exists
         git fetch origin webpage:webpage || echo "No existing webpage branch"
 
@@ -56,13 +59,13 @@ jobs:
           git checkout --orphan webpage
         fi
 
-        # Clean old files in webpage branch
-        if [ "$(git branch --show-current)" = "webpage" ]; then
-          git clean -fdx
-        fi
+        # Clean old files except .git
+        git clean -fdx
 
-        # Copy build files from master branch
-        git checkout master -- dist
+        # Move dist back into current branch
+        mv ../dist-temp ./dist
+
+        # Copy build files to root
         cp -a dist/. .
 
         # Commit and push changes
@@ -74,3 +77,4 @@ jobs:
           git commit -m "[Auto CI] Update build files from commit $GITHUB_SHA"
           git push origin webpage
         fi
+
