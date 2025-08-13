@@ -13,7 +13,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0 # Fetch all history for branching
+        fetch-depth: 0
 
     - name: Set up Node.js
       uses: actions/setup-node@v4
@@ -32,25 +32,34 @@ jobs:
 
     - name: Deploy build files to webpage branch
       run: |
+        set -e
+
         # Configure git identity
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
         # Fetch the existing webpage branch if it exists
-        git fetch origin webpage || echo "No existing webpage branch"
+        git fetch origin webpage:webpage || echo "No existing webpage branch"
 
         # Create/checkout webpage branch
-        if git rev-parse --verify origin/webpage >/dev/null 2>&1; then
+        if git rev-parse --verify webpage >/dev/null 2>&1; then
           git checkout webpage
         else
           git checkout --orphan webpage
         fi
 
-        # Remove old files and copy new build output
-        rm -rf ./*
-        cp -r dist/* .
+        # Remove all except .git
+        find . -mindepth 1 -not -name '.git' -exec rm -rf {} +
+
+        # Copy build files including hidden files
+        cp -a dist/. .
 
         # Commit and push changes
         git add .
-        git commit -m "[Auto CI] Update build files from commit $GITHUB_SHA" || echo "No changes to commit"
-        git push origin webpage
+
+        if git diff --cached --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "[Auto CI] Update build files from commit $GITHUB_SHA"
+          git push origin webpage
+        fi
