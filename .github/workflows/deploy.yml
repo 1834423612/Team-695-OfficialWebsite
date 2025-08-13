@@ -48,8 +48,11 @@ jobs:
           git checkout --orphan webpage
         fi
 
-        # Remove all except .git
-        find . -mindepth 1 -not -name '.git' -exec rm -rf {} +
+        # Remove all untracked files and directories except .git
+        if [ "$(git branch --show-current)" = "webpage" ]; then
+          git clean -fdx
+        fi
+
 
         # Copy build files including hidden files
         cp -a dist/. .
