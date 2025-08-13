@@ -1,0 +1,38 @@
+User-agent: Googlebot
+Allow: /
+
+User-agent: msnbot
+Allow: /
+
+User-agent: ia_archiver
+Allow: /
+
+User-agent: YandexBot
+Allow: /
+
+User-agent: bingbot
+Allow: /
+
+User-agent: Yahoo! Slurp
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
+User-agent: 360Spider
+Allow: /
+
+User-agent: DNSPod
+Allow: /
+
+User-agent: *
+Allow: /
+
+Sitemap: https://team695.com/sitemap.xml
+Sitemap: https://www.frc695.com/sitemap.xml
+Sitemap: https://frc695.com/sitemap.xml
+Sitemap: https://www.team695.com/sitemap.xml
+Sitemap: https://team695.com/sitemap.txt
+Sitemap: https://www.frc695.com/sitemap.txt
+Sitemap: https://frc695.com/sitemap.txt
+Sitemap: https://www.team695.com/sitemap.txt
