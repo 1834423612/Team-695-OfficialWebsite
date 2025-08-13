@@ -11,12 +11,15 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: Set up Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
-        node-version: 20.9.0
+        node-version: "20"
+        cache: 'pnpm'
 
     - name: Install pnpm
       run: npm install -g pnpm@latest
@@ -27,10 +30,39 @@ jobs:
     - name: Build project
       run: pnpm build
 
-    - name: Deploy to GitHub Pages
+    - name: Deploy build files to webpage branch
       run: |
+        set -e
+
+        # Configure git identity
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        git add dist -f
-        git commit -m "Deploy to HTML Pages"
-        git push origin `git subtree split --prefix dist master`:webpage --force
+
+        # Fetch the existing webpage branch if it exists
+        git fetch origin webpage:webpage || echo "No existing webpage branch"
+
+        # Create/checkout webpage branch
+        if git rev-parse --verify webpage >/dev/null 2>&1; then
+          git checkout webpage
+        else
+          git checkout --orphan webpage
+        fi
+
+        # Remove all untracked files and directories except .git
+        if [ "$(git branch --show-current)" = "webpage" ]; then
+          git clean -fdx
+        fi
+
+
+        # Copy build files including hidden files
+        cp -a dist/. .
+
+        # Commit and push changes
+        git add .
+
+        if git diff --cached --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "[Auto CI] Update build files from commit $GITHUB_SHA"
+          git push origin webpage
+        fi

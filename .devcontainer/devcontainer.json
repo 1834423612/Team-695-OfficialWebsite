@@ -1,0 +1,87 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/typescript-node
+{
+	"name": "[Plugins Enhanced] Node.js & TypeScript",
+	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	"image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
+	"features": {
+		"ghcr.io/devcontainers/features/git-lfs:1": {},
+		"ghcr.io/devcontainers/features/github-cli:1": {},
+		"ghcr.io/devcontainers/features/sshd:1": {},
+		"ghcr.io/devcontainers-extra/features/jshint:2": {},
+		"ghcr.io/devcontainers-extra/features/vercel-cli:1": {}
+	},
+
+	"hostRequirements": {
+		"cpus": 2,
+		"memory": "8gb",
+		"storage": "32gb"
+	},
+
+
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	// "features": {},
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+
+	// Use 'postCreateCommand' to run commands after the container is created.
+	// "postCreateCommand": "yarn install",
+	
+
+	// Configure tool-specific properties.
+	// "customizations": {},
+
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	// "remoteUser": "root"
+
+	// Keep all settings sync except extensions
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"antfu.vite",
+				"vue.volar",
+				"antfu.iconify",
+				"file-icons.file-icons",
+				"vscode-icons-team.vscode-icons",
+				"naumovs.color-highlight",
+				"intellsmi.comment-translate",
+				"streetsidesoftware.code-spell-checker",
+				"dbaeumer.vscode-eslint",
+				"usernamehw.errorlens",
+				"eamodio.gitlens",
+				"mikestead.dotenv",
+				"github.vscode-github-actions",
+				"github.copilot",
+					"github.copilot-chat",
+				"github.remotehub",
+				"ms-vsliveshare.vslives",
+				"oderwat.indent-rainbow",
+				"formulahendry.auto-rename-tag",
+				"jannisx11.batch-rename-extension",
+				"pranaygp.vscode-css-peek",
+				"vincaslt.highlight-matching-tag",
+				"kisstkondoros.vscode-gutter-preview",
+				"davidanson.vscode-markdownlint",
+				"christian-kohler.path-intellisense",
+				"esbenp.prettier-vscode",
+				"bradlc.vscode-tailwindcss",
+				"wayou.vscode-todo-highlight",
+				"johnsoncodehk.vscode-tsconfig-helper",
+				"redhat.vscode-yaml",
+				"ms-ceintl.vscode-language-pack-zh-hans"
+			],
+			"settings": {
+				"settingsSync.keybindings": true,
+				"settingsSync.globalState": true,
+				"settingsSync.settings": true,
+				"settingsSync.extensions": false,
+				// Ensure default UI language stays English unless user changes it
+				"locale": "en"
+			}
+		}
+	},
+
+	// Run pnpm install only in Codespaces
+	"postCreateCommand": "bash -c 'if [ \"$CODESPACES\" = \"true\" ]; then npm install -g pnpm && pnpm install; fi'"
+}
