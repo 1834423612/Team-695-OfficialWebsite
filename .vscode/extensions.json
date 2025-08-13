@@ -1,3 +1,36 @@
 {
-  "recommendations": ["Vue.volar"]
+	"recommendations": [
+    "antfu.vite",
+    "vue.volar",
+    "antfu.iconify",
+    "file-icons.file-icons",
+    "vscode-icons-team.vscode-icons",
+    "naumovs.color-highlight",
+    "intellsmi.comment-translate",
+    "streetsidesoftware.code-spell-checker",
+    "dbaeumer.vscode-eslint",
+    "usernamehw.errorlens",
+    "eamodio.gitlens",
+    "mikestead.dotenv",
+    "github.vscode-github-actions",
+    "github.copilot",
+		"github.copilot-chat",
+    "github.remotehub",
+    "ms-vsliveshare.vslives",
+    "oderwat.indent-rainbow",
+    "formulahendry.auto-rename-tag",
+    "jannisx11.batch-rename-extension",
+    "pranaygp.vscode-css-peek",
+    "vincaslt.highlight-matching-tag",
+    "kisstkondoros.vscode-gutter-preview",
+    "davidanson.vscode-markdownlint",
+    "christian-kohler.path-intellisense",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    "wayou.vscode-todo-highlight",
+    "johnsoncodehk.vscode-tsconfig-helper",
+    "redhat.vscode-yaml",
+    "ms-ceintl.vscode-language-pack-zh-hans"
+	],
+	"unwantedRecommendations": []
 }
