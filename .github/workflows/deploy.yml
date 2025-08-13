@@ -26,9 +26,6 @@ jobs:
         version: "10.14.0"
         run_install: false
 
-    - name: Install pnpm
-      run: npm install -g pnpm@latest
-
     - name: Install dependencies
       run: pnpm install
 
@@ -43,23 +40,29 @@ jobs:
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
+        # Ensure dist exists
+        if [ ! -d dist ]; then
+          echo "Error: dist folder not found"
+          exit 1
+        fi
+
         # Fetch the existing webpage branch if it exists
         git fetch origin webpage:webpage || echo "No existing webpage branch"
 
-        # Create/checkout webpage branch
+        # Create or checkout webpage branch
         if git rev-parse --verify webpage >/dev/null 2>&1; then
           git checkout webpage
         else
           git checkout --orphan webpage
         fi
 
-        # Remove all untracked files and directories except .git
+        # Clean old files in webpage branch
         if [ "$(git branch --show-current)" = "webpage" ]; then
           git clean -fdx
         fi
 
-
-        # Copy build files including hidden files
+        # Copy build files from master branch
+        git checkout master -- dist
         cp -a dist/. .
 
         # Commit and push changes
