@@ -62,11 +62,11 @@ jobs:
         # Clean old files except .git
         git clean -fdx
 
-        # Move dist back into current branch
-        mv ../dist-temp ./dist
+        # Copy build files directly to root (without creating dist folder)
+        cp -a ../dist-temp/. .
 
-        # Copy build files to root
-        cp -a dist/. .
+        # Remove the temporary folder
+        rm -rf ../dist-temp
 
         # Commit and push changes
         git add .
