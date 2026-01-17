@@ -67,18 +67,34 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import ResourceList from '../Data/ResourceList.json';
+import { ref, onMounted } from 'vue';
 import { Icon } from '@iconify/vue';
 
 // Setup categories and items
-const categories = ref(ResourceList.categories);
-const items = ref(ResourceList.items);
+const categories = ref([]);
+const items = ref([]);
+
+// 动态加载资源列表
+const loadResourceList = async () => {
+    try {
+        const ResourceList = await import('../Data/ResourceList.json');
+        const data = ResourceList.default || ResourceList;
+        categories.value = data.categories;
+        items.value = data.items;
+    } catch (error) {
+        console.error('Failed to load resource list:', error);
+    }
+};
 
 // Filter items based on type
 const filteredItems = (type) => {
     return items.value.filter(item => item.type === type);
 };
+
+// 组件挂载时加载数据
+onMounted(async () => {
+    await loadResourceList();
+});
 
 // Map icon names to Iconify icons
 const getIcon = (type) => {

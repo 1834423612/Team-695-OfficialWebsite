@@ -237,7 +237,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { Icon } from '@iconify/vue';
-import galleryData from '@/Data/Gallery-data.json';
 
 interface GalleryItem {
     id: number;
@@ -247,15 +246,37 @@ interface GalleryItem {
     category: string;
 }
 
+// 动态导入Gallery数据
+const galleryData = ref<any>({ items: [] });
+const loadGalleryData = async () => {
+    try {
+        const data = await import('@/Data/Gallery-data.json');
+        galleryData.value = data.default || data;
+        
+        // 初始化categories和items
+        if (galleryData.value.category) {
+            categories.value = galleryData.value.category;
+        }
+        if (galleryData.value.items) {
+            // 转换items格式
+            const transformedItems: Record<string, GalleryItem[]> = {};
+            Object.keys(galleryData.value.items).forEach(categoryKey => {
+                transformedItems[categoryKey] = galleryData.value.items[categoryKey].map((item: any) => ({
+                    ...item,
+                    category: categoryKey
+                }));
+            });
+            items.value = transformedItems;
+        }
+    } catch (error) {
+        console.error('Failed to load gallery data:', error);
+    }
+};
+
 interface Category {
     name: string;
     color: string;
     hoverColor: string;
-}
-
-interface GalleryData {
-    category: Category[];
-    items: Record<string, Omit<GalleryItem, 'category'>[]>;
 }
 
 // Data Initialization
@@ -307,18 +328,6 @@ const imageError = (item: GalleryItem) => {
 watch(lightboxIndex, () => {
     lightboxImageLoaded.value = false;
 });
-
-// Load Data from JSON
-const data: GalleryData = galleryData;
-categories.value = data.category;
-
-// Add Category to Each Item
-for (const category in data.items) {
-    items.value[category] = data.items[category].map(item => ({
-        ...item,
-        category
-    }));
-}
 
 // Set Active Category
 const setActiveCategory = (category: string) => {
@@ -621,7 +630,10 @@ const updateNavStatus = () => {
     }
 };
 // 监听事件并设置导航栏
-onMounted(() => {
+onMounted(async () => {
+    // 首先加载数据
+    await loadGalleryData();
+    
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('click', closeMenuOnOutsideClick);
     window.addEventListener('scroll', updateNavStatus);
