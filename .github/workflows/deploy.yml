@@ -68,6 +68,16 @@ jobs:
         # Remove the temporary folder
         rm -rf ../dist-temp
 
+        # Clean up any leftover dist or dist-tmp folders from previous deployments
+        if [ -d "dist" ]; then
+          echo "Removing leftover dist folder"
+          rm -rf dist
+        fi
+        if [ -d "dist-tmp" ] || [ -d "dist-temp" ]; then
+          echo "Removing leftover dist-tmp/dist-temp folder"
+          rm -rf dist-tmp dist-temp
+        fi
+
         # Commit and push changes
         git add .
 
