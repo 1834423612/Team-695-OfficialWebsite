@@ -1225,6 +1225,11 @@ const fetchData = async () => {
                     item.data = {};
                 }
             }
+            // Guard against non-object data to avoid runtime crashes
+            if (!item.data || typeof item.data !== 'object' || Array.isArray(item.data)) {
+                item.data = {};
+            }
+            
             if (typeof item.upload === 'string') {
                 try {
                     item.upload = JSON.parse(item.upload);
@@ -1232,6 +1237,10 @@ const fetchData = async () => {
                     console.warn("Failed to parse item.upload:", e);
                     item.upload = { fullRobotImages: [], driveTrainImages: [] };
                 }
+            }
+            // Guard against non-object upload to avoid runtime crashes
+            if (!item.upload || typeof item.upload !== 'object' || Array.isArray(item.upload)) {
+                item.upload = { fullRobotImages: [], driveTrainImages: [] };
             }
 
             // Map user_data to userData for backward compatibility
