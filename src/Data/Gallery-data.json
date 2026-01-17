@@ -1,151 +1,554 @@
 {
     "category": [
-        { "name": "All", "color": "bg-indigo-500", "hoverColor": "hover:bg-indigo-200" },
-        { "name": "Robots", "color": "bg-green-500", "hoverColor": "hover:bg-green-200" },
-        { "name": "Team Photos", "color": "bg-blue-500", "hoverColor": "hover:bg-blue-200" }
+        {
+            "name": "All",
+            "color": "bg-slate-600",
+            "hoverColor": "hover:bg-slate-100"
+        },
+        {
+            "name": "Robots",
+            "color": "bg-emerald-600",
+            "hoverColor": "hover:bg-emerald-100"
+        },
+        {
+            "name": "Team Photos",
+            "color": "bg-sky-600",
+            "hoverColor": "hover:bg-sky-100"
+        },
+        {
+            "name": "2025 Reefscape Season",
+            "color": "bg-teal-600",
+            "hoverColor": "hover:bg-teal-100"
+        },
+        {
+            "name": "2024 Season",
+            "color": "bg-amber-600",
+            "hoverColor": "hover:bg-amber-100"
+        },
+        {
+            "name": "2023 Season",
+            "color": "bg-violet-600",
+            "hoverColor": "hover:bg-violet-100"
+        },
+        {
+            "name": "2022 Season",
+            "color": "bg-rose-600",
+            "hoverColor": "hover:bg-rose-100"
+        }
     ],
     "items": {
         "Robots": [
             {
                 "id": 1,
                 "title": "2022 FRC Season Robot",
-                "description": "The Gold Module",
-                "image": "https://r2.fastbirdcdn.online/Robotics/Robots/66b5585976c8c-20240809_278988044_140123391903967_6855528956026866249.jpg"
+                "description": "The Gold Module - Our 2022 competition robot featuring advanced mobility and control systems.",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Robots/66b5585976c8c-20240809_278988044_140123391903967_6855528956026866249.jpg",
+                "year": "2022"
             },
             {
                 "id": 3,
                 "title": "2023 Charged Up Season",
-                "description": "Robot Image",
-                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2023%20Charged%20Up%20Season/compressed/A6301802.jpg"
+                "description": "Our 2023 competition robot designed for the Charged Up challenge with improved lifting mechanisms.",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2023%20Charged%20Up%20Season/compressed/A6301802.jpg",
+                "year": "2023"
             },
             {
                 "id": 4,
                 "title": "2023 Charged Up Season",
-                "description": "Robot Image",
-                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2023%20Charged%20Up%20Season/compressed/MKP00005.jpg"
+                "description": "Close-up view of our 2023 robot's precision grabbing mechanism during competition.",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2023%20Charged%20Up%20Season/compressed/MKP00005.jpg",
+                "year": "2023"
             },
             {
                 "id": 5,
                 "title": "2023 Charged Up Season",
-                "description": "Robot Image",
-                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2023%20Charged%20Up%20Season/compressed/MKP00125.jpg"
+                "description": "Our robot in action during the 2023 Charged Up regional competition.",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2023%20Charged%20Up%20Season/compressed/MKP00125.jpg",
+                "year": "2023"
             },
             {
                 "id": 6,
                 "title": "2024 Crescendo Season",
-                "description": "Robot Image",
-                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/Ayl7P7m.jpg"
+                "description": "The 2024 Crescendo robot featuring our innovative note-handling system.",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/Ayl7P7m.jpg",
+                "year": "2024"
             },
             {
                 "id": 7,
                 "title": "2024 Crescendo Season",
-                "description": "Robot Image",
-                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/GPR_Sat_106.jpg"
+                "description": "Our 2024 robot during the Pittsburgh Regional competition.",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/GPR_Sat_106.jpg",
+                "year": "2024"
             },
             {
                 "id": 8,
                 "title": "2024 Crescendo Season",
-                "description": "Robot Image",
-                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/GPR_Sat_112.jpg"
+                "description": "Close-up of our 2024 robot's shooting mechanism during testing.",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/GPR_Sat_112.jpg",
+                "year": "2024"
             },
             {
                 "id": 9,
                 "title": "2024 Crescendo Season",
-                "description": "Robot Image",
-                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/MKP00713.jpg"
+                "description": "Our robot performing during the qualification matches at the 2024 competition.",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/MKP00713.jpg",
+                "year": "2024"
             },
             {
                 "id": 10,
                 "title": "2024 Crescendo Season",
-                "description": "Robot Image",
-                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/MKP01360.jpg"
+                "description": "Side view of our 2024 Crescendo robot showing the intake mechanism.",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/MKP01360.jpg",
+                "year": "2024"
             },
             {
                 "id": 11,
                 "title": "2024 Crescendo Season",
-                "description": "Robot Image",
-                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/MKP01453.jpg"
+                "description": "Our robot in action during the final rounds of the 2024 competition.",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/MKP01453.jpg",
+                "year": "2024"
             },
             {
                 "id": 13,
                 "title": "2024 Crescendo Season",
-                "description": "Robot Image",
-                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/OHCL_2024_200.jpg"
+                "description": "The robot's climbing mechanism demonstrated during the Ohio competition.",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/OHCL_2024_200.jpg",
+                "year": "2024"
             },
             {
                 "id": 14,
                 "title": "2024 Crescendo Season",
-                "description": "Robot Image",
-                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/OHCL_2024_215.jpg"
+                "description": "Our 2024 robot's precision control systems being tested before competition.",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/OHCL_2024_215.jpg",
+                "year": "2024"
+            },
+            {
+                "id": 27,
+                "title": "2025 Reefscape Season",
+                "description": "Gold Fish - Our 2025 competition robot designed for the Reefscape challenge.",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Robots/2025-695-Robot_Gold-Fish.jpeg",
+                "year": "2025"
             }
         ],
         "Team Photos": [
             {
                 "id": 15,
                 "title": "2024 Team Photo at the Pittsburgh Regional",
-                "description": "The Pittsburgh Regional",
-                "image": "https://r2.fastbirdcdn.online/Robotics/Robots/66ad276113a1c-20240803_RoboticsTeamPittsburghRegional.jpg"
+                "description": "Team 695 Bison Robotics at the 2024 Pittsburgh Regional competition.",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Robots/66ad276113a1c-20240803_RoboticsTeamPittsburghRegional.jpg",
+                "year": "2024"
             },
             {
                 "id": 16,
                 "title": "2023 Charged Up Season",
-                "description": "Team Photo",
-                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2023%20Charged%20Up%20Season/compressed/MKP00166.jpg"
+                "description": "Our team celebrating after a successful match during the 2023 season.",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2023%20Charged%20Up%20Season/compressed/MKP00166.jpg",
+                "year": "2023"
             },
             {
                 "id": 17,
                 "title": "2023 Charged Up Season",
-                "description": "Team Photo",
-                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2023%20Charged%20Up%20Season/compressed/MKP00174.jpg"
+                "description": "Team 695 members working together in the pit area during competition.",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2023%20Charged%20Up%20Season/compressed/MKP00174.jpg",
+                "year": "2023"
             },
             {
                 "id": 18,
                 "title": "2023 Charged Up Season",
-                "description": "Team Photo",
-                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2023%20Charged%20Up%20Season/compressed/PXL_20230930_195422043.jpg"
+                "description": "Team gathering after the 2023 regional awards ceremony.",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2023%20Charged%20Up%20Season/compressed/PXL_20230930_195422043.jpg",
+                "year": "2023"
             },
             {
                 "id": 20,
                 "title": "2024 Crescendo Season",
-                "description": "Team Photo",
-                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/GPR_Sat_73.jpg"
+                "description": "Team members preparing for a match at the 2024 Pittsburgh Regional.",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/GPR_Sat_73.jpg",
+                "year": "2024"
             },
             {
                 "id": 21,
                 "title": "2024 Crescendo Season",
-                "description": "Team Photo",
-                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/GPR_Sat_91.jpg"
+                "description": "Our drive team strategizing before a qualification match.",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/GPR_Sat_91.jpg",
+                "year": "2024"
             },
             {
                 "id": 22,
                 "title": "2024 Crescendo Season",
-                "description": "Team Photo",
-                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/GPR_Sat_100.jpg"
+                "description": "Team 695 members collaborating in the pit area during competition.",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/GPR_Sat_100.jpg",
+                "year": "2024"
             },
             {
                 "id": 23,
                 "title": "2024 Crescendo Season",
-                "description": "Team Photo",
-                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/GPR_Sat_110.jpg"
+                "description": "Our mentors and students discussing strategy between matches.",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/GPR_Sat_110.jpg",
+                "year": "2024"
             },
             {
                 "id": 24,
                 "title": "2024 Crescendo Season",
-                "description": "Team Photo",
-                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/OHCL_2024_118.jpg"
+                "description": "Team 695 members at the Ohio competition working on last-minute adjustments.",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/OHCL_2024_118.jpg",
+                "year": "2024"
             },
             {
                 "id": 25,
                 "title": "2024 Crescendo Season",
-                "description": "Team Photo",
-                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/OHCL_2024_179.jpg"
+                "description": "Our team celebrating after winning an award at the 2024 competition.",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/OHCL_2024_179.jpg",
+                "year": "2024"
             },
             {
                 "id": 26,
                 "title": "2024 Crescendo Season",
-                "description": "Team Photo",
-                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/PXL_20240323_212533129.jpg"
+                "description": "Team photo after a successful day of competition at the regional event.",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2024%20Crescendo%20Season/compressed/PXL_20240323_212533129.jpg",
+                "year": "2024"
             }
-        ]
+        ],
+        "2025 Reefscape Season": [
+            {
+                "id": 28,
+                "title": "2025 Reefscape Season - NYRO",
+                "description": "Final team photo from the 2025 NYRO competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/NYRO25/compressed/695_Sat_016.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 29,
+                "title": "2025 Reefscape Season - NYRO",
+                "description": "Team 695 at the New York Regional Competition on Friday",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/NYRO25/compressed/695_Fri_001.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 30,
+                "title": "2025 Reefscape Season - NYRO",
+                "description": "NYRO",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/NYRO25/compressed/695_Fri_002.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 31,
+                "title": "2025 Reefscape Season - NYRO",
+                "description": "Robot scoring",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/NYRO25/compressed/695_Fri_003.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 32,
+                "title": "2025 Reefscape Season - NYRO",
+                "description": "Close-up of our robot's mechanism during testing",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/NYRO25/compressed/695_Fri_004.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 33,
+                "title": "2025 Reefscape Season - NYRO",
+                "description": "Drive team preparing for their match at NYRO",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/NYRO25/compressed/695_Fri_005.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 34,
+                "title": "2025 Reefscape Season - NYRO",
+                "description": "Team 695's robot in action during Friday's qualification round",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/NYRO25/compressed/695_Fri_006.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 35,
+                "title": "2025 Reefscape Season - NYRO",
+                "description": "Gold Fish",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/NYRO25/compressed/695_Fri_007.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 36,
+                "title": "2025 Reefscape Season - NYRO",
+                "description": "Team 695 at the New York Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/NYRO25/compressed/695_Fri_008.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 37,
+                "title": "2025 Reefscape Season - NYRO",
+                "description": "Robot performing key maneuver during competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/NYRO25/compressed/695_Fri_009.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 38,
+                "title": "2025 Reefscape Season - NYRO",
+                "description": "Saturday competition action at the New York Regional",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/NYRO25/compressed/695_Sat_010.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 39,
+                "title": "2025 Reefscape Season - NYRO",
+                "description": "Team 695's robot demonstrating precision control during Saturday's match",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/NYRO25/compressed/695_Sat_011.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 40,
+                "title": "2025 Reefscape Season - NYRO",
+                "description": "Drive team operating during an intense match moment",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/NYRO25/compressed/695_Sat_012.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 41,
+                "title": "2025 Reefscape Season - NYRO",
+                "description": "Robot scoring",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/NYRO25/compressed/695_Sat_013.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 42,
+                "title": "2025 Reefscape Season - NYRO",
+                "description": "Red Alliance teams",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/NYRO25/compressed/695_Sat_014.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 43,
+                "title": "2025 Reefscape Season - NYRO",
+                "description": "Team member cheering during the match",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/NYRO25/compressed/695_Sat_015.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 44,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/IMG_0096.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 45,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/IMG_20250405_170659725.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 46,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/IMG_20250406_112434%20%282%29.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 47,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/IMG_5633.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 48,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/IMG_5649.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 49,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/IMG_5653.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 50,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/IMG_5969.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 51,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/IMG_20250406_112434.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 52,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/MVIMG_20250405_170317.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 53,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/MVIMG_20250405_170441.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 54,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/OHCL25_695_Fri_001.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 55,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/OHCL25_695_Fri_002.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 56,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/OHCL25_695_Fri_003.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 57,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/OHCL25_695_Fri_004.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 58,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/OHCL25_695_Fri_005.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 59,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/OHCL25_695_Fri_006.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 60,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/OHCL25_695_Sat_007.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 61,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/OHCL25_695_Sat_008.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 62,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/OHCL25_695_Sat_009.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 63,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/OHCL25_695_Sat_010.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 64,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/OHCL25_695_Sat_011.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 65,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/OHCL25_695_Sat_012.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 66,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/OHCL25_695_Sat_013.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 67,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/OHCL25_695_Sat_014.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 68,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/OHCL25_695_Sat_015.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 69,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/OHCL25_695_Sat_016.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 70,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/OHCL25_695_Sat_017.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 71,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/OHCL25_695_Sat_018.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 72,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/OHCL25_695_Sat_019.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 73,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/OHCL25_695_Sat_020.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 74,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/OHCL25_695_Sat_021.jpg",
+                "year": "2025"
+            },
+            {
+                "id": 75,
+                "title": "2025 Reefscape Season - OHCL",
+                "description": "Team 695 at the Buckeye Regional Competition",
+                "image": "https://r2.fastbirdcdn.online/Robotics/Gallery/2025%20Reefscape%20Season/OHCL25/compressed/PXL_20250405_143441050.jpg",
+                "year": "2025"
+            }
+        ],
+        "2024 Season": [],
+        "2023 Season": [],
+        "2022 Season": []
     }
 }
