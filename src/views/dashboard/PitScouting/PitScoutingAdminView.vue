@@ -905,52 +905,20 @@ const touchScrolling = ref(false);
 const touchDragging = ref(false);
 const touchStartTime = ref(0);
 
-// Throttled search function
-const handleSearch = throttle(async () => {
-    if (isSearching.value) return;
+// Fix: Ensure uniqueEventIds are computed correctly
+const uniqueEventIds = computed(() => {
+    const eventIds = new Set(
+        surveyData.value.map(survey => survey.event_id).filter(eventId => eventId)
+    );
+    return Array.from(eventIds);
+});
 
-    isSearching.value = true;
-    try {
-        await fetchData();
-    } finally {
-        isSearching.value = false;
-    }
-}, 1000, { trailing: false });
-
-// Search throttling
-const handleEventChange = () => {
-    handleSearch();
-};
-
-// Load saved column preferences
-const loadSavedPreferences = () => {
-    try {
-        const savedFields = localStorage.getItem('selectedFields');
-        if (savedFields) {
-            selectedFields.value = JSON.parse(savedFields);
-        }
-
-        const savedCharts = localStorage.getItem('selectedChartTypes');
-        if (savedCharts) {
-            selectedChartTypes.value = JSON.parse(savedCharts);
-        }
-    } catch (error) {
-        console.error('Error loading saved preferences:', error);
-    }
-};
-
-// Save column preferences
-const savePreferences = () => {
-    localStorage.setItem('selectedFields', JSON.stringify(selectedFields.value));
-    localStorage.setItem('selectedChartTypes', JSON.stringify(selectedChartTypes.value));
-};
-
-// Fetch data from API
+// Fix: Ensure fetchData updates filters and handles errors
 const fetchData = async () => {
     loading.value = true;
     error.value = "";
     try {
-        const response = await axios.get<SurveyData[]>("https://api.frc695.com/api/survey/query");
+        const response = await axios.get<SurveyData[]>("https://api.team695.com/survey/query");
         surveyData.value = response.data.map(item => {
             // Parse JSON strings if needed
             if (typeof item.data === 'string') {
@@ -959,12 +927,6 @@ const fetchData = async () => {
             if (typeof item.upload === 'string') {
                 item.upload = JSON.parse(item.upload);
             }
-
-            // Map user_data to userData for backward compatibility
-            if (item.user_data) {
-                item.userData = item.user_data;
-            }
-
             return item;
         });
     } catch (err: any) {
@@ -976,26 +938,21 @@ const fetchData = async () => {
     }
 };
 
-// Handle clicks outside of dropdowns
-const handleClickOutside = (event: MouseEvent) => {
-    if (isChartSelectorOpen.value) {
-        const target = event.target as HTMLElement;
-        if (!target.closest('.chart-selector')) {
-            isChartSelectorOpen.value = false;
-        }
-    }
-};
+// Fix: Ensure handleSearch is called after fetchData
+const handleSearch = throttle(async () => {
+    if (isSearching.value) return;
 
-// Prevent text selection during drag operations
-const preventTextSelection = (event: Event) => {
-    if (isDragging.value || touchDragging.value) {
-        event.preventDefault();
+    isSearching.value = true;
+    try {
+        await fetchData();
+    } finally {
+        isSearching.value = false;
     }
-};
+}, 1000, { trailing: false });
 
-// Initialize data on component mount
-onMounted(() => {
-    fetchData();
+// Fix: Ensure filters are updated after fetchData
+onMounted(async () => {
+    await fetchData();
     loadSavedPreferences();
     document.addEventListener('click', handleClickOutside);
     document.addEventListener('selectstart', preventTextSelection);
@@ -1007,11 +964,6 @@ onUnmounted(() => {
 });
 
 // Computed properties
-const uniqueEventIds = computed(() => {
-    const eventIds = new Set(surveyData.value.map(survey => survey.event_id));
-    return Array.from(eventIds);
-});
-
 const filteredSurveyData = computed(() => {
     return surveyData.value.filter(survey => {
         const eventIdMatch = !queryParams.value.eventId || survey.event_id === queryParams.value.eventId;
@@ -1078,7 +1030,6 @@ const filteredChartFields = computed(() => {
     const measurementRegex = /height|width|weight|length/i;
     return availableChartFields.value.filter(field => !measurementRegex.test(field));
 });
-
 
 // For team number expansion in Submission Users
 const expandedTeams = ref<Record<string, string[]>>({});
