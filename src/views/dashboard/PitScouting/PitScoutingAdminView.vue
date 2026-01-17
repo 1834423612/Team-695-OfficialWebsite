@@ -1090,7 +1090,7 @@ const placeholderStyle = ref({
     zIndex: '-1'
 });
 const draggableContainer = ref<HTMLElement | null>(null);
-const draggableItems = ref<HTMLElement[]>([]);
+// draggableItems is intentionally not declared as it's not used in the current implementation
 
 // Touch drag state for mobile
 const touchStartY = ref(0);
@@ -1123,15 +1123,22 @@ const handleSearch = throttle(async () => {
     showEventRequiredError.value = false;
     isSearching.value = true;
     try {
+        // Refetch data with current filter parameters
         await fetchData();
+    } catch (error) {
+        console.error("Error during search:", error);
     } finally {
         isSearching.value = false;
     }
 }, 1000, { trailing: false });
 
-// Search throttling
+// Handle event selection change
 const handleEventChange = () => {
+    // Clear error message when event is selected
     showEventRequiredError.value = false;
+    // Reset pagination to first page when changing event
+    currentPage.value = 1;
+    // Trigger search when event changes
     handleSearch();
 };
 
@@ -1163,43 +1170,120 @@ const fetchData = async () => {
     loading.value = true;
     error.value = "";
     try {
-        // 获取访问令牌
+        // Get access token for authentication
         const token = casdoorService.getToken();
         
-        // 添加授权请求头
-        const response = await axios.get<SurveyData[]>("https://api.team695.com/survey/query", {
+        // Add authorization header to request
+        const response = await axios.get<any>("https://api.team695.com/survey/query", {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
         });
         
-        surveyData.value = response.data.map(item => {
+        // Handle response data - API returns { success: true, data: [...], message: "..." }
+        console.log("Raw API response:", response.data);
+        
+        // Extract the data array from the API response structure
+        let data: SurveyData[] = [];
+        
+        if (response.data && typeof response.data === 'object') {
+            // If response has a 'data' property, use it (API wrapped format)
+            if (Array.isArray(response.data.data)) {
+                data = response.data.data;
+            } 
+            // If response is directly an array, use it
+            else if (Array.isArray(response.data)) {
+                data = response.data;
+            }
+            // Otherwise, log the structure and fail gracefully
+            else {
+                console.warn("Unexpected response structure:", response.data);
+                surveyData.value = [];
+                error.value = "Invalid response format from server";
+                return;
+            }
+        }
+        
+        // Ensure we have a valid array
+        if (!Array.isArray(data) || data.length === 0) {
+            console.warn("No survey data found in response");
+            surveyData.value = [];
+            error.value = "No survey data available";
+            return;
+        }
+        
+        console.log(`Found ${data.length} survey records in API response`);
+        
+        // Process and normalize the survey data
+        surveyData.value = data.map(item => {
             // Parse JSON strings if needed
             if (typeof item.data === 'string') {
-                item.data = JSON.parse(item.data);
+                try {
+                    item.data = JSON.parse(item.data);
+                } catch (e) {
+                    console.warn("Failed to parse item.data:", e);
+                    item.data = {};
+                }
             }
+            // Guard against non-object data to avoid runtime crashes
+            if (!item.data || typeof item.data !== 'object' || Array.isArray(item.data)) {
+                item.data = {};
+            }
+            
             if (typeof item.upload === 'string') {
-                item.upload = JSON.parse(item.upload);
+                try {
+                    item.upload = JSON.parse(item.upload);
+                } catch (e) {
+                    console.warn("Failed to parse item.upload:", e);
+                    item.upload = { fullRobotImages: [], driveTrainImages: [] };
+                }
+            }
+            // Guard against non-object upload to avoid runtime crashes
+            if (!item.upload || typeof item.upload !== 'object' || Array.isArray(item.upload)) {
+                item.upload = { fullRobotImages: [], driveTrainImages: [] };
             }
 
             // Map user_data to userData for backward compatibility
-            if (item.user_data) {
+            if (item.user_data && !item.userData) {
                 item.userData = item.user_data;
             }
 
             return item;
         });
+        
+        console.log(`Successfully loaded ${surveyData.value.length} survey records`);
+        
+        // Extract and log all unique event IDs
+        const allEvents = Array.from(new Set(surveyData.value.map(s => s.event_id).filter(Boolean))).sort();
+        console.log(`Available events: ${allEvents.join(', ')}`);
+        
+        // Auto-select first event if available and no event is selected yet
+        if (allEvents.length > 0 && !queryParams.value.eventId) {
+            queryParams.value.eventId = allEvents[0];
+            console.log(`Auto-selected first event: ${allEvents[0]}`);
+        }
     } catch (err: any) {
         console.error("Error fetching data:", err);
-        // 检查是否为授权错误
+        // Check for authentication error
         if (err.response && err.response.status === 401) {
             error.value = "Authentication error. Please login again.";
-            // 可以选择重定向到登录页面
+            // Redirect to login if needed
             // window.location.href = '/login';
+        } else if (err.response && err.response.status === 304) {
+            // 304 Not Modified - data hasn't changed, this is acceptable
+            console.log("Data not modified (304). Using cached data if available.");
+            if (surveyData.value.length === 0) {
+                // No cached data available
+                error.value = "No data available. Please refresh the page.";
+            }
         } else {
             error.value = err.message || "Failed to fetch data. Please try again later.";
         }
-        surveyData.value = [];
+        
+        // Only clear data if we haven't already loaded some
+        if (surveyData.value.length === 0) {
+            surveyData.value = [];
+        }
     } finally {
         loading.value = false;
     }
@@ -1224,8 +1308,9 @@ const preventTextSelection = (event: Event) => {
 
 // Initialize data on component mount
 onMounted(() => {
-    fetchData();
     loadSavedPreferences();
+    // Fetch all data on page load
+    fetchData();
     document.addEventListener('click', handleClickOutside);
     document.addEventListener('selectstart', preventTextSelection);
 });
@@ -1237,8 +1322,14 @@ onUnmounted(() => {
 
 // Computed properties
 const uniqueEventIds = computed(() => {
-    const eventIds = new Set(surveyData.value.map(survey => survey.event_id));
-    return Array.from(eventIds);
+    // Extract unique event IDs from survey data and filter out empty ones
+    const eventIds = new Set(
+        surveyData.value
+            .map(survey => survey.event_id)
+            .filter((id): id is string => !!id) // Type guard to filter out null/undefined
+    );
+    // Return sorted array for consistent display
+    return Array.from(eventIds).sort();
 });
 
 const filteredSurveyData = computed(() => {
@@ -1249,6 +1340,14 @@ const filteredSurveyData = computed(() => {
             getFieldValue(survey.data, "Team number") === queryParams.value.teamNumber;
         return eventIdMatch && formIdMatch && teamNumberMatch;
     });
+});
+
+// Auto-select first event when data loads and no event is selected
+watch(uniqueEventIds, (newIds) => {
+    if (newIds.length > 0 && !queryParams.value.eventId) {
+        queryParams.value.eventId = newIds[0];
+        console.log(`Auto-selected event from dropdown: ${newIds[0]}`);
+    }
 });
 
 // Get unique team count for the selected event
@@ -1627,59 +1726,62 @@ const formatUrl = (url: string): string => {
     }
 };
 
-// Compute submission users
+// Compute submission users from filtered survey data
 const submissionUsers = computed(() => {
     const users: Record<string, SubmissionUser> = {};
 
     filteredSurveyData.value.forEach(survey => {
-        // Use user_data instead of userData
-        if (survey.user_data && survey.user_data.userId) {
-            const userId = survey.user_data.userId;
+        // Use either user_data or userData property
+        const userData = survey.user_data || survey.userData;
+        
+        if (userData && userData.userId) {
+            const userId = userData.userId;
 
             if (!users[userId]) {
                 users[userId] = {
                     userId,
-                    username: survey.user_data.username || 'Unknown',
-                    displayName: survey.user_data.displayName || survey.user_data.username || 'Unknown',
-                    firstName: survey.user_data.firstName,
-                    lastName: survey.user_data.lastName,
-                    avatar: survey.user_data.avatar || '',
+                    username: userData.username || 'Unknown',
+                    displayName: userData.displayName || userData.username || 'Unknown',
+                    firstName: userData.firstName,
+                    lastName: userData.lastName,
+                    avatar: userData.avatar || '',
                     count: 0,
                     lastSubmission: survey.timestamp,
                     // Add device info
                     userAgent: survey.user_agent || 'Unknown',
                     ip: survey.ip || 'Unknown',
                     language: survey.language || 'Unknown',
-                    // Add submissions by event
+                    // Add submissions grouped by event
                     submissionsByEvent: {}
                 };
             }
 
             users[userId].count++;
 
-            // Group submissions by event
+            // Group submissions by event ID
             const eventId = survey.event_id;
             if (!users[userId].submissionsByEvent[eventId]) {
                 users[userId].submissionsByEvent[eventId] = [];
             }
 
-            // Add team number to submissions
+            // Add team number information to submissions
             const teamNumber = getFieldValue(survey.data, "Team number");
             if (teamNumber) {
                 users[userId].submissionsByEvent[eventId].push({
                     id: survey.id,
-                    teamNumber,
+                    teamNumber: String(teamNumber),
                     timestamp: survey.timestamp
                 });
             }
 
-            // Update last submission if this one is newer
+            // Update last submission timestamp if this one is more recent
             if (new Date(survey.timestamp) > new Date(users[userId].lastSubmission)) {
                 users[userId].lastSubmission = survey.timestamp;
             }
         }
     });
 
+    // Return sorted by submission count (most active first)
     return Object.values(users).sort((a, b) => b.count - a.count);
 });
 

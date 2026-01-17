@@ -4,9 +4,7 @@ import piniaPluginPersistedstate from 'pinia-plugin-persistedstate';
 import App from './App.vue';
 import router from './router';
 import './assets/globals.css';
-import { Icon } from '@iconify/vue';
 import { lazyLoad } from './directives/lazyLoad';
-import ApiErrorHandler from '@/components/global/ApiErrorHandler.vue';
 
 const app = createApp(App);
 
@@ -34,9 +32,19 @@ pinia.use(piniaPluginPersistedstate);
 // Configure stores after pinia is installed
 configureStores();
 
-app.component('Icon', Icon);
-
-// 添加全局API错误处理组件
-app.component('ApiErrorHandler', ApiErrorHandler);
+// 延迟注册全局组件，避免阻塞初始加载
+// Icon组件按需导入，不再全局注册
+// 全局组件改为在各自使用的地方局部导入
 
 app.mount('#app');
+
+// 移除加载屏幕
+setTimeout(() => {
+    const loadingScreen = document.getElementById('loading-screen');
+    if (loadingScreen) {
+        loadingScreen.classList.add('fade-out');
+        setTimeout(() => {
+            loadingScreen.remove();
+        }, 500);
+    }
+}, 100);
