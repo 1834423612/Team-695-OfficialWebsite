@@ -28,7 +28,7 @@
     "pinia-plugin-persistedstate": "^4.2.0",
     "sweetalert2": "^11.14.1",
     "tailwindcss-animate": "^1.0.7",
-    "uuid": "^11.0.1",
+    "uuid": "^13.0.0",
     "vue": "^3.4.29",
     "vue-chartjs": "^5.3.1",
     "vue-router": "4"
