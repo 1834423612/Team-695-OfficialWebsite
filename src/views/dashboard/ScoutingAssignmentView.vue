@@ -30,7 +30,7 @@
                     <h3 class="text-lg font-medium text-gray-900 mb-3 sm:mb-0">Select Event</h3>
                     <div class="flex flex-col sm:flex-row gap-3">
                         <div class="relative">
-                            <select v-model="selectedEvent" @change="loadAssignments"
+                            <select v-model="selectedEvent"
                                 class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm rounded-md">
                                 <option v-for="event in events" :key="event.key" :value="event.key">
                                     {{ event.name }} ({{ event.key }})
@@ -753,10 +753,9 @@ export default defineComponent({
         const loading = ref(false);
         const error = ref('');
         const assignments = ref<any[]>([]);
-        const events = ref([
-            { key: '2025johnson', name: '2025 Johnson Division' },
-        ]);
-        const selectedEvent = ref('2025johnson');
+        let loadDataPromise: Promise<void> | null = null;
+        const events = ref<{ key: string; name: string }[]>([]);
+        const selectedEvent = ref('');
         const activeTab = ref('all');
         const filterType = ref('all');
         const searchQuery = ref('');
@@ -772,7 +771,7 @@ export default defineComponent({
 
         // Form data - Updated for multiple assignees
         const formData = ref({
-            event_key: '2025johnson',
+            event_key: '',
             task_type: 'scouting',
             assigned_team_numbers: [] as number[],
             assigned_alliance: 'red',
@@ -781,6 +780,53 @@ export default defineComponent({
             notes: '',
             status: 'pending'
         });
+
+        const loadCurrentEvent = async () => {
+            try {
+                const token = casdoorService.getToken();
+                if (!token) {
+                    throw new Error('Authentication token not found');
+                }
+
+                const response = await fetch('https://api.team695.com/api/event/events', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to load events: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                // Parse the events array
+                if (!Array.isArray(data) || data.length === 0) {
+                    throw new Error('No events available');
+                }
+
+                // Map events to dropdown format (keep original format for display)
+                events.value = data.map((event: any) => ({
+                    key: String(event.eventId || event.event_id),
+                    name: event.eventName || event.event_name || event.eventId || event.event_id
+                }));
+
+                // Sort events by date (most recent first) and select the latest one
+                const sortedEvents = [...data].sort((a: any, b: any) => {
+                    const dateA = new Date(a.eventDate || a.event_date).getTime();
+                    const dateB = new Date(b.eventDate || b.event_date).getTime();
+                    return dateB - dateA; // descending order
+                });
+
+                const latestEvent = sortedEvents[0];
+                const eventKey = String(latestEvent.eventId || latestEvent.event_id);
+                
+                selectedEvent.value = eventKey;
+            } catch (err: any) {
+                console.error('Error loading events:', err);
+                error.value = err.message || 'Failed to load events. Please try again.';
+            }
+        };
 
         // For multiple assignees selection
         const selectedAssignees = ref<any[]>([]);
@@ -867,8 +913,15 @@ export default defineComponent({
             return assigneesList.some((assignee: { id: string; }) => assignee.id === userId);
         };
 
+        // Convert event key to database format (lowercase, no underscore)
+        const toDbEventKey = (eventKey: string): string => {
+            return eventKey.replace(/_/g, '').toLowerCase();
+        };
+
         // Load assignments
         const loadAssignments = async () => {
+            if (!selectedEvent.value) return;
+
             loading.value = true;
             error.value = '';
 
@@ -878,10 +931,13 @@ export default defineComponent({
                     throw new Error('Authentication token not found');
                 }
 
+                // Convert event key to database format for API
+                const dbEventKey = toDbEventKey(selectedEvent.value);
+
                 // Determine which endpoint to use based on user role
                 const endpoint = isAdmin.value
-                    ? `https://api.team695.com/assignments/events/${selectedEvent.value}`
-                    : `https://api.team695.com/assignments/user/${selectedEvent.value}`;
+                    ? `https://api.team695.com/assignments/events/${dbEventKey}`
+                    : `https://api.team695.com/assignments/user/${dbEventKey}`;
 
                 const response = await fetch(endpoint, {
                     headers: {
@@ -958,8 +1014,7 @@ export default defineComponent({
 
         // Refresh data
         const refreshData = () => {
-            loadAssignments();
-            loadEventTeams();
+            loadEventData();
             if (isAdmin.value) {
                 loadTeamMembers();
             }
@@ -1308,6 +1363,7 @@ export default defineComponent({
                     // Create new assignment with assigner data
                     const postData = {
                         ...formData.value,
+                        event_key: toDbEventKey(formData.value.event_key), // Convert to database format
                         assigner_data: assignerData
                     };
                     
@@ -1351,20 +1407,45 @@ export default defineComponent({
             }
         };
 
-        // Watch for event changes
+        // Debounced data loading function
+        const loadEventData = async () => {
+            if (!selectedEvent.value) return;
+            
+            // If there's already a pending request, return that promise
+            if (loadDataPromise) {
+                return loadDataPromise;
+            }
+            
+            formData.value.event_key = selectedEvent.value;
+            
+            loadDataPromise = Promise.all([
+                loadAssignments(),
+                loadEventTeams()
+            ]).then(() => {
+                loadDataPromise = null;
+            }).catch((err) => {
+                loadDataPromise = null;
+                throw err;
+            });
+            
+            return loadDataPromise;
+        };
+
+        // Watch for event changes with debouncing
         watch(selectedEvent, () => {
-            loadAssignments();
-            loadEventTeams();
+            if (!selectedEvent.value) return;
+            loadEventData();
         });
 
         // Load data on mount
-        onMounted(() => {
+        onMounted(async () => {
             // Initialize the store to get user data
             userStore.initializeStore();
 
-            // Load assignments and team members
-            loadAssignments();
-            loadEventTeams();
+            // Load current event, which will trigger watch and load assignments/teams automatically
+            await loadCurrentEvent();
+
+            // Load team members for admin
             if (isAdmin.value) {
                 loadTeamMembers();
             }
@@ -1437,13 +1518,18 @@ export default defineComponent({
 
         // 加载事件队伍数据
         const loadEventTeams = async () => {
+            if (!selectedEvent.value) return;
+
             try {
                 const token = casdoorService.getToken();
                 if (!token) {
                     throw new Error('Authentication token not found');
                 }
 
-                const response = await fetch(`https://api.team695.com/team-matches/event/${selectedEvent.value}`, {
+                // Convert event key to database format for API
+                const dbEventKey = toDbEventKey(selectedEvent.value);
+
+                const response = await fetch(`https://api.team695.com/team-matches/event/${dbEventKey}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -1567,8 +1653,11 @@ export default defineComponent({
                 const currentStatus = isTeamPit(teamNumber);
                 const newStatus = !currentStatus;
                 
+                // Convert event key to database format for API
+                const dbEventKey = toDbEventKey(selectedEvent.value);
+                
                 // 发送API请求更新状态
-                const response = await fetch(`https://api.team695.com/team-matches/pit-status/${selectedEvent.value}/frc${teamNumber}`, {
+                const response = await fetch(`https://api.team695.com/team-matches/pit-status/${dbEventKey}/frc${teamNumber}`, {
                     method: 'PUT',
                     headers: {
                         'Authorization': `Bearer ${token}`,
