@@ -422,6 +422,16 @@ interface Team {
   team_name: string;
 }
 
+interface RawTeam {
+  team_number?: string | number;
+  team_name?: string;
+  teamNumber?: string | number;
+  teamName?: string;
+  number?: string | number;
+  name?: string;
+  nickname?: string;
+}
+
 // Use the Pinia store for user data
 const userStore = useUserStore();
 const { userInfo } = storeToRefs(userStore);
@@ -445,7 +455,7 @@ const currentFormId = computed(() => tabs.value[currentTab.value].formId);
 
 
 // Form versioning control
-const FORM_VERSION = "2025.4.15_PROD_ED6"; // Update this when you want to force a form reset
+const FORM_VERSION = "2026.02_PROD_ED1"; // Update this when you want to force a form reset
 const FORM_VERSION_KEY = "pit-scouting-form-version";
 
 
@@ -512,210 +522,249 @@ const initializeDefaultFormFields = () => {
       value: null,
       originalIndex: 0
     },
+
     {
-      i: "https://lh7-us.googleusercontent.com/pUWvHrPDa5IfrQcFalk4lO0e4PhD3sLMP0jyLJU8PTWWGfw5r-Wa4qDQNHhbu0byYLzXScP5lfTSUCsvbNI-FlwDY2L7Ra0-TgYqf5Eabw0INSFE3ah4QCqCqHFrsaPKyCOt8m2Yo-H2ie9E7apzh6c8AO147A",
-      w: "50%",
       question: "Type of drive train",
-      description: "Select the type of drive train used in your robot design.",
+      description: "Select the drivetrain used on the robot.",
       type: "radio",
       options: [
-        'Tank Drive ("skid steer", plates on both sides of wheels)',
-        "West Coast Drive (wheels mounted off one side of tube)",
-        "Swerve Drive",
-        "Other",
-      ],
-      optionValues: [
-        'Tank Drive',
+        "Tank Drive",
         "West Coast Drive",
         "Swerve Drive",
-        "Other",
-      ],
-      value: null,
-      required: true,
-      showOtherInput: false,
-      otherValue: "",
-      showDescription: false,
-      originalIndex: 1
-    },
-    {
-      i: "https://lh7-us.googleusercontent.com/PCI7CaG88MiY50L7AM0CVTs9dRd3NQgqW4B2rd64vmjHaNDMEHR0EkWYqv-rzHBnGBC08NzWtr7W97lIk226Q9WVCPuTKuOSZcpb6eyNC5Q3HGmFQwp8005gRcxiS09RjeWUJQJTK-vQGDWd0QAbpSipLSkExw",
-      w: "100%",
-      question: "Type of wheels used",
-      description: "Choose the type of wheels used on your robot.",
-      type: "radio",
-      options: [
-        "Traction",
-        "Mecanum (rollers at 45° angle)",
-        "Omni (rollers at 90° angle)",
-        "Other",
+        "Other"
       ],
       optionValues: [
-        "Traction",
-        "Mecanum",
-        "Omni",
-        "Other",
+        "Tank Drive",
+        "West Coast Drive",
+        "Swerve Drive",
+        "Other"
       ],
       value: null,
       required: true,
-      showOtherInput: false,
-      otherValue: "",
-      showDescription: false,
+      originalIndex: 1
+    },
+
+    {
+      question: "Primary mobility capabilities",
+      description: "Which field elements can your robot traverse?",
+      type: "checkbox",
+      options: [
+        "BUMP",
+        "TRENCH",
+        "Neither"
+      ],
+      optionValues: [
+        "BUMP",
+        "TRENCH",
+        "Neither"
+      ],
+      value: [],
+      required: true,
       originalIndex: 2
     },
+
     {
-      question: "Intake Use:",
+      question: "FUEL acquisition methods",
+      description: "How does your robot acquire FUEL?",
       type: "checkbox",
-      options: ["Ground", "Station", "None", "Other"],
-      optionValues: ["Ground", "Station", "None", "Other"],
+      options: [
+        "Floor pickup",
+        "DEPOT",
+        "OUTPOST (Human Player)",
+        "Preloaded only",
+        "Other"
+      ],
+      optionValues: [
+        "Floor",
+        "DEPOT",
+        "OUTPOST",
+        "Preloaded",
+        "Other"
+      ],
       value: [],
       required: true,
-      showOtherInput: false,
-      otherValue: "",
       originalIndex: 3
     },
+
     {
-      question: "Coral Acquisition(Scoring Method):",
+      question: "FUEL scoring method",
+      description: "How does your robot score FUEL into the HUB?",
       type: "radio",
-      options: ["None", "Coral Station Only", "Floor Only", "Coral Station and Floor"],
-      optionValues: ["None", "Coral Station Only", "Floor Only", "Coral Station and Floor"],
+      options: [
+        "Low goal / direct dump",
+        "High goal / shooting",
+        "Both",
+        "Does not score"
+      ],
+      optionValues: [
+        "Low",
+        "High",
+        "Both",
+        "None"
+      ],
       value: null,
       required: true,
-      showOtherInput: false,
-      otherValue: "",
       originalIndex: 4
     },
+
     {
-      question: "Scoring Locations:",
-      type: "checkbox",
-      options: ["L1", "L2", "L3", "L4", "Algae in Processor", "Algae in Net", "Other"],
-      optionValues: ["L1", "L2", "L3", "L4", "Algae in Processor", "Algae in Net", "Other"],
-      value: [],
+      question: "Preferred scoring range",
+      description: "From where does your robot usually score into the HUB?",
+      type: "radio",
+      options: [
+        "Close range only",
+        "Mid range",
+        "Long range",
+        "Multiple ranges"
+      ],
+      optionValues: [
+        "Close",
+        "Mid",
+        "Long",
+        "Multiple"
+      ],
+      value: null,
       required: true,
-      showOtherInput: false,
-      otherValue: "",
       originalIndex: 5
     },
+
     {
-      question: "Algae Acquisition(Scoring Method):",
-      type: "radio",
-      options: ["None", "Reef Only", "Floor Only", "Reef and Floor"],
-      optionValues: ["None", "Reef Only", "Floor Only", "Reef and Floor"],
-      value: null,
+      question: "Autonomous capabilities",
+      description: "Select all that apply during AUTO.",
+      type: "checkbox",
+      options: [
+        "Leaves ALLIANCE ZONE",
+        "Scores FUEL in HUB",
+        "Uses vision (AprilTags)",
+        "Climbs TOWER in AUTO",
+        "No autonomous scoring"
+      ],
+      optionValues: [
+        "Leaves Zone",
+        "Auto Fuel",
+        "Vision",
+        "Auto Climb",
+        "None"
+      ],
+      value: [],
       required: true,
-      showOtherInput: false,
-      otherValue: "",
       originalIndex: 6
     },
+
     {
-      question: "Algae Scoring:",
-      type: "radio",
-      options: ["None", "Processor Only", "Net Only", "Processor and Net"],
-      optionValues: ["None", "Processor Only", "Net Only", "Processor and Net"],
-      value: null,
+      question: "TOWER climbing capability",
+      description: "Which RUNGS can your robot reliably climb?",
+      type: "checkbox",
+      options: [
+        "LOW RUNG",
+        "MID RUNG",
+        "HIGH RUNG",
+        "No climb"
+      ],
+      optionValues: [
+        "Low",
+        "Mid",
+        "High",
+        "None"
+      ],
+      value: [],
       required: true,
-      showOtherInput: false,
-      otherValue: "",
       originalIndex: 7
     },
+
     {
-      question: "Cage Climbing:",
-      type: "checkbox",
-      options: ["Deep Climb", "Shallow Climb", "No Climb"],
-      optionValues: ["Deep Climb", "Shallow Climb", "No Climb"],
-      value: [],
+      question: "Endgame role preference",
+      description: "Primary intended role during END GAME.",
+      type: "radio",
+      options: [
+        "Primary climber",
+        "Secondary climber",
+        "Fuel scoring",
+        "Defense",
+        "Support only"
+      ],
+      optionValues: [
+        "Primary Climb",
+        "Secondary Climb",
+        "Fuel",
+        "Defense",
+        "Support"
+      ],
+      value: null,
       required: true,
       originalIndex: 8
     },
+
     {
-      question: "Robot leaves their Starting Zone during autonomous?",
-      type: "radio",
-      options: ["Yes", "No"],
-      optionValues: ["Yes", "No"],
-      value: null,
+      question: "Robot Weight (without bumpers)",
+      description: "Weight in pounds.",
+      type: "number",
       required: true,
-      showOtherInput: false,
-      otherValue: "",
+      value: null,
       originalIndex: 9
     },
+
     {
-      question: "Robot Weight (without Bumpers)",
-      description: "Enter the weight of the robot in pounds.",
+      question: "Bumpers Weight",
+      description: "Weight in pounds.",
       type: "number",
       required: true,
       value: null,
       originalIndex: 10
     },
+
     {
-      question: "Bumpers Weight",
-      description: "Enter the weight of the bumpers in pounds.",
-      type: "number",
+      question: "Robot Dimensions (without bumpers)",
+      description: "Enter dimensions in inches.",
+      type: "text",
       required: true,
       value: null,
       originalIndex: 11
     },
+
     {
-      question: "Robot Length (without Bumpers)",
-      description: "Enter the length of the robot in inches without bumpers(front to back).",
+      question: "Maximum robot height when fully extended",
+      description: "Height in inches.",
       type: "number",
       required: true,
       value: null,
       originalIndex: 12
     },
+
     {
-      question: "Robot Width (without Bumpers)",
-      description: "Enter the width of the robot in inches without bumpers(left to right).",
-      type: "number",
-      required: true,
+      question: "Drive team configuration",
+      type: "radio",
+      options: [
+        "Single driver",
+        "Driver + operator",
+        "Other"
+      ],
+      optionValues: [
+        "Single",
+        "Driver + Operator",
+        "Other"
+      ],
       value: null,
+      required: true,
       originalIndex: 13
     },
+
     {
-      question: "Robot Height",
-      description: "Enter the height of the robot in inches from the floor to the highest point on the robot at the start of the match.",
-      type: "number",
+      question: "Estimated hours of driver practice",
+      description: "Total hours or weeks practiced.",
+      type: "text",
       required: true,
       value: null,
       originalIndex: 14
     },
+
     {
-      question: "Height when fully extended",
-      description: "In inches.",
-      type: "number",
-      required: true,
-      value: null,
-      originalIndex: 15
-    },
-    {
-      question: "Drive Team Members",
-      type: "radio",
-      options: [
-        "One person driving and operating the robot during a match",
-        "Other",
-      ],
-      optionValues: [
-        "One person driving and operating the robot during a match",
-        "Other",
-      ],
-      value: null,
-      required: true,
-      showOtherInput: false,
-      otherValue: "",
-      originalIndex: 16
-    },
-    {
-      question: "Hours/Weeks of Practice",
-      type: "text",
-      required: true,
-      value: null,
-      originalIndex: 17
-    },
-    {
-      question: "Additional Comments",
+      question: "Additional comments",
       type: "textarea",
       required: false,
       value: null,
-      originalIndex: 18
-    },
+      originalIndex: 15
+    }
   ];
   
   // Set formFields to the default fields
@@ -768,7 +817,7 @@ onMounted(async () => {
 const fullRobotImages = ref<ImageData[]>([]);
 const driveTrainImages = ref<ImageData[]>([]);
 const imageRefs = ref<{ [key: string]: HTMLInputElement | null }>({});
-const teamSuggestions = ref<any[]>([]);
+const teamSuggestions = ref<Team[]>([]);
 const showTeamSuggestions = ref(false);
 
 onMounted(async () => {
@@ -811,10 +860,46 @@ const filteredTeamSuggestions = computed(() => {
   if (!query) return [];
   return teamSuggestions.value.filter(
     (team) =>
-      team.team_number.includes(query) ||
+      team.team_number.toLowerCase().includes(query) ||
       team.team_name.toLowerCase().includes(query)
   );
 });
+
+const normalizeTeamsFromApi = (payload: unknown): Team[] => {
+  const isRawTeam = (item: unknown): item is RawTeam =>
+    typeof item === 'object' && item !== null;
+
+  const mapTeam = (item: RawTeam): Team | null => {
+    const teamNumber = item.team_number ?? item.teamNumber ?? item.number;
+    const teamName = item.team_name ?? item.teamName ?? item.name ?? item.nickname ?? '';
+
+    if (teamNumber === undefined || teamNumber === null) {
+      return null;
+    }
+
+    return {
+      team_number: String(teamNumber),
+      team_name: String(teamName),
+    };
+  };
+
+  const extractArray = (value: unknown): unknown[] => {
+    if (Array.isArray(value)) return value;
+    if (!value || typeof value !== 'object') return [];
+
+    const obj = value as Record<string, unknown>;
+    const candidates = [obj.teams, obj.data, obj.results, obj.items];
+    for (const candidate of candidates) {
+      if (Array.isArray(candidate)) return candidate;
+    }
+    return [];
+  };
+
+  return extractArray(payload)
+    .filter(isRawTeam)
+    .map(mapTeam)
+    .filter((team): team is Team => team !== null);
+};
 
 const loadEventId = async () => {
   try {
@@ -981,9 +1066,10 @@ const loadTeams = async (query: string) => {
       }
     });
     const data = await response.json();
-    teamSuggestions.value = data;
+    teamSuggestions.value = normalizeTeamsFromApi(data);
   } catch (error) {
     console.error("Error loading teams:", error);
+    teamSuggestions.value = [];
   }
 };
 
