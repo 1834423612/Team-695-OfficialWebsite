@@ -224,7 +224,7 @@ export const useUserStore = defineStore('user', {
                     
                     try {
                         // Get user info directly without token validation
-                        const userInfo = await casdoorService.getUserInfo(showLoading);
+                        const userInfo = await casdoorService.getUserInfo(true);
                         this.userInfo = userInfo;
                         this.orgData = userInfo.data2;
                         this.lastFetchTime = Date.now();
@@ -310,7 +310,7 @@ export const useUserStore = defineStore('user', {
                             
                             // 2. After validation, get user info
                             logger.info('Step 2: Getting user info');
-                            const userInfo = await casdoorService.getUserInfo(showLoading);
+                            const userInfo = await casdoorService.getUserInfo(true);
                             
                             // Check for invalid response
                             if (isInvalidAuthResponse(userInfo)) {
@@ -436,15 +436,22 @@ export const useUserStore = defineStore('user', {
         // Update user info with new data
         updateUserInfo(userData: any) {
             logger.prettyGroup('Update User Info', 'info', true);
-            this.userInfo = userData;
+            this.userInfo = {
+                ...(this.userInfo || {}),
+                ...(userData || {})
+            };
+            this.orgData = this.userInfo?.data2 || null;
+            this.lastFetchTime = Date.now();
+            this.isInitialized = true;
+            this.error = null;
             
             // 注册用户ID映射，帮助迁移缓存
-            if (userData && userData.id) {
-                AvatarMigrationTool.registerUserOnLogin(userData);
+            if (this.userInfo && this.userInfo.id) {
+                AvatarMigrationTool.registerUserOnLogin(this.userInfo);
             }
             
             // Store in localStorage for persistence
-            localStorage.setItem('userInfo', JSON.stringify(userData));
+            localStorage.setItem('userInfo', JSON.stringify(this.userInfo));
             logger.pretty('Status', 'User info updated', 'success');
             logger.groupEnd();
             return Promise.resolve();

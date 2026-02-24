@@ -256,6 +256,7 @@ export default defineComponent({
         const showSecret = ref(false);
         const isGeneratingKeys = ref(false);
         const showResetConfirmModal = ref(false);
+        const apiKeyMutationId = ref(0);
 
         // Toast notification
         const showToast = ref(false);
@@ -291,7 +292,12 @@ export default defineComponent({
         // Generate new API keys
         const generateApiKeys = async () => {
             try {
+                if (isGeneratingKeys.value) {
+                    return;
+                }
+
                 isGeneratingKeys.value = true;
+                const currentMutationId = ++apiKeyMutationId.value;
 
                 // Ensure user is logged in
                 const token = casdoorService.getToken();
@@ -315,6 +321,10 @@ export default defineComponent({
                 // Parse the response data
                 const responseData = await response.json();
 
+                if (currentMutationId !== apiKeyMutationId.value) {
+                    return;
+                }
+
                 if (!responseData.success) {
                     throw new Error(responseData.error || 'Failed to generate API keys');
                 }
@@ -322,7 +332,7 @@ export default defineComponent({
                 // Update user information directly from the API response
                 if (responseData.data) {
                     // Create a copy of the current user info
-                    const updatedUserInfo = { ...userInfo.value };
+                    const updatedUserInfo = { ...(userInfo.value || {}) };
 
                     // Update the access keys
                     updatedUserInfo.accessKey = responseData.data.accessKey;
@@ -353,8 +363,13 @@ export default defineComponent({
         // Reset API keys
         const resetApiKeys = async () => {
             try {
+                if (isGeneratingKeys.value) {
+                    return;
+                }
+
                 isGeneratingKeys.value = true;
                 showResetConfirmModal.value = false;
+                const currentMutationId = ++apiKeyMutationId.value;
 
                 // Ensure user is logged in
                 const token = casdoorService.getToken();
@@ -378,6 +393,10 @@ export default defineComponent({
                 // Parse the response data
                 const responseData = await response.json();
 
+                if (currentMutationId !== apiKeyMutationId.value) {
+                    return;
+                }
+
                 if (!responseData.success) {
                     throw new Error(responseData.error || 'Failed to reset API keys');
                 }
@@ -385,7 +404,7 @@ export default defineComponent({
                 // Update user information directly from the API response
                 if (responseData.data) {
                     // Create a copy of the current user info
-                    const updatedUserInfo = { ...userInfo.value };
+                    const updatedUserInfo = { ...(userInfo.value || {}) };
 
                     // Update the access keys
                     updatedUserInfo.accessKey = responseData.data.accessKey;
