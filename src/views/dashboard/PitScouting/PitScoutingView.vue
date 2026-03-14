@@ -184,7 +184,7 @@
               </div>
               <div>
                 <h3 class="text-sm font-medium text-gray-700">Submitting as:</h3>
-                <p class="text-indigo-700 font-medium">{{ userData.displayName || userData.name }}</p>
+                <p class="text-indigo-700 font-medium">{{ submitterDisplayName }}</p>
               </div>
             </div>
           </div>
@@ -422,6 +422,19 @@ interface Team {
   team_name: string;
 }
 
+interface SubmissionUserData {
+  username: string;
+  displayName: string;
+  userId: string;
+  avatar: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  groups?: string[];
+  roles?: string[];
+  permissions?: string[];
+}
+
 interface RawTeam {
   team_number?: string | number;
   team_name?: string;
@@ -440,6 +453,57 @@ const { userInfo } = storeToRefs(userStore);
 const userData = computed(() => {
   return userInfo.value || {};
 });
+
+const normalizeClaimArray = (value: unknown): string[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((entry) => {
+      if (typeof entry === 'string') {
+        return entry;
+      }
+
+      if (entry && typeof entry === 'object') {
+        const record = entry as Record<string, unknown>;
+        if (typeof record.name === 'string') {
+          return record.name;
+        }
+      }
+
+      return '';
+    })
+    .filter(Boolean);
+};
+
+const buildSubmissionUserData = (raw: any): SubmissionUserData => {
+  const username = raw?.preferred_username || raw?.username || raw?.name || '';
+  const displayName = raw?.displayName || raw?.fullName || raw?.name || username || 'Unknown User';
+  const userId = raw?.id || raw?.sub || '';
+
+  return {
+    username,
+    displayName,
+    userId,
+    avatar: raw?.avatar || raw?.picture || '',
+    email: raw?.email || '',
+    firstName: raw?.firstName || '',
+    lastName: raw?.lastName || '',
+    groups: normalizeClaimArray(raw?.groups),
+    roles: normalizeClaimArray(raw?.roles),
+    permissions: normalizeClaimArray(raw?.permissions),
+  };
+};
+
+const submitter = computed<SubmissionUserData>(() => buildSubmissionUserData(userData.value));
+
+const submitterDisplayName = computed(() => submitter.value.displayName || submitter.value.username || 'Unknown User');
+
+const getPageSpyTitle = (): string => {
+  const userLabel = submitter.value.username || submitter.value.userId || 'anonymous';
+  return `Pit/${userLabel}`;
+};
 
 // Format event ID for URL
 const formatEventId = (id: string): string => {
@@ -1448,19 +1512,23 @@ const submitForm = async () => {
     // Get the team number from the first field in the form
     const teamNumber = formFields.value[0]?.value;
     
-    // Get user info including avatar
-    let userAvatar = userData.value.avatar || "";
+    // Build a normalized user identity for submission and logs.
+    let submissionUser = buildSubmissionUserData(userData.value);
+    let userAvatar = submissionUser.avatar;
     
     // If avatar is not in userData, try to get it directly from casdoorService
     if (!userAvatar) {
       try {
-        const userInfo = await casdoorService.getUserInfo(true); // Force refresh to get latest data
-        userAvatar = userInfo.avatar || "";
+        const refreshedUserInfo = await casdoorService.getUserInfo(true);
+        submissionUser = buildSubmissionUserData(refreshedUserInfo);
+        userAvatar = submissionUser.avatar;
         console.log("Retrieved avatar from casdoorService:", userAvatar);
       } catch (avatarError) {
         console.error("Error fetching user avatar:", avatarError);
       }
     }
+
+    submissionUser.avatar = userAvatar;
     
     // Format the form fields to ensure they are in the correct order
     const sortedFields = [...formFields.value].sort((a, b) => 
@@ -1503,14 +1571,9 @@ const submitForm = async () => {
         driveTrainImages: driveTrainImages.value
       },
       deviceInfo: deviceInfo.value,
-      // Add user information to the submission
-      userData: {
-        username: userData.value.name,
-        displayName: userData.value.displayName,
-        userId: userData.value.id,
-        avatar: userAvatar,
-        email: userData.value.email || "",
-      }
+      // Bind normalized user identity to submission payload.
+      userData: submissionUser,
+      user_data: submissionUser
     };
 
     console.log("Submitting with avatar:", userAvatar);
@@ -1802,10 +1865,10 @@ onMounted(() => {
     autoRender: false,
     enableSSL: true,
     project: '695_Web',
-    title: 'Pit',
-    // 移除不支持的logoStyle属性
+    title: getPageSpyTitle(),
+    // logoStyle is not a supported PageSpy option.
     logo: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgdmlld0JveD0iMCAwIDIwIDIwIj48cGF0aCBmaWxsPSIjNTM1MzUzIiBkPSJNMyA2YTMgMyAwIDAgMSAzLTNoOGEzIDMgMCAwIDEgMyAzdjIuMDNhNC41IDQuNSAwIDAgMC0xLS4wMDRWN0h2N2EyIDIgMCAwIDAgMiAyaDMuNDkyYTIuNSAyLjUgMCAwIDAtLjQ0MyAxSDZhMyAzIDAgMCAxLTMtM3ptMTAuMDQ0IDMuNThhNC41MDUgNC41MDUgMCAwIDAtMy4wNDQtMS41OCA0LjUgNC41IDAgMSAwIDQuNSA0LjVhNC40ODEgNC40ODEgMCAwIDAtLjExNS0uOTc0bC0uODkxIC44OTFhMS41IDEuNSAwIDAgMS0yLjEyMSAyLjEyMWwtMy0zYTEuNSAxLjUgMCAwIDEgMi4xMjEtMi4xMmwuODk5Ljg5OEEzLjQ4NCAzLjQ4NCAwIDAgMSA2LjcwOC0uMjJsLjg0My0uODQzek0xNSAxMmEyIDIgMCAxIDEtNCAwIDIgMiAwIDAgMSA0IDB6Ii8+PC9zdmc+'
-  } as any); // 使用类型断言来绕过TypeScript检查
+  } as any); // Use a type assertion to bypass strict constructor option typing.
 });
 
 const copyToClipboard = (text: string) => {

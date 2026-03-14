@@ -825,11 +825,7 @@ class CasdoorService {
                     const payload = tokenInfo.payload;
                     
                     // Check for admin status in token payload
-                    if (
-                        payload.role === 'admin' || 
-                        payload.isAdmin === true || 
-                        (payload.groups && Array.isArray(payload.groups) && payload.groups.includes('admin'))
-                    ) {
+                    if (hasAdminPrivileges(payload)) {
                         return true;
                     }
                 }
@@ -932,27 +928,8 @@ class CasdoorService {
         
         if (tokenInfo?.payload) {
             const payload = tokenInfo.payload;
-            
-            // Check admin status
-            const isAdmin = payload.role === 'admin' || 
-                          payload.isAdmin === true || 
-                          (payload.groups && Array.isArray(payload.groups) && payload.groups.includes('admin'));
-            
-            // Create a basic user info object with proper name handling
-            const fullName = createFullName(payload);
-            
-            basicUserInfo = {
-                id: payload.sub || '',
-                name: payload.name || '',
-                email: payload.email || '',
-                owner: payload.owner || '',
-                displayName: payload.displayName || '',
-                firstName: payload.firstName || '',
-                lastName: payload.lastName || '',
-                fullName: fullName,
-                avatar: payload.avatar || null,
-                isAdmin: isAdmin
-            };
+
+            basicUserInfo = normalizeUserInfo(payload);
         }
 
         // Try to get detailed user info from Casdoor API
@@ -1005,18 +982,14 @@ class CasdoorService {
                 }
                 
                 const userData = await response.json();
-                
-                // Process name fields if needed
-                if (!userData.fullName) {
-                    userData.fullName = createFullName(userData);
-                }
+                const normalizedUserData = normalizeUserInfo(userData, basicUserInfo || undefined);
                 
                 // Cache the user info
-                this.userInfoCache = userData;
-                localStorage.setItem(USER_INFO_CACHE, JSON.stringify(userData));
+                this.userInfoCache = normalizedUserData;
+                localStorage.setItem(USER_INFO_CACHE, JSON.stringify(normalizedUserData));
                 localStorage.setItem(USER_INFO_TIMESTAMP, Date.now().toString());
                 
-                return userData;
+                return normalizedUserData;
             } catch (secondaryError) {
                 console.error('Secondary user info endpoint failed:', secondaryError);
                 
@@ -1038,18 +1011,14 @@ class CasdoorService {
                     }
                     
                     const userInfo: UserInfo = await response.json();
-                    
-                    // Process name fields if needed
-                    if (!userInfo.fullName) {
-                        userInfo.fullName = createFullName(userInfo);
-                    }
+                    const normalizedUserInfo = normalizeUserInfo(userInfo, basicUserInfo || undefined);
                     
                     // Cache the user info
-                    this.userInfoCache = userInfo;
-                    localStorage.setItem(USER_INFO_CACHE, JSON.stringify(userInfo));
+                    this.userInfoCache = normalizedUserInfo;
+                    localStorage.setItem(USER_INFO_CACHE, JSON.stringify(normalizedUserInfo));
                     localStorage.setItem(USER_INFO_TIMESTAMP, Date.now().toString());
                     
-                    return userInfo;
+                    return normalizedUserInfo;
                 } catch (tertiaryError) {
                     console.error('All user info endpoints failed:', tertiaryError);
                     
@@ -1104,13 +1073,8 @@ class CasdoorService {
             // Handle direct user object from other endpoints
             userData = responseData;
         }
-        
-        // Process name fields correctly
-        if (!userData.fullName) {
-            userData.fullName = createFullName(userData);
-        }
-        
-        return userData;
+
+        return normalizeUserInfo(userData);
     }
 
     // Logout the user
@@ -1338,31 +1302,10 @@ class CasdoorService {
         }
     }
     
-    // 新增：从Casdoor用户响应中检查用户是否为管理员
+    // Check admin privileges from Casdoor user response.
     private checkIfUserIsAdmin(userResponse: any): boolean {
         try {
-            // 检查直接的isAdmin字段
-            if (userResponse.isAdmin === true) {
-                return true;
-            }
-            
-            // 检查角色中是否包含admin角色
-            if (userResponse.roles && Array.isArray(userResponse.roles)) {
-                const hasAdminRole = userResponse.roles.some(
-                    (role: any) => role.name === 'admin' || role.name.toLowerCase().includes('admin')
-                );
-                if (hasAdminRole) return true;
-            }
-            
-            // 检查组中是否包含admin组
-            if (userResponse.groups && Array.isArray(userResponse.groups)) {
-                const hasAdminGroup = userResponse.groups.some(
-                    (group: string) => group.toLowerCase().includes('admin')
-                );
-                if (hasAdminGroup) return true;
-            }
-            
-            return false;
+            return hasAdminPrivileges(userResponse);
         } catch (e) {
             logger.error('Error checking admin status from user response:', e);
             return false;
@@ -1734,6 +1677,79 @@ class CasdoorService {
     }
 }
 
+function normalizeClaimArray(value: unknown): string[] {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    return value
+        .map((entry) => {
+            if (typeof entry === 'string') {
+                return entry;
+            }
+
+            if (entry && typeof entry === 'object') {
+                const record = entry as Record<string, unknown>;
+                if (typeof record.name === 'string') {
+                    return record.name;
+                }
+                if (typeof record.id === 'string') {
+                    return record.id;
+                }
+            }
+
+            return '';
+        })
+        .filter(Boolean);
+}
+
+function hasAdminPrivileges(payload: any): boolean {
+    if (!payload || typeof payload !== 'object') {
+        return false;
+    }
+
+    if (payload.isAdmin === true || payload.role === 'admin') {
+        return true;
+    }
+
+    const groups = normalizeClaimArray(payload.groups);
+    const roles = normalizeClaimArray(payload.roles);
+    const permissions = normalizeClaimArray(payload.permissions);
+
+    const hasAdminKeyword = (values: string[]) =>
+        values.some((value) => value.toLowerCase().includes('admin'));
+
+    return hasAdminKeyword(groups) || hasAdminKeyword(roles) || hasAdminKeyword(permissions);
+}
+
+function normalizeUserInfo(rawUser: any, fallback?: Partial<UserInfo>): UserInfo {
+    const source = rawUser && typeof rawUser === 'object' ? rawUser : {};
+    const groups = normalizeClaimArray(source.groups ?? fallback?.groups);
+    const roles = normalizeClaimArray(source.roles ?? fallback?.roles);
+    const permissions = normalizeClaimArray(source.permissions ?? fallback?.permissions);
+
+    const normalized: UserInfo = {
+        ...(fallback || {}),
+        ...(source || {}),
+        id: source.id || source.sub || fallback?.id || '',
+        name: source.name || source.preferred_username || fallback?.name || '',
+        displayName: source.displayName || source.fullName || source.name || fallback?.displayName || '',
+        firstName: source.firstName || fallback?.firstName || '',
+        lastName: source.lastName || fallback?.lastName || '',
+        email: source.email || fallback?.email || '',
+        owner: source.owner || fallback?.owner || '',
+        avatar: source.avatar || source.picture || fallback?.avatar || '',
+        groups,
+        roles,
+        permissions,
+        isAdmin: hasAdminPrivileges({ ...fallback, ...source, groups, roles, permissions }),
+    };
+
+    normalized.fullName = source.fullName || fallback?.fullName || createFullName(normalized);
+
+    return normalized;
+}
+
 // Helper function to create a full name from user data
 function createFullName(userData: any): string {
     // First priority: use firstName + lastName if both exist
@@ -1744,6 +1760,14 @@ function createFullName(userData: any): string {
     // Second priority: use displayName
     if (userData.displayName) {
         return userData.displayName;
+    }
+
+    if (userData.name) {
+        return userData.name;
+    }
+
+    if (userData.preferred_username) {
+        return userData.preferred_username;
     }
     
     // Last resort: use name (username)

@@ -1158,20 +1158,20 @@ interface SurveyData {
     };
     timestamp: string;
     user_data?: {
-        username: string;
-        displayName: string;
-        userId: string;
-        avatar: string;
-        email: string;
+        username?: string;
+        displayName?: string;
+        userId?: string;
+        avatar?: string;
+        email?: string;
         firstName?: string;
         lastName?: string;
     };
     userData?: {
-        username: string;
-        displayName: string;
-        userId: string;
-        avatar: string;
-        email: string;
+        username?: string;
+        displayName?: string;
+        userId?: string;
+        avatar?: string;
+        email?: string;
         firstName?: string;
         lastName?: string;
     };
@@ -1249,6 +1249,15 @@ interface SubmissionUser {
         teamNumber: string;
         timestamp: string;
     }>>;
+}
+
+interface SurveyUserSnapshot {
+    userId: string;
+    username: string;
+    displayName: string;
+    firstName?: string;
+    lastName?: string;
+    avatar?: string;
 }
 
 // Reactive state
@@ -1927,58 +1936,95 @@ const formatUrl = (url: string): string => {
     }
 };
 
+const buildStableFallbackUserId = (survey: SurveyData): string => {
+    const username = (survey.user_data?.username || survey.userData?.username || '').trim();
+    if (username) {
+        return `username:${username.toLowerCase()}`;
+    }
+
+    const displayName = (survey.user_data?.displayName || survey.userData?.displayName || '').trim();
+    if (displayName) {
+        return `display:${displayName.toLowerCase()}`;
+    }
+
+    const ip = (survey.ip || '').trim();
+    const userAgent = (survey.user_agent || '').trim();
+    return `anonymous:${ip || 'no-ip'}:${userAgent.slice(0, 32) || 'no-ua'}`;
+};
+
+const extractSurveyUser = (survey: SurveyData): SurveyUserSnapshot => {
+    const merged = {
+        ...(survey.userData || {}),
+        ...(survey.user_data || {}),
+    } as Record<string, any>;
+
+    const username = String(
+        merged.username ||
+        merged.preferred_username ||
+        merged.name ||
+        ''
+    );
+    const displayName = String(
+        merged.displayName ||
+        merged.fullName ||
+        merged.name ||
+        username ||
+        'Unknown'
+    );
+
+    return {
+        userId: String(merged.userId || merged.id || merged.sub || buildStableFallbackUserId(survey)),
+        username: username || 'unknown',
+        displayName,
+        firstName: merged.firstName || '',
+        lastName: merged.lastName || '',
+        avatar: merged.avatar || merged.picture || '',
+    };
+};
+
 // Compute submission users from filtered survey data
 const submissionUsers = computed(() => {
     const users: Record<string, SubmissionUser> = {};
 
     filteredSurveyData.value.forEach(survey => {
-        // Use either user_data or userData property
-        const userData = survey.user_data || survey.userData;
-        
-        if (userData && userData.userId) {
-            const userId = userData.userId;
+        const surveyUser = extractSurveyUser(survey);
+        const userId = surveyUser.userId;
 
-            if (!users[userId]) {
-                users[userId] = {
-                    userId,
-                    username: userData.username || 'Unknown',
-                    displayName: userData.displayName || userData.username || 'Unknown',
-                    firstName: userData.firstName,
-                    lastName: userData.lastName,
-                    avatar: userData.avatar || '',
-                    count: 0,
-                    lastSubmission: survey.timestamp,
-                    // Add device info
-                    userAgent: survey.user_agent || 'Unknown',
-                    ip: survey.ip || 'Unknown',
-                    language: survey.language || 'Unknown',
-                    // Add submissions grouped by event
-                    submissionsByEvent: {}
-                };
-            }
+        if (!users[userId]) {
+            users[userId] = {
+                userId,
+                username: surveyUser.username || 'Unknown',
+                displayName: surveyUser.displayName || surveyUser.username || 'Unknown',
+                firstName: surveyUser.firstName,
+                lastName: surveyUser.lastName,
+                avatar: surveyUser.avatar || '',
+                count: 0,
+                lastSubmission: survey.timestamp,
+                userAgent: survey.user_agent || 'Unknown',
+                ip: survey.ip || 'Unknown',
+                language: survey.language || 'Unknown',
+                submissionsByEvent: {}
+            };
+        }
 
-            users[userId].count++;
+        users[userId].count++;
 
-            // Group submissions by event ID
-            const eventId = survey.event_id;
-            if (!users[userId].submissionsByEvent[eventId]) {
-                users[userId].submissionsByEvent[eventId] = [];
-            }
+        const eventId = survey.event_id;
+        if (!users[userId].submissionsByEvent[eventId]) {
+            users[userId].submissionsByEvent[eventId] = [];
+        }
 
-            // Add team number information to submissions
-            const teamNumber = getFieldValue(survey.data, "Team number");
-            if (teamNumber) {
-                users[userId].submissionsByEvent[eventId].push({
-                    id: survey.id,
-                    teamNumber: String(teamNumber),
-                    timestamp: survey.timestamp
-                });
-            }
+        const teamNumber = getFieldValue(survey.data, "Team number");
+        if (teamNumber) {
+            users[userId].submissionsByEvent[eventId].push({
+                id: survey.id,
+                teamNumber: String(teamNumber),
+                timestamp: survey.timestamp
+            });
+        }
 
-            // Update last submission timestamp if this one is more recent
-            if (new Date(survey.timestamp) > new Date(users[userId].lastSubmission)) {
-                users[userId].lastSubmission = survey.timestamp;
-            }
+        if (new Date(survey.timestamp) > new Date(users[userId].lastSubmission)) {
+            users[userId].lastSubmission = survey.timestamp;
         }
     });
 

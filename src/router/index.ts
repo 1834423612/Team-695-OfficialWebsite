@@ -202,8 +202,9 @@ router.beforeEach(async (to, _from, next) => {
     if (to.matched.some(record => record.meta.requiresAdmin)) {
       const userStore = await import('@/stores/userStore').then(m => m.useUserStore());
       const userData = userStore.userInfo;
+      const hasAdminAccess = userStore.isAdmin;
       
-      if (!userData?.isAdmin) {
+      if (!hasAdminAccess && !userData?.isAdmin) {
         next('/Dashboard');
         return;
       }

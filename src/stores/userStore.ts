@@ -7,6 +7,68 @@ import { AvatarMigrationTool } from '@/utils/avatarMigrationTool';
 // User info refresh interval (2 hours)
 const USER_INFO_REFRESH_INTERVAL = 2 * 60 * 60 * 1000;
 
+const normalizeClaimArray = (value: unknown): string[] => {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    return value
+        .map((entry) => {
+            if (typeof entry === 'string') {
+                return entry;
+            }
+
+            if (entry && typeof entry === 'object') {
+                const record = entry as Record<string, unknown>;
+                if (typeof record.name === 'string') {
+                    return record.name;
+                }
+                if (typeof record.id === 'string') {
+                    return record.id;
+                }
+            }
+
+            return '';
+        })
+        .filter(Boolean);
+};
+
+const isAdminFromUserInfo = (userInfo: any): boolean => {
+    if (!userInfo || typeof userInfo !== 'object') {
+        return false;
+    }
+
+    if (userInfo.isAdmin === true || userInfo.role === 'admin') {
+        return true;
+    }
+
+    const groups = normalizeClaimArray(userInfo.groups);
+    const roles = normalizeClaimArray(userInfo.roles);
+    const permissions = normalizeClaimArray(userInfo.permissions);
+
+    const hasAdminKeyword = (values: string[]) => values.some((value) => value.toLowerCase().includes('admin'));
+
+    return hasAdminKeyword(groups) || hasAdminKeyword(roles) || hasAdminKeyword(permissions);
+};
+
+const normalizeStoreUserInfo = (userInfo: any): any => {
+    if (!userInfo || typeof userInfo !== 'object') {
+        return userInfo;
+    }
+
+    const normalized = { ...userInfo };
+    normalized.id = normalized.id || normalized.sub || '';
+    normalized.name = normalized.name || normalized.preferred_username || '';
+    normalized.displayName = normalized.displayName || normalized.fullName || normalized.name || normalized.preferred_username || '';
+    normalized.avatar = normalized.avatar || normalized.picture || '';
+    normalized.groups = normalizeClaimArray(normalized.groups);
+    normalized.roles = normalizeClaimArray(normalized.roles);
+    normalized.permissions = normalizeClaimArray(normalized.permissions);
+    normalized.isAdmin = isAdminFromUserInfo(normalized);
+
+    return normalized;
+};
+
 // Define store state interface
 export interface UserStoreState {
     userInfo: any;
@@ -37,14 +99,17 @@ export const useUserStore = defineStore('user', {
         // Get current username, handling multiple scenarios
         userName(): string {
             if (!this.userInfo) return 'User';
-            return this.userInfo.displayName ||
-                (this.userInfo.name ? this.userInfo.name.split('@')[0] : 'User');
+            const displayName = this.userInfo.displayName || this.userInfo.fullName;
+            if (displayName) return displayName;
+
+            const name = this.userInfo.name || this.userInfo.preferred_username;
+            return name ? String(name).split('@')[0] : 'User';
         },
 
         // Check if user is admin
         isAdmin(): boolean {
             if (!this.userInfo) return false;
-            return !!this.userInfo.isAdmin;
+            return isAdminFromUserInfo(this.userInfo);
         },
 
         // Return avatar URL or null
@@ -224,7 +289,8 @@ export const useUserStore = defineStore('user', {
                     
                     try {
                         // Get user info directly without token validation
-                        const userInfo = await casdoorService.getUserInfo(true);
+                        const rawUserInfo = await casdoorService.getUserInfo(true);
+                        const userInfo = normalizeStoreUserInfo(rawUserInfo);
                         this.userInfo = userInfo;
                         this.orgData = userInfo.data2;
                         this.lastFetchTime = Date.now();
@@ -310,7 +376,8 @@ export const useUserStore = defineStore('user', {
                             
                             // 2. After validation, get user info
                             logger.info('Step 2: Getting user info');
-                            const userInfo = await casdoorService.getUserInfo(true);
+                            const rawUserInfo = await casdoorService.getUserInfo(true);
+                            const userInfo = normalizeStoreUserInfo(rawUserInfo);
                             
                             // Check for invalid response
                             if (isInvalidAuthResponse(userInfo)) {
@@ -436,10 +503,10 @@ export const useUserStore = defineStore('user', {
         // Update user info with new data
         updateUserInfo(userData: any) {
             logger.prettyGroup('Update User Info', 'info', true);
-            this.userInfo = {
+            this.userInfo = normalizeStoreUserInfo({
                 ...(this.userInfo || {}),
                 ...(userData || {})
-            };
+            });
             this.orgData = this.userInfo?.data2 || null;
             this.lastFetchTime = Date.now();
             this.isInitialized = true;
