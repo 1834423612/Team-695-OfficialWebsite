@@ -7,13 +7,6 @@
 ---------------------------
   Color Palette
 ---------------------------
-  使用的颜色格式是 HSL（色相、饱和度、亮度）：
-
-- 色相（Hue): 取值范围是 0 到 360，表示颜色的类型（例如红色、绿色、蓝色等）。
-- 饱和度（Saturation）: 取值范围是 0% 到 100%，表示颜色的强度或纯度。
-- 亮度（Lightness）: 取值范围是 0% 到 100%，表示颜色的明暗程度。
-
-
 The color format used is HSL (Hue, Saturation, Lightness):
 
 - Hue: The range is 0 to 360, representing the type of color (e.g. red, green, blue, etc.).

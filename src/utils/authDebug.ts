@@ -1,10 +1,10 @@
 /**
- * 认证调试工具
- * 用于在开发环境中监控和调试令牌状态
+ * Authentication debugging tools
+ * Used to monitor and debug token state in development
  */
 import { casdoorService } from '@/services/auth';
 
-// 为全局窗口对象添加类型定义
+// Add type definitions to the global window object
 declare global {
     interface Window {
         authDebug?: typeof AuthDebugTools;
@@ -12,8 +12,8 @@ declare global {
 }
 
 /**
- * 简单的JWT签名验证工具
- * 注意：这只是一个基本验证，不执行完整的密码学验证
+ * Simple JWT signature validation helper
+ * Note: this is only a basic check and does not perform full cryptographic validation
  */
 const validateSignature = (token: string): boolean => {
     try {
@@ -22,13 +22,13 @@ const validateSignature = (token: string): boolean => {
             return false;
         }
 
-        // 检查签名是否存在且不为空
+        // Check that the signature exists and is not empty
         const signature = parts[2];
         if (!signature || signature.trim() === '') {
             return false;
         }
 
-        // 检查签名是否是有效的base64url字符串
+        // Check that the signature is a valid base64url string
         const base64UrlRegex = /^[A-Za-z0-9_-]+$/;
         return base64UrlRegex.test(signature);
     } catch (e) {
@@ -37,9 +37,9 @@ const validateSignature = (token: string): boolean => {
     }
 };
 
-// 调试工具对象
+// Debug tool object
 const AuthDebugTools = {
-    // 检查令牌状态
+    // Check token status
     async checkTokenStatus() {
         const token = casdoorService.getToken();
 
@@ -49,7 +49,7 @@ const AuthDebugTools = {
         }
 
         try {
-            // 解析令牌
+            // Parse the token
             const tokenInfo = casdoorService.parseAccessToken(token);
 
             if (!tokenInfo || !tokenInfo.payload) {
@@ -70,13 +70,13 @@ const AuthDebugTools = {
             console.log(`Time remaining: ${timeRemaining} minutes`);
             console.log(`Issuer: ${payload.iss}`);
             
-            // 添加签名验证
+            // Add signature validation
             const signatureValid = validateSignature(token);
             console.log(`Signature format valid: ${signatureValid ? 'Yes' : 'No'}`);
             
             console.groupEnd();
 
-            // 验证令牌有效性
+            // Validate token validity
             console.log('Validating token with Team API...');
             const validationResult = await casdoorService.validateWithTeamApi();
 
@@ -96,7 +96,7 @@ const AuthDebugTools = {
         }
     },
 
-    // 测试多重验证方法
+    // Test multiple validation methods
     async testValidation() {
         const results: Record<string, any> = {};
 
@@ -125,7 +125,7 @@ const AuthDebugTools = {
         return results;
     },
 
-    // 测试令牌刷新
+    // Test token refresh
     async testRefresh() {
         try {
             console.log('Attempting to refresh token...');
@@ -139,7 +139,7 @@ const AuthDebugTools = {
     }
 };
 
-// 在开发环境中将工具暴露给全局
+// Expose the tool globally in development
 if (process.env.NODE_ENV === 'development') {
     (window as any).authDebug = AuthDebugTools;
     console.log('Auth debug tools available as window.authDebug');

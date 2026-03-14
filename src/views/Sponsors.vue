@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div>
         <!-- Hero Section -->
         <section class="relative bg-cover bg-center text-white"
@@ -898,14 +898,14 @@ function useFallbackData() {
     bronzeSponsors.value = fallbackData.bronze;
 }
 
-// 处理图片加载错误
+// Handle image loading errors
 function handleImageError(event: Event, sponsor: { name: string | number | boolean; }) {
-    // 替换为占位图
+    // Replace it with a placeholder image
     const target = event.target as HTMLImageElement;
     target.src = `https://placehold.co/300x150/CCCCCC/333333?text=${encodeURIComponent(sponsor.name)}`;
 }
 
-// 在组件挂载时加载数据
+// Load data when the component is mounted
 onMounted(() => {
     fetchSponsors();
 });

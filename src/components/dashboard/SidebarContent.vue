@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="flex flex-col h-full">
         <!-- Sidebar header - Logo -->
         <!-- <div class="flex items-center justify-between flex-shrink-0 p-2" :class="{ 'justify-center': !sidebarOpen }"> -->
@@ -245,12 +245,12 @@ export default defineComponent({
                 }
             }
             
-            // 如果是父菜单，应该只由isParentActive函数来判断高亮
+            // Parent menus should rely only on isParentActive for highlighting
             if (isParentMenu) {
                 return false;
             }
             
-            // 子菜单项的高亮逻辑
+            // Highlighting logic for child menu items
             if (isChildMenu) {
                 if (exact) {
                     return currentPath === targetPath;
@@ -259,7 +259,7 @@ export default defineComponent({
                 }
             }
             
-            // 普通菜单项的高亮逻辑
+            // Highlighting logic for regular menu items
             if (exact) {
                 return currentPath === targetPath;
             } else {
@@ -267,13 +267,13 @@ export default defineComponent({
             }
         };
         
-        // 新增函数，专门处理父菜单的高亮状态
+        // Dedicated helper for parent-menu highlighting
         const isParentActive = (item: NavItem) => {
             const currentPath = route.path.toLowerCase();
             
-            // 如果父菜单没有路径
+            // Handle parent menus without a path
             if (!item.path) {
-                // 检查当前路径是否匹配任何子菜单路径
+                // Check whether the current path matches any child-menu path
                 if (item.children) {
                     return item.children.some(child => {
                         const childPath = child.path.toLowerCase();
@@ -283,13 +283,13 @@ export default defineComponent({
                 return false;
             }
             
-            // 处理有路径的父菜单
+            // Handle parent menus that do have a path
             const targetPath = item.path.toLowerCase();
             
-            // 首先检查当前路径是否直接匹配父菜单路径
+            // First check whether the current path directly matches the parent-menu path
             if (currentPath === targetPath) return true;
             
-            // 检查是否匹配任何子菜单路径
+            // Check whether any child-menu path matches
             if (item.children) {
                 return item.children.some(child => {
                     const childPath = child.path.toLowerCase();
@@ -306,10 +306,10 @@ export default defineComponent({
             
             navigationConfig.sidebarNavItems.forEach((item, index) => {
                 if (item.children && item.children.length > 0) {
-                    // 创建一个可靠的键
+                    // Create a stable key
                     const menuKey = getMenuKey(item, index);
                     
-                    // 检查是否应该展开
+                    // Check whether the menu should be expanded
                     const shouldExpand = item.children.some(child => {
                         const childPath = child.path.toLowerCase();
                         return currentPath === childPath || currentPath.startsWith(childPath + '/');
@@ -324,7 +324,7 @@ export default defineComponent({
         
         // Toggle submenu expansion state
         const toggleSubmenu = (item: NavItem) => {
-            // 使用唯一标识符作为键
+            // Use a unique identifier as the key
             const menuKey = getMenuKey(item);
             expandedMenus.value[menuKey] = !expandedMenus.value[menuKey];
         };
@@ -340,28 +340,28 @@ export default defineComponent({
 
         // Toggle sidebar
         const toggleSidebar = () => {
-            // 修复: 无论当前模式如何，都允许切换sidebar状态
-            // 移除对于固定模式下的限制条件
+            // Fix: allow the sidebar state to toggle regardless of the current mode
+            // Remove the restriction that applied in fixed mode
             emit('toggle-sidebar');
         };
         
-        // 创建一个更可靠的获取菜单唯一标识符的方法
+        // Create a more reliable helper for generating unique menu identifiers
         const getMenuKey = (item: NavItem, index?: number): string => {
-            // 如果有路径且不为空，使用路径作为键
+            // Use the path as the key when it exists and is not empty
             if (item.path) {
                 return item.path;
             }
             
-            // 否则使用节、文本和索引组合创建唯一键
+            // Otherwise build a unique key from the section, text, and index
             return `${item.section}-${item.text}-${index || 0}`;
         };
         
-        // 获取子菜单展开状态
+        // Get the child-menu expansion state
         const getSubmenuExpandedState = (item: NavItem): boolean => {
-            // 为父菜单创建的唯一键
+            // Unique key created for the parent menu
             const menuKey = getMenuKey(item);
             
-            // 检查这个键是否在expandedMenus中为true
+            // Check whether this key is true in expandedMenus
             return !!expandedMenus.value[menuKey];
         };
 
@@ -386,27 +386,27 @@ export default defineComponent({
 </script>
 
 <style scoped>
-/* 为移动设备优化侧边栏导航 */
+/* Optimize sidebar navigation for mobile devices */
 @media (max-width: 720px) {
     .mobile-nav {
         position: relative;
-        z-index: 30; /* 确保与DashboardLayout的z-index值匹配 */
+        z-index: 30; /* Keep it consistent with DashboardLayout's z-index */
     }
     
-    /* 确保侧边栏内容在移动设备上正确显示 */
+    /* Ensure sidebar content displays correctly on mobile devices */
     .flex-col.h-full {
-        z-index: 31; /* 比父容器高，确保内容可见 */
+        z-index: 31; /* Higher than the parent container so the content stays visible */
         position: relative;
-        padding-top: 1rem; /* 移除顶部空白 */
+        padding-top: 1rem; /* Remove the empty top space */
     }
     
-    /* 调整用户信息区域，移除多余边距 */
+    /* Adjust the user-info section and remove extra spacing */
     .flex-shrink-0.p-2.mt-4 {
         margin-top: 0;
     }
 }
 
-/* 调整链接的样式以确保它们在移动设备上正确显示 */
+/* Adjust link styling so links render correctly on mobile devices */
 nav a, nav button, nav div.cursor-pointer {
     position: relative;
     z-index: 10;

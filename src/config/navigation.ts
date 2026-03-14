@@ -5,7 +5,7 @@
 
 // Type definitions for navigation items
 export interface NavItem {
-    path: string;  // 对于父菜单，这个值可以为空字符串（但仍需保留字段）
+    path: string;  // For parent menus, this value can be an empty string (but the field must still exist)
     text: string;
     icon: string;
     section: 'main' | 'scouting' | 'user' | 'external';
@@ -17,7 +17,7 @@ export interface NavItem {
         color: string;
     };
     children?: NavItem[];
-    exact?: boolean; // 增加精确匹配选项，用于解决子路由高亮问题
+    exact?: boolean; // Add an exact-match option to fix child-route highlighting
 }
 
 export interface BreadcrumbItem {
@@ -34,7 +34,7 @@ export const sidebarNavItems: NavItem[] = [
         text: 'Dashboard',
         icon: 'mdi:view-dashboard',
         section: 'main',
-        exact: true // 精确匹配
+        exact: true // Exact match
     },
     // {
     //     path: '/Dashboard/Calendar',
@@ -51,7 +51,7 @@ export const sidebarNavItems: NavItem[] = [
         section: 'scouting'
     },
     {
-        path: '', // 移除父菜单的路径，避免与子菜单冲突
+        path: '', // Remove the parent menu path to avoid conflicts with child menus
         text: 'Pit Scouting',
         icon: 'mdi:clipboard-text',
         section: 'scouting',
@@ -61,14 +61,14 @@ export const sidebarNavItems: NavItem[] = [
                 text: 'Pit Scouting Form',
                 icon: 'mdi:clipboard-text',
                 section: 'scouting',
-                exact: true // 保持精确匹配以避免与Admin页面冲突
+                exact: true // Keep exact matching to avoid conflicts with the Admin page
             },
             {
                 path: '/Dashboard/Pit-Scouting/Admin',
                 text: 'Admin Dashboard',
                 icon: 'mdi:shield-account',
                 section: 'scouting',
-                exact: true, // 保持精确匹配
+                exact: true, // Keep exact matching
                 adminOnly: true
             }
         ]

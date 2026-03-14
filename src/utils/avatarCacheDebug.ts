@@ -146,7 +146,7 @@ const AvatarCacheDebugger = {
         logger.prettyGroup(groupName, 'info', false);
         
         try {
-            // 检查是否实现了该方法
+            // Check whether the method is implemented
             if (typeof (avatarCache as any).getRequestStats !== 'function') {
                 logger.warn('getRequestStats method is not implemented in avatarCache');
                 return { error: 'Method not implemented' };
@@ -172,7 +172,7 @@ const AvatarCacheDebugger = {
         logger.prettyGroup(groupName, 'system', false);
         
         try {
-            // 检查是否实现了该方法
+            // Check whether the method is implemented
             if (typeof (avatarCache as any).dumpAllCaches !== 'function') {
                 logger.warn('dumpAllCaches method is not implemented in avatarCache');
                 return { error: 'Method not implemented' };
@@ -198,7 +198,7 @@ const AvatarCacheDebugger = {
         logger.prettyGroup(groupName, 'primary', false);
         
         try {
-            // 检查方法是否存在
+            // Check whether the method exists
             if (typeof avatarCache.getCacheStats !== 'function') {
                 logger.warn('avatarCache.getCacheStats is not implemented');
                 return { error: 'Method not implemented' };
@@ -225,7 +225,7 @@ const AvatarCacheDebugger = {
         logger.prettyGroup(groupName, 'system', false);
         
         try {
-            // 检查是否实现了该方法
+            // Check whether the method is implemented
             if (typeof (avatarCache as any).flushMemoryCache !== 'function') {
                 logger.warn('flushMemoryCache method is not implemented in avatarCache');
                 return { error: 'Method not implemented' };
@@ -251,7 +251,7 @@ const AvatarCacheDebugger = {
         logger.prettyGroup(groupName, 'info', false);
         
         try {
-            // 创建一个备用状态对象
+            // Create a fallback status object
             const fallbackStatus = {
                 entriesCount: 0,
                 implementation: 'Memory cache status not available',
@@ -259,14 +259,14 @@ const AvatarCacheDebugger = {
                 hitRate: 'N/A'
             };
             
-            // 检查是否实现了该方法
+            // Check whether the method is implemented
             if (typeof (avatarCache as any).getMemoryCacheStatus !== 'function') {
                 logger.warn('getMemoryCacheStatus method is not implemented in avatarCache');
                 logger.table(fallbackStatus);
                 return fallbackStatus;
             }
             
-            // 如果实现了，则使用实现的方法
+            // Use the implemented method when it exists
             const status = (avatarCache as any).getMemoryCacheStatus();
             logger.table(status);
             return status;
@@ -291,7 +291,7 @@ const AvatarCacheDebugger = {
             const maxAgeMs = maxAgeDays * 24 * 60 * 60 * 1000;
             const cutoffDate = now - maxAgeMs;
             
-            // 检查是否实现了该方法
+            // Check whether the method is implemented
             if (typeof (avatarCache as any).dumpAllCaches !== 'function') {
                 logger.warn('dumpAllCaches method is not implemented in avatarCache');
                 return { count: 0, entries: {}, error: 'Method not implemented' };
@@ -338,7 +338,7 @@ const AvatarCacheDebugger = {
         logger.prettyGroup(groupName, 'warn', false);
         
         try {
-            // 检查是否实现了方法
+            // Check whether the method is implemented
             if (typeof this.checkStaleCaches !== 'function') {
                 logger.warn('checkStaleCaches is not implemented');
                 return { error: 'Method not implemented' };
@@ -346,7 +346,7 @@ const AvatarCacheDebugger = {
             
             const { count, entries, error } = await this.checkStaleCaches(maxAgeDays);
             
-            // 如果有错误，直接返回
+            // Return immediately if an error exists
             if (error) {
                 return { error };
             }
@@ -361,7 +361,7 @@ const AvatarCacheDebugger = {
                     // Purge each stale entry
                     let purgeCount = 0;
                     
-                    // 检查方法是否存在
+                    // Check whether the method exists
                     if (typeof avatarCache.clearCache !== 'function') {
                         logger.warn('avatarCache.clearCache is not implemented');
                         return { error: 'Clear cache method not implemented' };

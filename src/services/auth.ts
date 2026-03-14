@@ -1,4 +1,4 @@
-import Sdk from 'casdoor-js-sdk';
+﻿import Sdk from 'casdoor-js-sdk';
 import Cookies from 'js-cookie';
 import { avatarCache } from '@/services/avatarCache';
 import { AUTH_LOCKS, cleanupStaleLocks, setAuthLock, releaseAuthLock, isLockActive } from '@/utils/authUtils';
@@ -353,42 +353,42 @@ class CasdoorService {
     // Handle the callback from Casdoor
     async signin(): Promise<string> {
         try {
-            // 获取浏览器URL中的授权码和状态
-            // 安全检查：信任标记必须同时满足多个条件才有效，降低单点失效风险
+            // Get the authorization code and state from the browser URL
+            // Security check: trust flags are valid only when multiple conditions are satisfied, reducing single-point failure risk
             const absoluteTrustEnabled = localStorage.getItem('token_absolute_trust') === 'true';
             const trustExpireAtStr = localStorage.getItem('trust_flags_expire_at');
             const tokenValidated = localStorage.getItem('token_verified') === 'true';
             const authCallbackStr = localStorage.getItem('auth_callback_completed_time');
             
-            // 验证信任标记的有效性 - 多重验证
+            // Validate the trust flag with multiple checks
             let trustValid = false;
             
-            // 1. 验证过期时间 - 信任标记必须有明确过期时间且未过期
+            // 1. Validate expiration time: the trust flag must have an explicit expiration time and must not be expired
             if (trustExpireAtStr) {
                 const trustExpireAt = parseInt(trustExpireAtStr, 10);
                 if (!isNaN(trustExpireAt) && Date.now() < trustExpireAt) {
-                    // 2. 验证与认证回调时间的一致性
+                    // 2. Validate consistency with the authentication callback time
                     if (authCallbackStr) {
                         const authCallbackTime = parseInt(authCallbackStr, 10);
-                        // 信任标记必须在认证回调后不久创建（防止伪造）
+                        // The trust flag must be created shortly after the authentication callback to prevent forgery
                         if (!isNaN(authCallbackTime) && 
-                            trustExpireAt - authCallbackTime < 15 * 60 * 1000 && // 信任期不能超过认证时间15分钟
-                            Date.now() - authCallbackTime < 10 * 60 * 1000) {    // 认证必须在10分钟内
+                            trustExpireAt - authCallbackTime < 15 * 60 * 1000 && // The trust window cannot exceed 15 minutes from the authentication time
+                            Date.now() - authCallbackTime < 10 * 60 * 1000) {    // Authentication must have happened within 10 minutes
                             trustValid = true;
                         }
                     }
                 } else {
-                    // 信任标记已过期，立即清除
+                    // The trust flag has expired, so clear it immediately
                     localStorage.removeItem('token_absolute_trust');
                     localStorage.removeItem('trust_flags_expire_at');
                 }
             }
             
-            // 只有当满足多个安全条件时才允许使用绝对信任
+            // Allow absolute trust only when multiple security conditions are met
             if (absoluteTrustEnabled && trustValid && tokenValidated) {
                 const existingToken = this.getToken();
                 if (existingToken) {
-                    // 添加限制：即使信任标记有效，也需验证token格式和基本有效性
+                    // Add a restriction: even when the trust flag is valid, still verify the token format and basic validity
                     const tokenInfo = this.parseAccessToken(existingToken);
                     if (tokenInfo?.payload?.exp && tokenInfo.payload.exp * 1000 > Date.now()) {
                         logger.info('Secure trust validation passed, using existing token');
@@ -406,14 +406,14 @@ class CasdoorService {
             const code = urlParams.get('code');
             const state = urlParams.get('state');
             
-            // 首先检查是否已有有效令牌
+            // First check whether a valid token already exists
             if (this.isLoggedIn()) {
                 console.log('Already have token, skipping code exchange completely');
                 
-                // 直接获取当前token而不执行任何验证
+                // Get the current token directly without performing validation
                 const existingToken = this.getToken();
                 if (existingToken) {
-                    // 设置信任标记
+                    // Set the trust flag
                     localStorage.setItem('token_absolute_trust', 'true');
                     localStorage.setItem('token_trusted', 'true');
                     localStorage.setItem('token_verified', 'true');
@@ -423,13 +423,13 @@ class CasdoorService {
                 }
             }
             
-            // 检查是否是有效的授权回调
+            // Check whether this is a valid authorization callback
             if (!code || !state) {
                 console.warn('Missing code or state in signin request');
                 throw new Error('Invalid authorization callback - missing code or state');
             }
             
-            // 使用signinWithCode方法处理
+            // Handle it with the signinWithCode method
             return this.signinWithCode(code, state);
         } catch (error) {
             console.error('Signin error:', error);
@@ -437,53 +437,53 @@ class CasdoorService {
         }
     }
 
-    // 新增：使用提供的code和state直接处理登录，无需重新从URL获取
+    // New: handle login directly with the provided code and state without reading the URL again
     async signinWithCode(code: string, state: string): Promise<string> {
         try {
-            // 添加防重入锁，确保不会同时发起多个token请求
+            // Add a re-entry lock to ensure multiple token requests are not started at the same time
             const SIGNIN_LOCK = AUTH_LOCKS.SIGNIN;
             
-            // 首先检查签名状态，防止重复处理同一个授权回调
+            // First check the sign-in state to avoid handling the same authorization callback twice
             const processedAuth = sessionStorage.getItem('casdoor_auth_processed');
             if (processedAuth === 'true') {
                 console.log('This authorization code was already processed');
                 const existingToken = this.getToken();
                 if (existingToken) {
-                    // 标记为绝对信任
+                    // Mark as absolute trust
                     localStorage.setItem('token_absolute_trust', 'true');
                     localStorage.setItem('token_trusted', 'true');
                     localStorage.setItem('token_verified', 'true');
                     return existingToken;
                 }
-                // 如果找不到令牌但已处理过，清除状态并继续
+                // If no token is found but the callback was already handled, clear the state and continue
                 sessionStorage.removeItem('casdoor_auth_processed');
             }
             
-            // 首先检查是否已经有有效令牌 - 这是关键部分
+            // First check whether a valid token already exists; this is the key part
             const existingToken = this.getToken();
             if (existingToken) {
                 console.log('Found existing token, checking if it can be used instead of requesting new one');
                 
-                // 标记为绝对信任，完全跳过token验证
+                // Mark as absolute trust and skip token validation entirely
                 localStorage.setItem('token_absolute_trust', 'true');
                 localStorage.setItem('token_trusted', 'true');
                 localStorage.setItem('token_verified', 'true');
                 localStorage.setItem('auth_callback_completed_time', Date.now().toString());
                 
-                // 确保令牌刷新定时器已设置
+                // Ensure the token refresh timer is set
                 this.setupTokenRefresh();
                 
-                // 标记当前授权码已处理
+                // Mark the current authorization code as handled
                 sessionStorage.setItem('casdoor_auth_processed', 'true');
                 sessionStorage.setItem('casdoor_processed_code', code);
                 
                 return existingToken;
             }
             
-            // 检查是否有强制刷新标记
+            // Check whether a forced-refresh flag exists
             const forceRefresh = sessionStorage.getItem('force_token_refresh') === 'true';
             
-            // 检查此授权码是否已处理过
+            // Check whether this authorization code has already been handled
             const processedCode = sessionStorage.getItem('casdoor_processed_code');
             if (processedCode === code && !forceRefresh) {
                 console.log(`Authorization code ${code.substring(0, 5)}... already processed, checking for existing token`);
@@ -495,41 +495,41 @@ class CasdoorService {
                     return existingToken;
                 }
                 
-                // 如果找不到有效令牌但设置了代码已处理标记，进行清理
+                // Clean up when no valid token is found but the code-handled flag is set
                 console.log('No token found for processed code, clearing processed flag to retry');
                 sessionStorage.removeItem('casdoor_processed_code');
             }
             
-            // 检查是否已有正在进行的登录流程
+            // Check whether a login flow is already in progress
             if (isLockActive(SIGNIN_LOCK, 20000)) {
                 console.log('Signin already in progress, waiting for completion');
                 
-                // 等待一小段时间，看是否有新token生成
+                // Wait briefly to see whether a new token is generated
                 for (let i = 0; i < 5; i++) {
-                    await new Promise(resolve => setTimeout(resolve, 1000)); // 等待1秒
+                    await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
                     
-                    // 再次检查是否有新token
+                    // Check again for a new token
                     const newToken = this.getToken();
                     if (newToken) {
                         console.log('New token was generated while waiting');
                         
-                        // 标记当前授权码已处理
+                        // Mark the current authorization code as handled
                         sessionStorage.setItem('casdoor_auth_processed', 'true');
                         sessionStorage.setItem('casdoor_processed_code', code);
                         return newToken;
                     }
                 }
                 
-                // 如果等待后仍然没有新令牌，清除锁并继续
+                // If there is still no new token after waiting, clear the lock and continue
                 console.warn('No token generated after waiting, clearing lock and continuing');
                 releaseAuthLock(SIGNIN_LOCK);
             }
             
-            // 设置锁 - 确保只能有一个令牌交换进行
+            // Set a lock to ensure only one token exchange runs at a time
             const lockResult = setAuthLock(SIGNIN_LOCK);
             if (!lockResult.success) {
                 console.warn('Failed to acquire signin lock, another process may be signing in');
-                // 等待并再次检查是否有令牌
+                // Wait and check again whether a token exists
                 await new Promise(resolve => setTimeout(resolve, 2000));
                 const existingToken = this.getToken();
                 if (existingToken) {
@@ -538,7 +538,7 @@ class CasdoorService {
                     sessionStorage.setItem('casdoor_processed_code', code);
                     return existingToken;
                 }
-                // 如果仍然没有令牌，尝试强制获取锁
+                // If there is still no token, try to force-acquire the lock
                 releaseAuthLock(SIGNIN_LOCK);
                 const retryLockResult = setAuthLock(SIGNIN_LOCK);
                 if (!retryLockResult.success) {
@@ -547,16 +547,16 @@ class CasdoorService {
             }
             
             try {
-                // 记录当前正在处理的授权码
+                // Record the authorization code currently being processed
                 sessionStorage.setItem('casdoor_processed_code', code);
                 
-                // 执行代码交换获取令牌 - 使用提供的code和state
+                // Exchange the code for a token using the provided code and state
                 console.log('Exchanging code for token...');
                 
-                // 手动将code和state存储到sessionStorage中，以便SDK可以找到它们
+                // Manually store the code and state in sessionStorage so the SDK can find them
                 sessionStorage.setItem('casdoor-state', state);
                 
-                // 使用SDK交换令牌
+                // Use the SDK to exchange the token
                 const tokenResponse = await sdk.exchangeForAccessToken();
                 console.log('Token response received:', !!tokenResponse);
         
@@ -564,20 +564,20 @@ class CasdoorService {
                     throw new Error('Failed to exchange code for token');
                 }
         
-                // 存储令牌
+                // Store the token
                 this.storeTokensInCookies(tokenResponse);
                 
-                // 标记当前授权码已处理完成
+                // Mark the current authorization code as fully handled
                 sessionStorage.setItem('casdoor_auth_processed', 'true');
                 
                 return tokenResponse.access_token;
             } finally {
-                // 清除锁，确保即使出错也会释放
+                // Clear the lock to ensure it is released even when an error occurs
                 releaseAuthLock(SIGNIN_LOCK);
             }
         } catch (error) {
             console.error('Signin with code error:', error);
-            // 清理所有可能卡住的状态
+            // Clear all state that may be stuck
             sessionStorage.removeItem('casdoor_processed_code');
             releaseAuthLock(AUTH_LOCKS.SIGNIN);
             throw error;
@@ -652,25 +652,25 @@ class CasdoorService {
 
     // Refresh the access token
     async refreshAccessToken(): Promise<string> {
-        // 添加防重入标记，防止多次刷新冲突
+        // Add a re-entry flag to prevent conflicts from multiple refresh attempts
         const REFRESH_LOCK = AUTH_LOCKS.REFRESH;
         
-        // 如果已经在刷新中，返回现有的Promise
+        // If a refresh is already in progress, return the existing promise
         if (this.refreshing && this.refreshPromise) {
             return this.refreshPromise;
         }
         
-        // 检查是否有其他页面/组件正在刷新 - 使用isLockActive方法
+        // Check whether another page or component is refreshing by using isLockActive
         if (isLockActive(REFRESH_LOCK, 5000)) {
             console.log('Another refresh is in progress, waiting for it to complete');
             
-            // 等待短暂时间后检查是否有新令牌
+            // Wait briefly and then check whether a new token exists
             await new Promise(resolve => setTimeout(resolve, 1000));
             
-            // 获取当前令牌并验证它是否是新的
+            // Get the current token and verify whether it is new
             const currentToken = this.getToken();
             if (currentToken) {
-                // 检查令牌是否新鲜（过期时间远在未来）
+                // Check whether the token is fresh with an expiration time far in the future
                 const tokenInfo = this.parseAccessToken(currentToken);
                 if (tokenInfo?.payload?.exp && tokenInfo.payload.exp * 1000 > Date.now() + 10 * 60 * 1000) {
                     console.log('Using newly refreshed token from another process');
@@ -678,23 +678,23 @@ class CasdoorService {
                 }
             }
             
-            // 如果没有获得新令牌，移除可能卡住的锁
+            // Remove any potentially stuck lock when no new token is obtained
             releaseAuthLock(REFRESH_LOCK);
         } else if (localStorage.getItem(REFRESH_LOCK) === 'true') {
-            // 如果锁太旧，清除它
+            // Clear the lock when it is too old
             releaseAuthLock(REFRESH_LOCK);
         }
         
-        // 设置刷新锁
+        // Set the refresh lock
         const lockResult = setAuthLock(REFRESH_LOCK);
         if (!lockResult.success) {
             console.error('Failed to acquire refresh lock');
         }
         
-        // 获取刷新令牌
+        // Get the refresh token
         let refreshToken = localStorage.getItem(REFRESH_TOKEN_COOKIE);
         
-        // 如果不在localStorage，尝试从cookie获取
+        // If it is not in localStorage, try reading it from cookies
         if (!refreshToken) {
             refreshToken = Cookies.get(REFRESH_TOKEN_COOKIE) || null;
         }
@@ -718,7 +718,7 @@ class CasdoorService {
                     
                     return tokenResponse.access_token;
                 } finally {
-                    // 无论成功或失败，都清除锁
+                    // Clear the lock whether the operation succeeds or fails
                     releaseAuthLock(REFRESH_LOCK);
                 }
             })();
@@ -738,21 +738,21 @@ class CasdoorService {
 
     // Check if the user is logged in
     isLoggedIn(): boolean {
-        // 首先检查绝对信任标记 - 如果存在，完全信任token
+        // First check the absolute-trust flag; if it exists, trust the token completely
         if (localStorage.getItem('token_absolute_trust') === 'true') {
-            // 检查token是否存在
+            // Check whether the token exists
             const localToken = localStorage.getItem(TOKEN_COOKIE);
             if (localToken) return true;
             
             const cookieToken = Cookies.get(TOKEN_COOKIE);
             if (cookieToken) return true;
             
-            // 如果没有token但有信任标记，清除标记
+            // Clear the trust flag when no token exists
             localStorage.removeItem('token_absolute_trust');
             return false;
         }
         
-        // 其次检查常规信任标记
+        // Next check the regular trust flag
         if (localStorage.getItem('token_trusted') === 'true') {
             const localToken = localStorage.getItem(TOKEN_COOKIE);
             if (localToken) return true;
@@ -764,10 +764,10 @@ class CasdoorService {
             return false;
         }
         
-        // 检查常规验证标记
+        // Check the regular validation flag
         const tokenVerified = localStorage.getItem('token_verified') === 'true';
         
-        // 如果有验证标记，再检查token是否真的存在
+        // If a validation flag exists, check whether the token actually exists
         if (tokenVerified) {
             // First check localStorage (more reliable)
             const localToken = localStorage.getItem(TOKEN_COOKIE);
@@ -781,15 +781,15 @@ class CasdoorService {
                 return true;
             }
             
-            // 如果有验证标记但没找到token，清除标记
+            // Clear the flag when a validation marker exists but no token is found
             localStorage.removeItem('token_verified');
             return false;
         }
         
-        // 没有验证标记，使用传统验证方式
+        // Use the traditional validation path when no validation flag exists
         const localToken = localStorage.getItem(TOKEN_COOKIE);
         if (localToken) {
-            // 找到token时设置验证标记
+            // Set the validation flag when a token is found
             localStorage.setItem('token_verified', 'true');
             return true;
         }
@@ -937,13 +937,13 @@ class CasdoorService {
             // Try primary endpoint first
             const userInfo = await this.fetchUserInfoFromAPI(token);
             
-            // 如果用户有头像，缓存头像
+            // Cache the avatar when the user has one
             if (userInfo.id && userInfo.avatar) {
                 avatarCache.cacheAvatar(userInfo.id, userInfo.avatar).catch(e => {
                     console.warn('Failed to cache avatar:', e);
                 });
                 
-                // 尝试提前获取头像，同时传递用户信息以便生成更好的默认头像
+                // Try prefetching the avatar while passing user information so a better default avatar can be generated
                 avatarCache.getAvatar(userInfo.id, userInfo.avatar, {
                     firstName: userInfo.firstName,
                     lastName: userInfo.lastName,
@@ -1106,14 +1106,14 @@ class CasdoorService {
         } catch (error) {
             console.error('Error during server logout:', error);
         } finally {
-            // 清除全局验证标记
+            // Clear the global validation flag
             localStorage.removeItem('token_verified');
             localStorage.removeItem('auth_callback_completed_time');
             localStorage.removeItem('last_token_validated_time');
             localStorage.removeItem('last_auth_check_time');
             localStorage.removeItem('is_admin_validated');
             
-            // 清除定期检查定时器
+            // Clear the periodic check timer
             if (this.tokenCheckTimer !== null) {
                 window.clearInterval(this.tokenCheckTimer);
                 this.tokenCheckTimer = null;
@@ -1160,43 +1160,43 @@ class CasdoorService {
         this.storeTokensInCookies(tokenResponse);
     }
 
-    // 使用团队API验证令牌 - 确保始终向服务器发送请求
+    // Validate the token with the team API and always send the request to the server
     async validateWithTeamApi(token: string | null = null): Promise<{valid: boolean, isAdmin: boolean}> {
-        // 确保一定会访问API验证端点 - 在关键认证流程中不使用缓存
-        // 但保留了对绝对信任标记的检查，仅用于登录流程的特殊场景
+        // Ensure the API validation endpoint is always reached and do not use cache in critical authentication flows
+        // Still keep the absolute-trust flag check, but only for special login-flow scenarios
         if (localStorage.getItem('token_absolute_trust') === 'true' && 
             localStorage.getItem('auth_callback_completed_time') !== null) {
             
             const authTime = parseInt(localStorage.getItem('auth_callback_completed_time') || '0');
-            // 仅在登录后的10分钟内有效，且不用于定期验证
+            // Only valid within 10 minutes after login and not used for periodic validation
             if (Date.now() - authTime < 10 * 60 * 1000) {
                 logger.debug('Team API validation: Absolute trust flag detected during auth callback flow');
                 return { valid: true, isAdmin: localStorage.getItem('is_admin_validated') === 'true' };
             } else {
-                // 10分钟后自动清除信任标记
+                // Automatically clear the trust flag after 10 minutes
                 localStorage.removeItem('token_absolute_trust');
             }
         }
         
-        // 无论其他条件如何，确保在定期验证中始终请求API
+        // Always request the API during periodic validation regardless of other conditions
         const isPeriodicCheck = localStorage.getItem('is_periodic_validation') === 'true';
         
-        // 确定是否应该使用缓存
+        // Determine whether cache should be used
         const shouldUseCache = !isPeriodicCheck && 
                               isRecentLogin(10) && 
                               localStorage.getItem('token_trusted') === 'true';
         
-        // 对于定期验证始终跳过缓存，但对于其他场景可以考虑使用缓存
+        // Always skip the cache for periodic validation, but allow it in other scenarios
         if (!isPeriodicCheck && shouldUseCache) {
             logger.debug('Team API validation: Recent login with trust flag, but will still validate with API');
-            // 即使在信任期内，我们仍然进行API验证，但降低频率
+            // Even during the trust window, still perform API validation but at a lower frequency
             
             const cachedResult = localStorage.getItem('team_api_validation_result');
             if (cachedResult) {
                 try {
                     const parsed = JSON.parse(cachedResult);
-                    if (Date.now() - parsed.timestamp < 60000) { // 只有在1分钟内的结果才使用缓存
-                        // 如果提供了特定令牌且与缓存时的令牌不同，则不使用缓存
+                    if (Date.now() - parsed.timestamp < 60000) { // Use the cache only for results that are less than 1 minute old
+                        // Do not use the cache when a specific token is provided and it differs from the cached token
                         if (token && parsed.tokenHash && parsed.tokenHash !== this.simpleTokenHash(token)) {
                             logger.debug('Token changed, not using cached validation result');
                         } else {
@@ -1208,12 +1208,12 @@ class CasdoorService {
                         }
                     }
                 } catch (e) {
-                    // 忽略缓存解析错误
+                    // Ignore cache parsing errors
                 }
             }
         }
         
-        // 如果已经有请求在进行中，返回该请求的Promise
+        // Return the existing request promise when a request is already in progress
         if (this.teamApiValidationPromise && isLockActive(AUTH_LOCKS.TEAM_API_VALIDATION)) {
             return this.teamApiValidationPromise;
         }
@@ -1227,16 +1227,16 @@ class CasdoorService {
         }
         
         try {
-            // 设置验证锁
+            // Set the validation lock
             setAuthLock(AUTH_LOCKS.TEAM_API_VALIDATION);
             
-            // 创建新的Promise并存储引用
+            // Create a new promise and store its reference
             this.teamApiValidationPromise = (async () => {
                 try {
-                    // 使用Casdoor API验证令牌
+                    // Validate the token with the Casdoor API
                     logger.info('Validating token with Casdoor API...');
                     
-                    // 使用Casdoor的用户端点验证令牌
+                    // Validate the token using Casdoor's user endpoint
                     const validationUrl = `${config.serverUrl}/api/user`;
                     
                     const response = await fetch(validationUrl, {
@@ -1248,26 +1248,26 @@ class CasdoorService {
                         }
                     });
                     
-                    // 检查响应状态
+                    // Check the response status
                     if (!response.ok) {
                         logger.warn(`Casdoor API validation failed with status: ${response.status}`);
                         return { valid: false, isAdmin: false };
                     }
                     
-                    // 解析响应
+                    // Parse the response
                     const result = await response.json();
                     
-                    // 检查是否为错误响应
+                    // Check whether the response is an error
                     if (result.status === 'error') {
                         logger.warn('Casdoor API returned error:', result.msg);
                         return { valid: false, isAdmin: false };
                     }
                     
-                    // 如果返回的是JWT格式(成功)，表示令牌有效
-                    // 解析响应中的用户信息
+                    // If the response is in JWT format, treat it as a successful valid token
+                    // Parse the user information from the response
                     const isAdmin = this.checkIfUserIsAdmin(result);
                     
-                    // 仅对非周期性验证进行短期缓存
+                    // Apply short-term caching only for non-periodic validation
                     if (!isPeriodicCheck) {
                         localStorage.setItem('team_api_validation_result', JSON.stringify({
                             valid: true,
@@ -1277,7 +1277,7 @@ class CasdoorService {
                         }));
                     }
                     
-                    // 如果用户是管理员，设置标记
+                    // Set a flag when the user is an administrator
                     if (isAdmin) {
                         localStorage.setItem('is_admin_validated', 'true');
                     }
@@ -1285,7 +1285,7 @@ class CasdoorService {
                     logger.info('Casdoor API validation successful, token is valid');
                     return { valid: true, isAdmin: isAdmin };
                 } finally {
-                    // 无论成功失败，请求完成后清除Promise引用和锁
+                    // Clear the promise reference and lock after the request completes, regardless of success or failure
                     setTimeout(() => {
                         this.teamApiValidationPromise = null;
                         releaseAuthLock(AUTH_LOCKS.TEAM_API_VALIDATION);
@@ -1312,38 +1312,38 @@ class CasdoorService {
         }
     }
 
-    // 实现简单的令牌哈希方法，用于令牌比较
+    // Implement a simple token hash for token comparison
     private simpleTokenHash(token: string): string {
-        // 仅使用令牌的前8个和后8个字符创建简单哈希
-        // 这不是密码学安全哈希，仅用于令牌缓存比较
+        // Build a simple hash from only the first 8 and last 8 characters of the token
+        // This is not a cryptographically secure hash; it is only used for token cache comparison
         if (!token || token.length < 16) {
-            return token; // 如果令牌太短，直接返回原始值
+            return token; // Return the original value directly when the token is too short
         }
         
         const prefix = token.substring(0, 8);
         const suffix = token.substring(token.length - 8);
         const length = token.length.toString();
         
-        // 结合令牌长度和首尾字符，创建简单哈希标识
+        // Combine token length with its first and last characters to create a simple hash identifier
         return `${prefix}_${length}_${suffix}`;
     }
 
     // Basic token validation without external API calls
     public async validateLocalToken(): Promise<boolean> {
-        // 首先检查绝对信任标记 - 如果存在，立即返回true而不做任何验证
+        // First check the absolute-trust flag and return true immediately without validation if it exists
         if (localStorage.getItem('token_absolute_trust') === 'true' || 
             localStorage.getItem('skip_all_token_validation') === 'true') {
             logger.debug('Local validation: Absolute trust flag detected, returning true without validation');
             return true;
         }
         
-        // 检查标准信任标记
+        // Check the standard trust flag
         if (localStorage.getItem('token_trusted') === 'true') {
             logger.debug('Local validation: Trust flag detected, returning true without validation');
             return true;
         }
         
-        // 检查登录后短时间，在此期间绝对信任token
+        // Check the short post-login window during which the token is absolutely trusted
         const authCallbackCompleted = localStorage.getItem('auth_callback_completed_time');
         if (authCallbackCompleted) {
             const completionTime = parseInt(authCallbackCompleted);
@@ -1363,31 +1363,31 @@ class CasdoorService {
             const expiryTime = tokenInfo.payload.exp * 1000;
             const now = Date.now();
             
-            // 本地验证足够 - 如果token没有过期，直接视为有效
-            if (expiryTime > now + 30 * 1000) { // 至少30秒后过期
+            // Local validation is sufficient; if the token has not expired, treat it as valid
+            if (expiryTime > now + 30 * 1000) { // Expires at least 30 seconds later
                 localStorage.setItem('token_verified', 'true');
                 return true;
             }
             
-            // 如果token即将过期，尝试刷新
-            if (expiryTime <= now + 10 * 60 * 1000) { // 10分钟内过期
+            // Try refreshing the token when it is close to expiring
+            if (expiryTime <= now + 10 * 60 * 1000) { // Expires within 10 minutes
                 try {
                     await this.refreshAccessToken();
                     localStorage.setItem('token_verified', 'true');
                     return true;
                 } catch (error) {
                     logger.error('Token near expiry and refresh failed during local validation:', error);
-                    // 如果已经过期则登出
+                    // Log out if it has already expired
                     if (expiryTime <= now) {
                         await this.logout();
                         return false;
                     }
-                    // 如果还没过期，仍然视为有效，稍后再尝试刷新
+                    // If it has not expired yet, still treat it as valid and try refreshing later
                     return true;
                 }
             }
             
-            // 验证成功，设置验证标记
+            // Set the validation flag after successful validation
             localStorage.setItem('token_verified', 'true');
             return true;
         } catch (error) {
@@ -1396,7 +1396,7 @@ class CasdoorService {
         }
     }
 
-    // 触发认证无效事件的辅助方法
+    // Helper method for triggering the invalid-authentication event
     private triggerInvalidAuthEvent(message: string): void {
         if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('auth:invalid', { 
@@ -1405,21 +1405,21 @@ class CasdoorService {
         }
     }
 
-    // 综合验证方法，结合本地验证和团队API验证
+    // Combined validation method that uses both local validation and team API validation
     async validateToken(noRefresh: boolean = false): Promise<boolean> {
         const token = this.getToken();
         
         if (!token) return false;
         
         try {
-            // 检查最高级别的信任标记 - 如果存在，完全跳过验证
+            // Check the highest-level trust flag and skip validation entirely if it exists
             if (localStorage.getItem('token_absolute_trust') === 'true' || 
                 localStorage.getItem('skip_all_token_validation') === 'true') {
                 console.log('Auth: Using absolute trust flag, skipping validateToken');
                 return true;
             }
             
-            // 首先验证令牌格式和过期时间
+            // First validate the token format and expiration time
             const tokenInfo = this.parseAccessToken(token);
             if (!tokenInfo || !tokenInfo.payload || !tokenInfo.payload.exp) {
                 console.warn('Token lacks expiration information');
@@ -1429,11 +1429,11 @@ class CasdoorService {
             const expiryTime = tokenInfo.payload.exp * 1000;
             const now = Date.now();
             
-            // 如果令牌明显已过期，无需调用API
+            // Do not call the API when the token is clearly expired
             if (expiryTime <= now) {
                 console.warn('Token has expired based on exp claim');
                 
-                // 如果设置noRefresh，仅返回false但不刷新令牌
+                // If noRefresh is set, return false without refreshing the token
                 if (noRefresh) {
                     return false;
                 }
@@ -1449,16 +1449,16 @@ class CasdoorService {
                 }
             }
             
-            // 如果设置了noRefresh参数，不进行进一步验证
+            // Do not perform further validation when the noRefresh parameter is set
             if (noRefresh) {
-                // 仅基于本地验证令牌，不进行API调用或刷新
+                // Validate only with local token checks without API calls or refreshes
                 return true;
             }
             
-            // 正常的API验证流程
+            // Normal API validation flow
             // ...existing code for API validation...
             
-            // 如果令牌即将过期（30分钟内），主动刷新
+            // Proactively refresh the token when it is close to expiring within 30 minutes
             if (expiryTime - now < 30 * 60 * 1000 && !noRefresh) {
                 console.log('Token will expire soon, preemptively refreshing');
                 this.refreshAccessToken().catch(err => 
@@ -1473,11 +1473,11 @@ class CasdoorService {
         }
     }
 
-    // 检查token是否有效（公开方法）- 修改为避免不必要的token刷新
+    // Public method for checking whether a token is valid, updated to avoid unnecessary token refreshes
     async isTokenValid(): Promise<boolean> {
         if (!this.isLoggedIn()) return false;
         
-        // 检查最高级别的信任标记
+        // Check the highest-level trust flag
         if (localStorage.getItem('token_absolute_trust') === 'true' || 
             localStorage.getItem('skip_all_token_validation') === 'true') {
             console.log('Auth: Using absolute trust flag, skipping isTokenValid check');
@@ -1485,12 +1485,12 @@ class CasdoorService {
         }
         
         try {
-            // 仅进行基本验证，不自动刷新token
+            // Perform only basic validation and do not refresh the token automatically
             const isBasicValid = await this.isTokenValidWithoutRefresh();
             if (!isBasicValid) {
                 console.warn('Basic token validation failed');
                 
-                // 这里我们仍然尝试刷新token，因为这可能是显式的有效性检查
+                // Still try refreshing the token here because this may be an explicit validity check
                 try {
                     await this.refreshAccessToken();
                     return true;
@@ -1507,24 +1507,24 @@ class CasdoorService {
         }
     }
 
-    // 检查token是否有效但不会请求新token（仅验证）- 改进以更准确检查
+    // Check whether a token is valid without requesting a new token, improved for more accurate validation
     async isTokenValidWithoutRefresh(): Promise<boolean> {
         if (!this.isLoggedIn()) return false;
         
-        // 检查绝对信任标记 - 如果存在，完全跳过验证
+        // Check the absolute-trust flag and skip validation entirely if it exists
         if (localStorage.getItem('token_absolute_trust') === 'true' || 
             localStorage.getItem('skip_all_token_validation') === 'true') {
             logger.debug('No-refresh validation: Absolute trust flag detected, returning true without validation');
             return true;
         }
         
-        // 检查标准信任标记
+        // Check the standard trust flag
         if (localStorage.getItem('token_trusted') === 'true') {
             logger.debug('No-refresh validation: Trust flag detected, returning true without validation');
             return true;
         }
         
-        // 检查登录后短时间，在此期间绝对信任token
+        // Check the short post-login window during which the token is absolutely trusted
         const authCallbackCompleted = localStorage.getItem('auth_callback_completed_time');
         if (authCallbackCompleted) {
             const completionTime = parseInt(authCallbackCompleted);
@@ -1535,7 +1535,7 @@ class CasdoorService {
         }
         
         try {
-            // 基础本地验证 - 仅检查token格式和过期时间
+            // Basic local validation that checks only token format and expiration time
             const token = this.getToken();
             if (!token) return false;
             
@@ -1545,13 +1545,13 @@ class CasdoorService {
             const expiryTime = tokenInfo.payload.exp * 1000;
             const now = Date.now();
             
-            // 如果token已过期，返回false，但不自动刷新
+            // Return false when the token has expired, but do not refresh it automatically
             if (expiryTime <= now) {
                 logger.warn('Token has expired based on exp claim');
                 return false;
             }
             
-            // 本地验证通过，不进一步请求API验证
+            // Stop after local validation succeeds and do not request further API validation
             return true;
         } catch (error) {
             logger.error('Error in token validation without refresh:', error);
@@ -1559,13 +1559,13 @@ class CasdoorService {
         }
     }
 
-    // 处理API响应中的认证错误
+    // Handle authentication errors in API responses
     checkApiResponse(response: any): boolean {
-        // 检查是否为标准错误响应
+        // Check whether this is a standard error response
         if (response && response.success === true && response.data) {
             const data = response.data;
             
-            // 检查特定的错误消息格式
+            // Check specific error-message formats
             if (data.status === 'error' && data.msg && 
                 (data.msg.includes('token') || 
                  data.msg.includes('Access') || 
@@ -1573,7 +1573,7 @@ class CasdoorService {
                 
                 console.warn('API returned auth error:', data.msg);
                 
-                // 触发无效认证处理
+                // Trigger invalid-authentication handling
                 setTimeout(() => {
                     this.handleInvalidAuthResponse().catch(console.error);
                 }, 0);
@@ -1597,75 +1597,75 @@ class CasdoorService {
             // If refresh fails, log out and clear everything
             await this.logout();
             
-            // 通知用户需要重新登录
+            // Notify the user that they need to log in again
             this.triggerInvalidAuthEvent('Your session has expired. Please login again.');
             return false;
         }
     }
 
-    // 设置定期检查令牌有效性的定时器
+    // Set up a timer to periodically check token validity
     private setupTokenPeriodicCheck(): void {
-        // 清除已有定时器
+        // Clear the existing timer
         if (this.tokenCheckTimer !== null) {
             window.clearInterval(this.tokenCheckTimer);
             this.tokenCheckTimer = null;
         }
 
-        // 如果用户已登录，设置定期检查
+        // Set up periodic checks when the user is logged in
         if (this.isLoggedIn()) {
-            const checkInterval = TOKEN_CHECK_INTERVAL; // 5分钟间隔
+            const checkInterval = TOKEN_CHECK_INTERVAL; // 5-minute interval
             
             this.tokenCheckTimer = window.setInterval(async () => {
                 logger.debug('Token check interval triggered, checking if validation needed');
                 
                 try {
-                    // 检查是否是登录后10分钟内
+                    // Check whether it is within 10 minutes after login
                     const authCallbackTime = localStorage.getItem('auth_callback_completed_time');
                     if (authCallbackTime && Date.now() - parseInt(authCallbackTime) < 10 * 60 * 1000) {
                         logger.debug('Token check: Recent auth callback detected (<10min), skipping validation');
                         return;
                     }
                     
-                    // 检查是否有其他验证进行中
+                    // Check whether another validation is already in progress
                     if (localStorage.getItem('auth_validation_in_progress') === 'true') {
                         logger.debug('Token check: Validation already in progress, skipping');
                         return;
                     }
                     
-                    // 检查最近是否已由AuthManager验证
+                    // Check whether AuthManager has validated recently
                     const lastAuthCheck = localStorage.getItem('last_auth_check_time');
-                    if (lastAuthCheck && Date.now() - parseInt(lastAuthCheck) < 60000) { // 1分钟内
+                    if (lastAuthCheck && Date.now() - parseInt(lastAuthCheck) < 60000) { // Within 1 minute
                         logger.debug('Token check: Recent validation detected, skipping check');
                         return;
                     }
 
-                    // 已过10分钟初始信任期，清除绝对信任标记
+                    // The initial 10-minute trust period has passed, so clear the absolute-trust flag
                     localStorage.removeItem('token_absolute_trust');
                     localStorage.removeItem('skip_all_token_validation');
                     
                     logger.info('Token check: Validating token without requesting new token');
                     
-                    // 标记验证进行中
+                    // Mark validation as in progress
                     localStorage.setItem('auth_validation_in_progress', 'true');
                     
                     try {
-                        // 基于本地令牌信息验证 - 只检查格式和过期时间，不发送API请求
+                        // Validate based on local token information by checking only format and expiration time without sending an API request
                         const isValid = await this.isTokenValidWithoutRefresh();
                         
                         if (!isValid) {
                             logger.warn('Token check: Token validation failed - token appears invalid');
                             
-                            // 如果验证失败，触发登出流程
+                            // Trigger the logout flow when validation fails
                             this.triggerInvalidAuthEvent('Your session has expired. Please login again.');
                             await this.logout();
                         } else {
-                            // 本地验证成功，记录验证时间
+                            // Record the validation time when local validation succeeds
                             logger.info('Token check: Local validation successful');
                             localStorage.setItem('last_token_validated_time', Date.now().toString());
                             localStorage.setItem('last_auth_check_time', Date.now().toString());
                         }
                     } finally {
-                        // 清除验证标记
+                        // Clear the validation flag
                         localStorage.removeItem('auth_validation_in_progress');
                     }
                 } catch (error) {
@@ -1776,10 +1776,10 @@ function createFullName(userData: any): string {
 
 // Helper function to detect invalid auth responses
 function isInvalidAuthResponse(response: any): boolean {
-    // 检测空响应
+    // Detect empty responses
     if (!response) return true;
     
-    // 检查显式错误响应格式
+    // Check explicit error-response formats
     if (response.success === true && response.data && response.data.status === 'error') {
         const errorMsg = response.data.msg;
         if (errorMsg && (
@@ -1791,7 +1791,7 @@ function isInvalidAuthResponse(response: any): boolean {
         }
     }
     
-    // 检查标准的无效响应特征
+    // Check standard invalid-response characteristics
     if (response.status === 'error' && 
         response.msg && (
             response.msg.includes('token') || 
@@ -1801,7 +1801,7 @@ function isInvalidAuthResponse(response: any): boolean {
         return true;
     }
     
-    // 典型的无效响应特征
+    // Typical invalid-response characteristics
     if (response.status === 'ok' && 
         (!response.sub || response.sub === '') && 
         (!response.name || response.name === '') && 
@@ -1837,3 +1837,7 @@ function isRecentLogin(minutes: number): boolean {
 
 // Export the helper functions
 export { isInvalidAuthResponse, AUTH_LOCKS, isRecentLogin };
+
+
+
+

@@ -2,26 +2,26 @@ import { casdoorService } from './auth';
 import { logger } from '@/utils/logger';
 
 /**
- * API 拦截器工具
- * 提供用于检查API响应中的认证错误的工具函数
+ * API interceptor utilities
+ * Provides helper functions for checking authentication errors in API responses
  */
 
 /**
- * 检查API响应中的认证错误
- * @param response API响应对象
- * @returns 如果不存在认证错误返回true，否则返回false
+ * Check API responses for authentication errors
+ * @param response API response object
+ * @returns Returns true when no authentication error exists, otherwise false
  */
 export function checkAuthInResponse(response: any): boolean {
     logger.prettyGroup('API Auth Check', 'info', true);
     
     try {
-        // 检查响应是否为空
+        // Check whether the response is empty
         if (!response) {
             logger.pretty('Empty Response', 'No response data', 'error');
             return false;
         }
         
-        // 检查明确的错误信息
+        // Check explicit error messages
         if (response.success === true && response.data && response.data.status === 'error') {
             const errorMsg = response.data.msg;
             
@@ -33,7 +33,7 @@ export function checkAuthInResponse(response: any): boolean {
             )) {
                 logger.pretty('Auth Error', errorMsg, 'error');
                 
-                // 触发认证错误处理
+                // Trigger authentication error handling
                 setTimeout(() => {
                     casdoorService.handleInvalidAuthResponse().catch(error => {
                         logger.error('Error handling invalid auth:', error);
@@ -44,7 +44,7 @@ export function checkAuthInResponse(response: any): boolean {
             }
         }
         
-        // 检查通用错误格式
+        // Check the generic error format
         if (response.status === 'error' && 
             response.msg && (
                 response.msg.includes('token') || 
@@ -56,7 +56,7 @@ export function checkAuthInResponse(response: any): boolean {
             return false;
         }
         
-        // 如果本质上是空响应
+        // Handle responses that are effectively empty
         if (response.status === 'ok' && 
             (!response.sub || response.sub === '') && 
             (!response.name || response.name === '') && 
@@ -72,52 +72,52 @@ export function checkAuthInResponse(response: any): boolean {
         logger.error('Error checking auth in response:', error);
         return false;
     } finally {
-        // 使用安全的组关闭方法
+        // Use the safe group-closing helper
         logger.safeGroupEnd('API Auth Check');
     }
 }
 
 /**
- * 处理API错误响应的通用方法
- * @param error 捕获的错误对象
- * @param handleAuthErrors 是否自动处理认证错误
- * @returns 格式化的错误对象
+ * General-purpose handler for API error responses
+ * @param error Captured error object
+ * @param handleAuthErrors Whether authentication errors should be handled automatically
+ * @returns A formatted error object
  */
 export function handleApiError(error: any, handleAuthErrors = true): {message: string, status?: number} {
     logger.prettyGroup('API Error Handler', 'error', true);
     
     try {
-        // 默认错误消息
+        // Default error message
         let message = 'An unexpected error occurred';
         let status: number | undefined = undefined;
         
-        // 处理不同类型的错误
+        // Handle different types of errors
         if (error.response) {
-            // 服务器返回错误响应
+            // The server returned an error response
             status = error.response.status;
             
-            // 检查认证错误
+            // Check for authentication errors
             if ((status === 401 || status === 403) && handleAuthErrors) {
                 logger.pretty('Auth Error', `Status code: ${status}`, 'error');
                 
-                // 触发认证错误处理
+                // Trigger authentication error handling
                 setTimeout(() => {
                     casdoorService.handleInvalidAuthResponse().catch(console.error);
                 }, 0);
                 
                 message = 'Authentication failed. Please login again.';
             } else if (error.response.data && error.response.data.message) {
-                // 使用服务器返回的错误消息
+                // Use the error message returned by the server
                 message = error.response.data.message;
             } else {
-                // 使用HTTP状态描述
+                // Use the HTTP status description
                 message = `Server error: ${error.response.statusText || status}`;
             }
         } else if (error.request) {
-            // 请求发送但未收到响应
+            // The request was sent but no response was received
             message = 'No response received from server. Please check your connection.';
         } else if (error.message) {
-            // 请求设置过程中的错误
+            // Error while configuring the request
             message = error.message;
         }
         
@@ -128,7 +128,7 @@ export function handleApiError(error: any, handleAuthErrors = true): {message: s
         logger.error('Error in handleApiError:', err);
         return { message: 'An unexpected error occurred' };
     } finally {
-        // 使用安全的组关闭方法
+        // Use the safe group-closing helper
         logger.safeGroupEnd('API Error Handler');
     }
 }

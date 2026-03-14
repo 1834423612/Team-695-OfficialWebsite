@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div v-if="show" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
         <div class="w-11/12 max-w-lg p-4">
             <div :class="[
@@ -79,7 +79,7 @@ export default defineComponent({
             }
         });
 
-        // 确保只有一个通知显示
+        // Ensure that only one notification is shown at a time
         let notificationQueue: Array<{
             title: string;
             message: string;
@@ -89,7 +89,7 @@ export default defineComponent({
         }> = [];
         let isDisplayingNotification = false;
 
-        // 处理通知队列
+        // Process the notification queue
         const processQueue = () => {
             if (notificationQueue.length > 0 && !isDisplayingNotification) {
                 isDisplayingNotification = true;
@@ -104,7 +104,7 @@ export default defineComponent({
             }
         };
 
-        // 关闭当前通知
+        // Close the current notification
         const close = () => {
             show.value = false;
             setTimeout(() => {
@@ -113,7 +113,7 @@ export default defineComponent({
             }, 300);
         };
 
-        // 执行操作并关闭
+        // Run the action and close the notification
         const handleAction = () => {
             if (actionCallback.value) {
                 actionCallback.value();
@@ -121,7 +121,7 @@ export default defineComponent({
             close();
         };
 
-        // 添加新通知
+        // Add a new notification
         const notify = (
             newTitle: string,
             newMessage: string,
@@ -129,18 +129,18 @@ export default defineComponent({
             newActionText = 'OK',
             callback?: () => void
         ) => {
-            // 检查队列中是否已有相同消息
+            // Check whether the queue already contains the same message
             const isDuplicate = notificationQueue.some(item =>
                 item.title === newTitle && item.message === newMessage);
 
-            // 如果当前正在显示相同消息，也视为重复
+            // Treat the current notification as a duplicate if it shows the same message
             const isCurrentlyShowing =
                 isDisplayingNotification &&
                 title.value === newTitle &&
                 message.value === newMessage;
 
             if (isDuplicate || isCurrentlyShowing) {
-                return; // 跳过重复消息
+                return; // Skip duplicate messages
             }
 
             notificationQueue.push({
@@ -154,7 +154,7 @@ export default defineComponent({
             processQueue();
         };
 
-        // 提供全局访问方法
+        // Provide a globally accessible helper
         if (typeof window !== 'undefined') {
             (window as any).$notify = notify;
         }
@@ -172,3 +172,4 @@ export default defineComponent({
     }
 });
 </script>
+

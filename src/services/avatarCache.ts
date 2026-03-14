@@ -1,83 +1,83 @@
-/**
- * 用户头像缓存服务
- * 用于缓存用户头像到浏览器，避免频繁请求和第三方头像限流问题
+﻿/**
+ * User avatar cache service
+ * Caches user avatars in the browser to avoid frequent requests and third-party avatar rate limits
  * 
- * 使用 IndexedDB 作为主要存储，提供更大的存储空间和更好的性能
- * 同时保留内存缓存，以便快速访问常用头像
+ * Uses IndexedDB as the primary storage for more space and better performance
+ * Also keeps an in-memory cache for fast access to frequently used avatars
  */
 
-import { logger } from '@/utils/logger'; // 导入logger工具
+import { logger } from '@/utils/logger'; // Import the logger utility
 
-// 缓存键名前缀
+// Cache key prefix
 const CACHE_PREFIX = 'avatar_cache_';
-// 缓存有效期（默认7天）
+// Cache lifetime (7 days by default)
 const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000;
-// 头像默认尺寸
+// Default avatar size
 const DEFAULT_SIZE = 200;
-// 数据库名称和版本
+// Database name and version
 const DB_NAME = 'avatar_cache_db';
-const DB_VERSION = 2; // 提高版本号，以支持新的索引和存储结构
+const DB_VERSION = 2; // Increase the version to support the new indexes and storage structure
 const STORE_NAME = 'avatars';
-// 请求控制 - 同一URL的最小请求间隔（24小时）
+// Request throttling: minimum interval for the same URL (24 hours)
 const REQUEST_THROTTLE = 24 * 60 * 60 * 1000;
-// 最近请求记录存储
+// Storage for recent request records
 const REQUEST_STORE = 'avatar_requests';
 
 interface CacheEntry {
     dataUrl: string;
     timestamp: number;
     originalUrl: string;
-    userId: string; // 添加明确的用户ID关联
-    userName?: string; // 可选：存储用户名以便于调试和识别
-    displayName?: string; // 可选：存储显示名以便于调试和识别
-    initial?: string; // 新增：保存初始标识符
+    userId: string; // Add an explicit user ID association
+    userName?: string; // Optional: store the username for debugging and identification
+    displayName?: string; // Optional: store the display name for debugging and identification
+    initial?: string; // New: store the initial identifier
 }
 
 interface RequestRecord {
     url: string;
     timestamp: number;
-    count: number; // 计数器，记录请求次数
+    count: number; // Counter that tracks request frequency
 }
 
 class AvatarCacheService {
-    // 内存缓存，用于快速访问
+    // In-memory cache for quick access
     private memoryCache: Map<string, CacheEntry> = new Map();
-    // 请求记录，用于控制请求频率
+    // Request records used to control request frequency
     private requestCache: Map<string, RequestRecord> = new Map();
-    // 数据库连接
+    // Database connection
     private dbPromise: Promise<IDBDatabase> | null = null;
-    // 是否已初始化
+    // Whether initialization has completed
     private initialized: boolean = false;
-    // 初始化Promise，用于跟踪初始化过程
+    // Initialization promise used to track the initialization process
     private initPromise: Promise<void> | null = null;
 
     constructor() {
-        // 构造函数中自动启动初始化过程
+        // Automatically start initialization from the constructor
         this.initPromise = this.init();
     }
 
     /**
-     * 检查服务是否已初始化
+     * Check whether the service has been initialized
      */
     public isInitialized(): boolean {
         return this.initialized;
     }
 
     /**
-     * 初始化缓存服务
-     * - 打开IndexedDB连接
-     * - 加载关键头像到内存缓存
-     * - 初始化请求控制系统
+     * Initialize the cache service
+     * - Open the IndexedDB connection
+     * - Load key avatars into the memory cache
+     * - Initialize the request throttling system
      * 
-     * 多次调用是安全的，会返回相同的Promise
+     * It is safe to call this multiple times; the same promise will be returned
      */
     public async init(): Promise<void> {
-        // 如果已经有初始化过程在进行，直接返回该Promise
+        // Return the existing promise if initialization is already in progress
         if (this.initPromise) {
             return this.initPromise;
         }
 
-        // 如果已初始化完成，直接返回
+        // Return immediately if initialization has already finished
         if (this.initialized) {
             return Promise.resolve();
         }
@@ -85,34 +85,34 @@ class AvatarCacheService {
         logger.info('Initializing avatar cache service...');
         
         try {
-            // 打开数据库连接
+            // Open the database connection
             this.dbPromise = this.openDatabase();
             await this.dbPromise;
             
-            // 迁移旧的localStorage数据到IndexedDB
+            // Migrate old localStorage data into IndexedDB
             await this.migrateFromLocalStorage();
             
-            // 从IndexedDB预加载最近的头像到内存缓存
+            // Preload recent avatars from IndexedDB into the memory cache
             await this.preloadRecentAvatars();
             
-            // 加载请求记录到内存
+            // Load request records into memory
             await this.loadRequestRecords();
             
             this.initialized = true;
             logger.info(`Avatar cache initialized with ${this.memoryCache.size} entries in memory cache`);
         } catch (e) {
             logger.error('Failed to initialize avatar cache:', e);
-            // 重置初始化状态，允许重试
+            // Reset the initialization state to allow retries
             this.initPromise = null;
             throw e;
         }
     }
 
     /**
-     * 缓存用户头像
-     * @param userId 用户ID
-     * @param avatarUrl 头像URL
-     * @param userInfo 可选的用户信息，帮助识别头像所属用户
+     * Cache a user avatar
+     * @param userId User ID
+     * @param avatarUrl Avatar URL
+     * @param userInfo Optional user information to help identify who the avatar belongs to
      */
     public async cacheAvatar(
         userId: string, 
@@ -120,10 +120,10 @@ class AvatarCacheService {
         userInfo?: {
             name?: string,
             displayName?: string,
-            initial?: string // 新增initial字段
+            initial?: string // New initial field
         }
     ): Promise<string | null> {
-        // 确保服务已初始化
+        // Ensure the service is initialized
         if (!this.initialized) {
             await this.init();
         }
@@ -131,40 +131,40 @@ class AvatarCacheService {
         if (!userId || !avatarUrl) return null;
 
         try {
-            // 检查传入的userId是否是缩写形式，如果是就尝试获取之前缓存的完整ID
+            // Check whether the incoming userId is abbreviated and try to recover the previously cached full ID
             const isShortId = userId.length <= 2;
             let effectiveId = userId;
             
             if (isShortId) {
-                // 记录警告，因为这可能是错误使用了initial作为ID
+                // Log a warning because this may mean an initial was incorrectly used as the ID
                 logger.warn(`Short userId detected: "${userId}", might be using initials instead of real user ID`);
                 
-                // 如果userInfo包含更多信息，尝试用它来创建更一致的ID
+                // If userInfo contains more details, try to use it to create a more consistent ID
                 if (userInfo?.displayName) {
-                    // 使用displayName创建一个伪ID，以保持一致性
+                    // Use displayName to create a pseudo ID for consistency
                     effectiveId = `pseudo_${this.hashCode(userInfo.displayName)}`;
                     logger.debug(`Using pseudo ID for "${userId}": ${effectiveId}`);
                 }
             }
 
-            // 检查请求频率限制
+            // Check request rate limits
             if (this.shouldThrottleRequest(avatarUrl)) {
                 logger.debug(`Request throttled for URL: ${avatarUrl}`);
                 
-                // 查找最近缓存的头像，优先使用缓存而不是立即回退到默认
+                // Look for a recently cached avatar and prefer cache instead of falling back to the default immediately
                 
-                // 首先尝试内存缓存
+                // Try the memory cache first
                 const cachedEntry = this.memoryCache.get(userId);
                 if (cachedEntry) {
                     logger.debug(`Using memory cached avatar for throttled request: ${userId}`);
                     return cachedEntry.dataUrl;
                 }
                 
-                // 然后尝试从DB获取
+                // Then try loading it from the database
                 try {
                     const dbEntry = await this.getFromDb(userId);
                     if (dbEntry) {
-                        // 更新内存缓存
+                        // Update the memory cache
                         this.memoryCache.set(userId, dbEntry);
                         logger.debug(`Using DB avatar for throttled request: ${userId}`);
                         return dbEntry.dataUrl;
@@ -173,14 +173,14 @@ class AvatarCacheService {
                     logger.warn(`Failed to get avatar from DB for throttled URL: ${avatarUrl}`, dbError);
                 }
                 
-                // 最后一次尝试，检查是否有任何来源的URL匹配
+                // As a final attempt, check whether any cached URL matches from another source
                 try {
                     const entriesWithSameUrl = await this.findEntriesByUrl(avatarUrl);
                     if (entriesWithSameUrl.length > 0) {
-                        // 使用相同URL的第一个条目
+                        // Use the first entry that has the same URL
                         const dataUrl = entriesWithSameUrl[0].dataUrl;
                         
-                        // 创建一个新条目为当前用户
+                        // Create a new entry for the current user
                         const entry: CacheEntry = {
                             dataUrl,
                             timestamp: Date.now(),
@@ -191,7 +191,7 @@ class AvatarCacheService {
                             initial: userInfo?.initial
                         };
                         
-                        // 保存到缓存
+                        // Save it to the cache
                         this.memoryCache.set(userId, entry);
                         await this.saveToDb(userId, entry).catch(e => logger.warn(`Failed to save shared URL avatar to DB: ${e}`));
                         
@@ -202,35 +202,35 @@ class AvatarCacheService {
                     logger.warn(`Failed to find entries by URL for throttled request: ${avatarUrl}`, e);
                 }
                 
-                // 如果没有缓存，返回null让调用者使用默认头像
+                // Return null when no cache is available so the caller can use the default avatar
                 return null;
             }
             
             logger.debug(`Caching avatar for user ${effectiveId} (original: ${userId}): ${avatarUrl}`);
 
-            // 记录请求以控制频率
+            // Record the request to control request frequency
             this.recordRequest(avatarUrl);
 
-            // 获取图像并转换为Data URL
+            // Fetch the image and convert it to a data URL
             const dataUrl = await this.fetchImageAsDataUrl(avatarUrl);
 
             if (!dataUrl) return null;
 
-            // 创建缓存条目，包含用户信息
+            // Create a cache entry that includes user information
             const entry: CacheEntry = {
                 dataUrl,
                 timestamp: Date.now(),
                 originalUrl: avatarUrl,
-                userId: effectiveId, // 使用处理后的effectiveId
+                userId: effectiveId, // Use the processed effectiveId
                 userName: userInfo?.name,
                 displayName: userInfo?.displayName,
                 initial: userInfo?.initial
             };
 
-            // 更新内存缓存
+            // Update the memory cache
             this.memoryCache.set(effectiveId, entry);
 
-            // 保存到IndexedDB
+            // Save it to IndexedDB
             await this.saveToDb(effectiveId, entry);
 
             return dataUrl;
@@ -241,11 +241,11 @@ class AvatarCacheService {
     }
 
     /**
-     * 获取缓存的头像
-     * @param userId 用户ID
-     * @param avatarUrl 原始头像URL（如果缓存不存在或过期）
-     * @param userInfo 用户信息对象（用于生成更准确的默认头像）
-     * @param cacheOnly 是否只使用缓存（不获取新头像）
+     * Get a cached avatar
+     * @param userId User ID
+     * @param avatarUrl Original avatar URL when the cache is missing or expired
+     * @param userInfo User information used to generate a more accurate default avatar
+     * @param cacheOnly Whether to use only cached data without fetching a new avatar
      */
     public async getAvatar(
         userId: string, 
@@ -259,19 +259,19 @@ class AvatarCacheService {
         },
         cacheOnly: boolean = false
     ): Promise<string> {
-        // 确保服务已初始化
+        // Ensure the service is initialized
         if (!this.initialized) {
             await this.init();
         }
         
-        // 处理短ID问题
+        // Handle short-ID issues
         const isShortId = userId.length <= 2;
         let effectiveId = userId;
         
         if (isShortId) {
-            // 如果是短ID（可能是initial），尝试从映射工具获取真实ID
+            // If this is a short ID, possibly an initial, try to resolve the real ID from the mapping tool
             try {
-                // 动态导入避免循环依赖
+                // Use a dynamic import to avoid circular dependencies
                 const { AvatarMigrationTool } = await import('@/utils/avatarMigrationTool');
                 const mappedId = AvatarMigrationTool.getUserIdByInitial(userId);
                 
@@ -279,12 +279,12 @@ class AvatarCacheService {
                     logger.debug(`Using mapped ID for "${userId}": ${mappedId}`);
                     effectiveId = mappedId;
                 } else if (userInfo?.displayName) {
-                    // 如果映射工具没有匹配，但有displayName，创建伪ID
+                    // Create a pseudo ID when the mapping tool has no match but displayName is available
                     effectiveId = `pseudo_${this.hashCode(userInfo.displayName)}`;
                     logger.debug(`Using pseudo ID for "${userId}": ${effectiveId}`);
                 }
             } catch (e) {
-                // 如果导入失败，回退到使用displayName
+                // Fall back to displayName if the import fails
                 if (userInfo?.displayName) {
                     effectiveId = `pseudo_${this.hashCode(userInfo.displayName)}`;
                     logger.debug(`Using pseudo ID for "${userId}" (fallback): ${effectiveId}`);
@@ -292,17 +292,17 @@ class AvatarCacheService {
             }
         }
         
-        // 检查内存缓存
+        // Check the memory cache
         let cachedEntry = this.memoryCache.get(effectiveId);
         
-        // 如果找不到，尝试用原始userId再查一次（兼容旧数据）
+        // If nothing is found, try the original userId again for compatibility with older data
         if (!cachedEntry && effectiveId !== userId) {
             cachedEntry = this.memoryCache.get(userId);
         }
         
-        // 如果有有效缓存，返回缓存的数据URL
+        // Return the cached data URL when a valid cache entry exists
         if (cachedEntry && Date.now() - cachedEntry.timestamp < CACHE_DURATION) {
-            // 如果提供了新URL且与缓存的不同，且不是只使用缓存模式，异步更新缓存
+            // Asynchronously update the cache when a new URL is provided, differs from the cached one, and cache-only mode is off
             if (avatarUrl && cachedEntry.originalUrl !== avatarUrl && !cacheOnly && !this.shouldThrottleRequest(avatarUrl)) {
                 this.cacheAvatar(userId, avatarUrl, {
                     name: userInfo?.name,
@@ -313,9 +313,9 @@ class AvatarCacheService {
             return cachedEntry.dataUrl;
         }
         
-        // 如果没有有效缓存但提供了URL且不是只使用缓存模式
+        // If no valid cache exists but a URL is provided and cache-only mode is off
         if (avatarUrl && !cacheOnly) {
-            // 优先尝试从URL获取头像
+            // Prefer fetching the avatar directly from the URL
             try {
                 const dataUrl = await this.cacheAvatar(userId, avatarUrl, {
                     name: userInfo?.name,
@@ -328,11 +328,11 @@ class AvatarCacheService {
             }
         }
         
-        // 如果内存缓存中没有，尝试从IndexedDB获取
+        // If the memory cache misses, try loading it from IndexedDB
         try {
             const entry = await this.getFromDb(userId);
             if (entry && Date.now() - entry.timestamp < CACHE_DURATION) {
-                // 将找到的条目放入内存缓存
+                // Put the found entry into the memory cache
                 this.memoryCache.set(userId, entry);
                 return entry.dataUrl;
             }
@@ -340,10 +340,10 @@ class AvatarCacheService {
             console.warn(`Failed to get avatar from DB for ${userId}:`, e);
         }
         
-        // 检查并迁移旧缓存
+        // Check and migrate old cache entries
         this.migrateOldCache(userId);
         
-        // 如果所有尝试都失败，生成并返回默认头像
+        // Generate and return the default avatar if every other attempt fails
         const defaultAvatar = this.getDefaultAvatar(
             userId,
             userInfo?.firstName,
@@ -353,23 +353,23 @@ class AvatarCacheService {
             userInfo?.initial
         );
         
-        // 在cacheOnly模式下，将默认头像保存到缓存中，以便下次直接使用
+        // In cacheOnly mode, save the default avatar into the cache so it can be reused next time
         if (cacheOnly) {
-            // 创建一个默认头像的缓存条目
+            // Create a cache entry for the default avatar
             const entry: CacheEntry = {
                 dataUrl: defaultAvatar,
                 timestamp: Date.now(),
-                originalUrl: '',  // 没有原始URL
+                originalUrl: '',  // No original URL
                 userId: effectiveId,
                 userName: userInfo?.name,
                 displayName: userInfo?.displayName,
                 initial: userInfo?.initial
             };
             
-            // 更新内存缓存
+            // Update the memory cache
             this.memoryCache.set(effectiveId, entry);
             
-            // 保存到IndexedDB（异步，不等待完成）
+            // Save it to IndexedDB asynchronously without waiting for completion
             this.saveToDb(effectiveId, entry).catch(e => {
                 logger.warn(`Failed to save default avatar to DB: ${e}`);
             });
@@ -379,25 +379,25 @@ class AvatarCacheService {
     }
 
     /**
-     * 清除特定用户的头像缓存
-     * @param userId 用户ID
+     * Clear the avatar cache for a specific user
+     * @param userId User ID
      */
     public async clearCache(userId: string): Promise<void> {
-        // 确保服务已初始化
+        // Ensure the service is initialized
         if (!this.initialized) {
             await this.init();
         }
 
-        // 检查是否是短ID
+        // Check whether this is a short ID
         const isShortId = userId.length <= 2;
         if (isShortId) {
             logger.warn(`Attempting to clear cache with short userId: "${userId}", might need to check real user ID`);
         }
 
-        // 从内存缓存移除
+        // Remove it from the memory cache
         this.memoryCache.delete(userId);
         
-        // 从IndexedDB移除
+        // Remove it from IndexedDB
         try {
             const db = await this.dbPromise;
             if (!db) return;
@@ -409,24 +409,24 @@ class AvatarCacheService {
             console.error(`Failed to delete avatar for ${userId} from DB:`, e);
         }
         
-        // 清除旧版本localStorage缓存（兼容性）
+        // Clear old-version localStorage cache entries for compatibility
         localStorage.removeItem(`${CACHE_PREFIX}${userId}`);
         this.clearOldCache(userId);
     }
 
     /**
-     * 清除所有头像缓存
+     * Clear all avatar caches
      */
     public async clearAllCache(): Promise<void> {
-        // 确保服务已初始化
+        // Ensure the service is initialized
         if (!this.initialized) {
             await this.init();
         }
 
-        // 清除内存缓存
+        // Clear the memory cache
         this.memoryCache.clear();
         
-        // 清除IndexedDB
+        // Clear IndexedDB
         try {
             const db = await this.dbPromise;
             if (!db) return;
@@ -438,7 +438,7 @@ class AvatarCacheService {
             console.error('Failed to clear avatar database:', e);
         }
         
-        // 清除localStorage中的旧缓存（兼容性）
+        // Clear old localStorage cache entries for compatibility
         for (let i = localStorage.length - 1; i >= 0; i--) {
             const key = localStorage.key(i);
             if (key && key.startsWith(CACHE_PREFIX)) {
@@ -446,7 +446,7 @@ class AvatarCacheService {
             }
         }
         
-        // 也清除请求记录
+        // Clear request records as well
         this.requestCache.clear();
         try {
             const db = await this.dbPromise;
@@ -463,9 +463,9 @@ class AvatarCacheService {
     }
 
     /**
-     * 检查是否应该限制请求
-     * @param url 请求的URL
-     * @returns 是否应该限制请求
+     * Check whether the request should be throttled
+     * @param url Requested URL
+     * @returns Whether the request should be throttled
      */
     private shouldThrottleRequest(url: string): boolean {
         const record = this.requestCache.get(url);
@@ -473,22 +473,22 @@ class AvatarCacheService {
         
         const timeSinceLastRequest = Date.now() - record.timestamp;
         
-        // 根据频率计算限流策略
-        // 使用动态阈值，减少对常用资源的过度限制
+        // Calculate the throttling strategy based on request frequency
+        // Use dynamic thresholds to reduce over-throttling for frequently used resources
         let throttleTime = REQUEST_THROTTLE;
         
-        // 当频率较高时，使用更短的限流时间窗口
+        // Use a shorter throttling window when the request rate is higher
         if (record.count > 20) {
-            // 针对高频请求 (超过20次), 24小时限流
+            // Apply a 24-hour throttle for high-frequency requests over 20 times
             throttleTime = REQUEST_THROTTLE;
         } else if (record.count > 10) {
-            // 针对中频请求 (10-20次), 12小时限流
+            // Apply a 12-hour throttle for medium-frequency requests between 10 and 20 times
             throttleTime = REQUEST_THROTTLE * 0.5;
         } else if (record.count > 5) {
-            // 针对低频请求 (5-10次), 6小时限流
+            // Apply a 6-hour throttle for low-frequency requests between 5 and 10 times
             throttleTime = REQUEST_THROTTLE * 0.25;
         } else {
-            // 针对非常低频的请求 (小于5次), 3小时限流
+            // Apply a 3-hour throttle for very low-frequency requests under 5 times
             throttleTime = REQUEST_THROTTLE * 0.125;
         }
         
@@ -496,15 +496,15 @@ class AvatarCacheService {
     }
 
     /**
-     * 记录请求以控制频率
-     * @param url 请求的URL
+     * Record requests to control frequency
+     * @param url Requested URL
      */
     private recordRequest(url: string): void {
         const now = Date.now();
         const existingRecord = this.requestCache.get(url);
         
         if (existingRecord) {
-            // 如果记录比较旧（超过限制时间），重置计数器
+            // Reset the counter when the record is old enough to exceed the limit window
             if (now - existingRecord.timestamp > REQUEST_THROTTLE) {
                 this.requestCache.set(url, {
                     url,
@@ -512,7 +512,7 @@ class AvatarCacheService {
                     count: 1
                 });
             } else {
-                // 否则增加计数器
+                // Otherwise increment the counter
                 this.requestCache.set(url, {
                     url,
                     timestamp: now,
@@ -520,7 +520,7 @@ class AvatarCacheService {
                 });
             }
         } else {
-            // 新URL，创建新记录
+            // Create a new record for a new URL
             this.requestCache.set(url, {
                 url,
                 timestamp: now,
@@ -528,14 +528,14 @@ class AvatarCacheService {
             });
         }
         
-        // 保存到IndexedDB
+        // Save it to IndexedDB
         this.saveRequestRecord(url, this.requestCache.get(url)!).catch(e => {
             logger.warn('Failed to save request record:', e);
         });
     }
 
     /**
-     * 保存请求记录到IndexedDB
+     * Save request records to IndexedDB
      */
     private async saveRequestRecord(url: string, record: RequestRecord): Promise<void> {
         try {
@@ -551,7 +551,7 @@ class AvatarCacheService {
     }
 
     /**
-     * 从IndexedDB加载请求记录
+     * Load request records from IndexedDB
      */
     private async loadRequestRecords(): Promise<void> {
         try {
@@ -563,7 +563,7 @@ class AvatarCacheService {
             const records = await promisifyRequest<RequestRecord[]>(store.getAll());
             const urls = await promisifyRequest<IDBValidKey[]>(store.getAllKeys());
             
-            // 加载到内存
+            // Load them into memory
             for (let i = 0; i < urls.length; i++) {
                 if (i < records.length) {
                     this.requestCache.set(String(urls[i]), records[i]);
@@ -572,7 +572,7 @@ class AvatarCacheService {
             
             logger.info(`Loaded ${this.requestCache.size} request records`);
             
-            // 清理过期的请求记录
+            // Clean up expired request records
             this.cleanupRequestRecords();
         } catch (e) {
             logger.error('Failed to load request records:', e);
@@ -580,25 +580,25 @@ class AvatarCacheService {
     }
 
     /**
-     * 清理过期的请求记录
+     * Clean up expired request records
      */
     private async cleanupRequestRecords(): Promise<void> {
         const now = Date.now();
         const expiredUrls: string[] = [];
         
-        // 查找过期记录
+        // Find expired records
         this.requestCache.forEach((record, url) => {
             if (now - record.timestamp > REQUEST_THROTTLE * 3) {
                 expiredUrls.push(url);
             }
         });
         
-        // 从内存缓存中删除
+        // Remove them from the memory cache
         for (const url of expiredUrls) {
             this.requestCache.delete(url);
         }
         
-        // 从IndexedDB删除
+        // Delete them from IndexedDB
         try {
             if (expiredUrls.length === 0) return;
             
@@ -621,13 +621,13 @@ class AvatarCacheService {
     }
 
     /**
-     * 获取基于用户信息的默认头像
-     * @param userId 用户ID或初始标识符
-     * @param firstName 名字
-     * @param lastName 姓氏 
-     * @param displayName 显示名称
-     * @param name 用户名
-     * @param initial 直接提供的初始标识符
+     * Get the default avatar based on user information
+     * @param userId User ID or initial identifier
+     * @param firstName First name
+     * @param lastName Last name 
+     * @param displayName Display name
+     * @param name Username
+     * @param initial Explicitly provided initial identifier
      */
     private getDefaultAvatar(
         userId: string,
@@ -635,20 +635,20 @@ class AvatarCacheService {
         lastName?: string,
         displayName?: string,
         name?: string,
-        initial?: string // 添加initial参数
+        initial?: string // Add the initial parameter
     ): string {
-        // 生成首字母
+        // Generate initials
         let initials: string;
 
-        // 优先使用提供的initial
+        // Prefer the provided initial
         if (initial) {
             initials = initial.substring(0, 2).toUpperCase();
         }
-        // 然后是firstName和lastName
+        // Then use firstName and lastName
         else if (firstName && lastName) {
             initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
         }
-        // 其次使用displayName并尝试拆分
+        // Next use displayName and try splitting it
         else if (displayName) {
             const parts = displayName.trim().split(/\s+/);
             if (parts.length >= 2) {
@@ -657,7 +657,7 @@ class AvatarCacheService {
                 initials = displayName.substring(0, 2).toUpperCase();
             }
         }
-        // 再次使用name
+        // Then use name
         else if (name) {
             const parts = name.trim().split(/\s+/);
             if (parts.length >= 2) {
@@ -666,18 +666,18 @@ class AvatarCacheService {
                 initials = name.substring(0, 2).toUpperCase();
             }
         }
-        // 最后使用userId
+        // Finally fall back to userId
         else {
             initials = userId.substring(0, 2).toUpperCase();
         }
 
-        // 根据用户ID生成一致的颜色
+        // Generate a consistent color from the user ID
         const hash = this.hashCode(userId);
         const hue = hash % 360;
         const saturation = 75;
         const lightness = 65;
 
-        // 创建一个简单的SVG作为默认头像
+        // Create a simple SVG for the default avatar
         const svg = `
         <svg xmlns="http://www.w3.org/2000/svg" width="${DEFAULT_SIZE}" height="${DEFAULT_SIZE}" viewBox="0 0 100 100">
             <rect width="100" height="100" fill="hsl(${hue}, ${saturation}%, ${lightness}%)" />
@@ -691,8 +691,8 @@ class AvatarCacheService {
     }
 
     /**
-     * 从URL获取图像并转换为Data URL
-     * @param url 图像URL
+     * Fetch an image from a URL and convert it to a data URL
+     * @param url Image URL
      */
     private async fetchImageAsDataUrl(url: string): Promise<string | null> {
         try {
@@ -716,8 +716,8 @@ class AvatarCacheService {
     }
 
     /**
-     * 将Blob转换为Data URL
-     * @param blob 图像Blob
+     * Convert a Blob to a data URL
+     * @param blob Image blob
      */
     private blobToDataUrl(blob: Blob): Promise<string> {
         return new Promise((resolve, reject) => {
@@ -729,24 +729,24 @@ class AvatarCacheService {
     }
 
     /**
-     * 计算字符串的哈希码（用于生成默认头像颜色）
-     * @param str 输入字符串
+     * Compute a string hash used to generate the default avatar color
+     * @param str Input string
      */
     private hashCode(str: string): number {
         let hash = 0;
         for (let i = 0; i < str.length; i++) {
             hash = ((hash << 5) - hash) + str.charCodeAt(i);
-            hash |= 0; // 转换为32位整数
+            hash |= 0; // Convert to a 32-bit integer
         }
         return Math.abs(hash);
     }
 
     /**
-     * 清除旧版本的缓存键
-     * @param userId 用户ID
+     * Clear old-version cache keys
+     * @param userId User ID
      */
     private clearOldCache(userId: string): void {
-        // 这里可以添加清除旧版本缓存键的逻辑
+        // Old-version cache-key cleanup logic can be added here
         const oldKeys = [
             `avatar_${userId}`,
             `user_avatar_${userId}`
@@ -760,8 +760,8 @@ class AvatarCacheService {
     }
 
     /**
-     * 迁移旧版本的缓存键
-     * @param userId 用户ID
+     * Migrate old-version cache keys
+     * @param userId User ID
      */
     private migrateOldCache(userId: string): void {
         const oldKeys = [
@@ -773,10 +773,10 @@ class AvatarCacheService {
             const value = localStorage.getItem(key);
             if (value) {
                 try {
-                    // 尝试解析旧缓存
+                    // Try parsing the old cache entry
                     const parsed = JSON.parse(value);
                     if (parsed && parsed.dataUrl) {
-                        // 创建新的缓存条目
+                        // Create a new cache entry
                         const entry: CacheEntry = {
                             dataUrl: parsed.dataUrl,
                             timestamp: parsed.timestamp || Date.now(),
@@ -784,11 +784,11 @@ class AvatarCacheService {
                             userId: userId
                         };
 
-                        // 保存到新缓存
+                        // Save it into the new cache
                         this.memoryCache.set(userId, entry);
                         localStorage.setItem(`${CACHE_PREFIX}${userId}`, JSON.stringify(entry));
 
-                        // 删除旧缓存
+                        // Delete the old cache entry
                         localStorage.removeItem(key);
                     }
                 } catch (e) {
@@ -799,12 +799,12 @@ class AvatarCacheService {
     }
 
     /**
-     * 清除最旧的缓存以释放空间
-     * 当localStorage空间不足时调用
+     * Clear the oldest cache entries to free up space
+     * Called when localStorage runs out of space
      */
     private clearOldestCaches(): void {
         try {
-            // 收集所有头像缓存项
+            // Collect all avatar cache entries
             const cacheEntries: { key: string, timestamp: number }[] = [];
 
             for (let i = 0; i < localStorage.length; i++) {
@@ -819,7 +819,7 @@ class AvatarCacheService {
                                 timestamp: entry.timestamp
                             });
                         } catch (e) {
-                            // 如果解析失败，将其视为最旧的缓存
+                            // Treat entries that fail to parse as the oldest cache entries
                             cacheEntries.push({
                                 key,
                                 timestamp: 0
@@ -829,10 +829,10 @@ class AvatarCacheService {
                 }
             }
 
-            // 按时间戳升序排序（最旧的在前）
+            // Sort by timestamp in ascending order so the oldest entries come first
             cacheEntries.sort((a, b) => a.timestamp - b.timestamp);
 
-            // 删除前1/3的缓存项
+            // Delete the oldest one-third of cache entries
             const removeCount = Math.ceil(cacheEntries.length / 3);
             console.log(`Clearing ${removeCount} oldest avatar caches`);
 
@@ -848,7 +848,7 @@ class AvatarCacheService {
     }
 
     /**
-     * 打开IndexedDB数据库连接
+     * Open the IndexedDB database connection
      */
     private openDatabase(): Promise<IDBDatabase> {
         return new Promise((resolve, reject) => {
@@ -871,15 +871,15 @@ class AvatarCacheService {
             request.onupgradeneeded = (event) => {
                 const db = (event.target as IDBOpenDBRequest).result;
                 
-                // 创建头像存储
+                // Create the avatar store
                 if (!db.objectStoreNames.contains(STORE_NAME)) {
                     db.createObjectStore(STORE_NAME);
                 }
                 
-                // 创建请求记录存储
+                // Create the request-record store
                 if (!db.objectStoreNames.contains(REQUEST_STORE)) {
                     const requestStore = db.createObjectStore(REQUEST_STORE);
-                    // 为请求记录添加时间戳索引，方便清理过期记录
+                    // Add a timestamp index to request records so expired entries can be cleaned up easily
                     requestStore.createIndex('timestamp', 'timestamp', { unique: false });
                 }
             };
@@ -887,7 +887,7 @@ class AvatarCacheService {
     }
     
     /**
-     * 将缓存条目保存到IndexedDB
+     * Save a cache entry to IndexedDB
      */
     private async saveToDb(userId: string, entry: CacheEntry): Promise<void> {
         try {
@@ -901,9 +901,9 @@ class AvatarCacheService {
                 await promisifyRequest(store.put(entry, userId));
             } catch (storageError) {
                 logger.warn('Storage error, attempting to clear space:', storageError);
-                // 存储遇到问题时清理空间
+                // Free up space when storage issues are encountered
                 await this.ensureStorageSpace();
-                // 再次尝试保存
+                // Try saving again
                 const newTransaction = db.transaction([STORE_NAME], 'readwrite');
                 const newStore = newTransaction.objectStore(STORE_NAME);
                 await promisifyRequest(newStore.put(entry, userId));
@@ -915,7 +915,7 @@ class AvatarCacheService {
     }
     
     /**
-     * 从IndexedDB获取缓存条目
+     * Get a cache entry from IndexedDB
      */
     private async getFromDb(userId: string): Promise<CacheEntry | undefined> {
         try {
@@ -933,7 +933,7 @@ class AvatarCacheService {
     }
     
     /**
-     * 从IndexedDB获取所有缓存条目
+     * Get all cache entries from IndexedDB
      */
     private async getAllFromDb(): Promise<Array<[string, CacheEntry]>> {
         try {
@@ -945,7 +945,7 @@ class AvatarCacheService {
             const values = await promisifyRequest<CacheEntry[]>(store.getAll());
             const keys = await promisifyRequest<IDBValidKey[]>(store.getAllKeys());
             
-            // 修复类型错误，确保正确构建[string, CacheEntry][]数组
+            // Fix the typing issue and ensure the [string, CacheEntry][] array is built correctly
             const result: Array<[string, CacheEntry]> = [];
             
             for (let i = 0; i < keys.length; i++) {
@@ -962,7 +962,7 @@ class AvatarCacheService {
     }
     
     /**
-     * 迁移旧的localStorage数据到IndexedDB
+     * Migrate old localStorage data to IndexedDB
      */
     private async migrateFromLocalStorage(): Promise<void> {
         try {
@@ -978,7 +978,7 @@ class AvatarCacheService {
                         try {
                             const entry = JSON.parse(value) as CacheEntry;
                             
-                            // 迁移到IndexedDB
+                            // Migrate it to IndexedDB
                             await this.saveToDb(userId, entry);
                             migratedKeys.push(key);
                         } catch (e) {
@@ -988,7 +988,7 @@ class AvatarCacheService {
                 }
             }
             
-            // 迁移成功后清除localStorage条目
+            // Clear the localStorage entry after migration succeeds
             for (const key of migratedKeys) {
                 localStorage.removeItem(key);
             }
@@ -1002,19 +1002,19 @@ class AvatarCacheService {
     }
     
     /**
-     * 从IndexedDB预加载最近的头像到内存缓存
+     * Preload recent avatars from IndexedDB into the memory cache
      */
     private async preloadRecentAvatars(limit: number = 20): Promise<void> {
         try {
             const allEntries = await this.getAllFromDb();
             
-            // 按时间戳排序，只加载最近的
+            // Sort by timestamp and load only the most recent entries
             allEntries.sort((a, b) => b[1].timestamp - a[1].timestamp);
             
-            // 限制加载数量
+            // Limit the number of entries to load
             const recentEntries = allEntries.slice(0, limit);
             
-            // 加载到内存缓存
+            // Load them into the memory cache
             for (const [userId, entry] of recentEntries) {
                 this.memoryCache.set(userId, entry);
             }
@@ -1026,11 +1026,11 @@ class AvatarCacheService {
     }
 
     /**
-     * 保存到IndexedDB时遇到存储问题时清理缓存空间
+     * Free cache space when storage problems occur while saving to IndexedDB
      */
     private async ensureStorageSpace(): Promise<void> {
         try {
-            // 在保存遇到存储问题时调用 clearOldestCaches
+            // Call clearOldestCaches when storage issues happen during save
             await this.clearOldestCaches();
             console.log('Storage space cleared for new avatars');
         } catch (e) {
@@ -1039,8 +1039,8 @@ class AvatarCacheService {
     }
     
     /**
-     * 获取缓存信息统计
-     * 用于调试和监控
+     * Get cache statistics
+     * Used for debugging and monitoring
      */
     public async getCacheStats(): Promise<{
         memoryEntries: number,
@@ -1048,7 +1048,7 @@ class AvatarCacheService {
         dbEntries: number
     }> {
         try {
-            // 确保已初始化
+            // Ensure initialization has completed
             if (!this.initialized) {
                 await this.init();
             }
@@ -1077,8 +1077,8 @@ class AvatarCacheService {
     }
 
     /**
-     * 根据URL查找缓存条目
-     * 用于在限流情况下查找使用相同URL的其他条目
+     * Find a cache entry by URL
+     * Used to find other entries that share the same URL when throttling is active
      */
     private async findEntriesByUrl(url: string): Promise<CacheEntry[]> {
         try {
@@ -1094,7 +1094,7 @@ class AvatarCacheService {
 }
 
 /**
- * 将IndexedDB请求转换为Promise
+ * Convert an IndexedDB request into a promise
  */
 function promisifyRequest<T>(request: IDBRequest<T>): Promise<T> {
     return new Promise<T>((resolve, reject) => {
@@ -1103,12 +1103,12 @@ function promisifyRequest<T>(request: IDBRequest<T>): Promise<T> {
     });
 }
 
-// 创建并导出单例实例
+// Create and export the singleton instance
 export const avatarCache = new AvatarCacheService();
 
-// 在导出完成后，在开发环境中添加调试功能
+// Add debugging helpers in development after exporting the instance
 if (process.env.NODE_ENV === 'development') {
-    // 在开发环境中添加全局调试变量
+    // Add global debug variables in development
     (window as any).avatarCacheDebug = {
         service: avatarCache,
         testCache: async (userId: string, url: string, userName?: string) => {
@@ -1119,7 +1119,7 @@ if (process.env.NODE_ENV === 'development') {
         },
         getAllCaches: async () => {
             try {
-                // 确保服务已初始化
+                // Ensure the service is initialized
                 if (!avatarCache.isInitialized()) {
                     await avatarCache.init();
                 }
@@ -1155,7 +1155,7 @@ if (process.env.NODE_ENV === 'development') {
         },
         getRequestStats: async () => {
             try {
-                // 确保服务已初始化
+                // Ensure the service is initialized
                 if (!avatarCache.isInitialized()) {
                     await avatarCache.init();
                 }
@@ -1163,7 +1163,7 @@ if (process.env.NODE_ENV === 'development') {
                 const stats = await avatarCache.getCacheStats();
                 console.table(stats);
                 
-                // 获取请求记录详情
+                // Get request record details
                 const requestData: Record<string, any> = {};
                 (avatarCache as any).requestCache.forEach((record: RequestRecord, url: string) => {
                     requestData[url] = {
@@ -1185,3 +1185,9 @@ if (process.env.NODE_ENV === 'development') {
 
 // Export the avatar cache instance
 export default avatarCache;
+
+
+
+
+
+

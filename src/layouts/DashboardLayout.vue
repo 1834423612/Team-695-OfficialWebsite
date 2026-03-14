@@ -1,6 +1,6 @@
-<template>
+﻿<template>
     <div class="min-h-screen bg-gray-50 flex">
-        <!-- Sidebar - Overlay Mode - 确保z-index值低于header，修复顶部间距 -->
+        <!-- Sidebar - Overlay Mode - keep the z-index below the header and fix top spacing -->
         <aside v-if="navMode === 'overlay'"
             class="fixed inset-y-0 z-[30] flex flex-col flex-shrink-0 w-64 max-h-screen overflow-hidden transition-all transform bg-white border-r shadow-lg pt-[60px] mobile-sidebar"
             :class="{
@@ -22,13 +22,13 @@
                 @toggle-sidebar="toggleSidebar" :logout="logout" />
         </aside>
 
-        <!-- Backdrop for overlay sidebar on mobile - 最低的z-index -->
+        <!-- Backdrop for the overlay sidebar on mobile - lowest z-index -->
         <div v-if="sidebarOpen && navMode === 'overlay'" class="fixed inset-0 z-[20] bg-black bg-opacity-30"
             @click="closeSidebar"></div>
 
         <!-- Main content -->
         <div class="flex flex-col flex-1 h-full overflow-hidden transition-all duration-300 ease-in-out">
-            <!-- Navbar - 最高的z-index值 - 确保不受模糊影响 -->
+            <!-- Navbar - highest z-index to ensure it is not affected by blur -->
             <header
                 class="flex-shrink-0 border-b bg-white shadow-sm fixed top-0 left-0 right-0 z-[50] transition-all duration-300 ease-in-out w-full">
                 <div class="flex items-center justify-between p-2 px-4">
@@ -143,7 +143,7 @@
             </header>
 
             <!-- Main content with scrollable area - add padding top to account for fixed header -->
-            <!-- 仅对内容区域应用模糊效果，而不是整个容器 -->
+            <!-- Apply the blur effect only to the content area, not the entire container -->
             <div class="flex-1 overflow-auto pt-[60px]">
                 <main class="p-2 mb-4 mx-auto w-full max-w-7xl" :class="{
                         'filter blur-sm pointer-events-none': sidebarOpen && navMode === 'overlay' && !isLargeScreen
@@ -176,7 +176,7 @@
                     <slot></slot>
                 </main>
 
-                <!-- Footer 也应该被模糊 -->
+                <!-- The footer should also be blurred -->
                 <footer class="flex items-center justify-between p-4 border-t" :class="{
                         'filter blur-sm pointer-events-none': sidebarOpen && navMode === 'overlay' && !isLargeScreen
                     }">
@@ -199,7 +199,7 @@
             </div>
         </div>
 
-        <!-- 移动设备工具提示 -->
+        <!-- Mobile tooltip -->
         <div v-if="activeTouchTooltip"
             class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/80 text-white py-2 px-3 rounded-md z-[100] text-sm max-w-[280px] text-center">
             <template v-if="activeTouchTooltip === 'home'">
@@ -638,25 +638,25 @@ export default defineComponent({
     border-radius: 3px;
 }
 
-/* 移动设备特定样式 */
+/* Mobile-specific styles */
 @media (max-width: 720px) {
-    /* 确保sidebar始终位于header下方，并调整顶部间距 */
+    /* Ensure the sidebar always stays below the header and adjust the top spacing */
     aside.fixed, .mobile-sidebar {
-        top: 60px; /* 匹配header高度 */
+        top: 60px; /* Match the header height */
     }
     
-    /* 移除sidebar上方的空白区域 */
+    /* Remove the empty space above the sidebar */
     .mobile-sidebar {
-        padding-top: 0 !important; /* 覆盖pt-[60px]类 */
+        padding-top: 0 !important; /* Override the pt-[60px] class */
     }
     
-    /* 优化背景模糊效果 */
+    /* Improve the background blur effect */
     .filter.blur-sm {
         backdrop-filter: blur(4px);
     }
 }
 
-/* 淡入淡出过渡效果 */
+/* Fade transition effect */
 .tooltip-fade-enter-active,
 .tooltip-fade-leave-active {
     transition: opacity 0.3s ease;

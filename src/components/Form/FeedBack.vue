@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="bg-gray-100 p-4 rounded shadow overflow-x-auto">
         <form @submit.prevent="submitFeedback">
             <div class="mb-4">
@@ -60,7 +60,7 @@ export default {
         const submitFeedback = async () => {
             const feedbackData = {
                 nickname: nickname.value,
-                category: 'general',  // 默认值
+                category: 'general',  // Default value
                 title: title.value,
                 contact: contact.value,
                 content: content.value,
@@ -70,7 +70,7 @@ export default {
             try {
                 await axios.post('https://api.frc695.com/api/feedback', feedbackData);
                 alert('Successfully submitted your feedback! We are appreciative that you took the time to help us improve.');
-                window.location.reload();  // 刷新页面
+                window.location.reload();  // Refresh the page
             } catch (error) {
                 console.error('An error occurred while submitting feedback:', error);
             }

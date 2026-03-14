@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="bg-sky-100">
         <main class="flex-1">
             <section id="resource" class="py-16 px-6">
@@ -74,7 +74,7 @@ import { Icon } from '@iconify/vue';
 const categories = ref([]);
 const items = ref([]);
 
-// 动态加载资源列表
+// Dynamically load the resource list
 const loadResourceList = async () => {
     try {
         const ResourceList = await import('../Data/ResourceList.json');
@@ -91,7 +91,7 @@ const filteredItems = (type) => {
     return items.value.filter(item => item.type === type);
 };
 
-// 组件挂载时加载数据
+// Load data when the component is mounted
 onMounted(async () => {
     await loadResourceList();
 });
@@ -148,3 +148,4 @@ const getIconHover = (type) => {
     border-radius: 0.25rem;
 } */
 </style>
+

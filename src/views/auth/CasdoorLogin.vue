@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="login-container">
         <div class="login-card-wrapper">
             <div class="max-w-md w-full space-y-6 bg-white p-6 sm:p-8 rounded-xl shadow-xl">
@@ -111,7 +111,7 @@ export default defineComponent({
     justify-content: center;
 }
 
-/* 针对较小设备的优化 */
+/* Optimizations for smaller devices */
 @media (max-height: 700px) {
     .login-container {
         padding-top: 0;

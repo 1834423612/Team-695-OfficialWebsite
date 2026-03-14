@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="min-h-screen flex items-center justify-center bg-gray-50">
         <div class="max-w-md w-full p-6 bg-white rounded-lg shadow-md">
             <div class="text-center">
@@ -57,19 +57,19 @@ export default defineComponent({
         const maxRetries = 3;
         const retryCount = ref(0);
         const isProcessing = ref(false);
-        // 添加已处理标记，避免重复处理同一个回调
+        // Add a processed flag to avoid handling the same callback twice
         const callbackProcessed = ref(false);
         
-        // 全局单例标志 - 确保整个应用中只有一个回调处理正在进行
+        // Global singleton flag to ensure only one callback is being processed across the app
         const GLOBAL_SINGLETON_KEY = 'global_auth_callback_processing';
         
-        // 退回到登录页
+        // Return to the login page
         const redirectToLogin = () => {
-            // 使用页面刷新方式导航到登录页
+            // Navigate to the login page with a full page refresh
             window.location.href = '/login';
         };
 
-        // 生成调试信息
+        // Generate debug information
         const generateDebugInfo = () => {
             const urlParams = new URLSearchParams(window.location.search);
             const info = {
@@ -92,9 +92,9 @@ export default defineComponent({
         };
 
         /**
-         * 更强大的令牌验证，避免不必要的新令牌请求
+         * Stronger token validation to avoid unnecessary new-token requests
          */
-        // 完全重写validateExistingToken方法，不再做任何验证，直接信任存在的token
+        // Completely rewrite validateExistingToken to trust any existing token without further validation
         const validateExistingToken = async (): Promise<boolean> => {
             const token = casdoorService.getToken();
             if (!token) return false;
@@ -102,7 +102,7 @@ export default defineComponent({
             try {
                 console.log('Found existing token - setting trust flags and SKIPPING validation completely');
                 
-                // 设置最高级别的信任标记，表示绝对不要再验证
+                // Set the highest trust flag to indicate the token should not be validated again
                 localStorage.setItem('token_absolute_trust', 'true');
                 localStorage.setItem('token_trusted', 'true');
                 localStorage.setItem('token_verified', 'true');
@@ -112,51 +112,51 @@ export default defineComponent({
                 return true;
             } catch (error) {
                 console.error('Error setting trust flags:', error);
-                return !!token; // 如果有token，即使设置标记失败也视为有效
+                return !!token; // If a token exists, treat it as valid even if setting the flag fails
             }
         };
 
-        // 改进的处理登录流程
+        // Improved login flow handling
         const processLogin = async () => {
             try {
-                // 首先检查是否已经有token - 如果有，完全信任它，不做任何验证
+                // First check whether a token already exists; if it does, trust it completely without validation
                 if (await validateExistingToken()) {
                     message.value = 'Using existing session';
                     subMessage.value = 'Redirecting to dashboard...';
                     isLoading.value = false;
                     isProcessing.value = false;
                     
-                    // 设置处理完成标记
+                    // Set the processing-complete flag
                     callbackProcessed.value = true;
                     sessionStorage.setItem('auth_callback_processed', 'true');
                     
-                    // 立即重定向
+                    // Redirect immediately
                     window.location.href = '/dashboard';
                     return;
                 }
 
-                // 检查URL参数 - 只有在真正需要处理授权码时才继续
+                // Check URL parameters and continue only when the authorization code truly needs handling
                 const urlParams = new URLSearchParams(window.location.search);
                 const code = urlParams.get('code');
                 const state = urlParams.get('state');
                 
-                // 如果没有授权码或状态，但有有效令牌，直接跳转
+                // If there is no authorization code or state but a valid token exists, redirect directly
                 if ((!code || !state) && casdoorService.isLoggedIn()) {
                     console.log('No auth parameters but user is logged in, redirecting');
                     message.value = 'Already authenticated';
                     subMessage.value = 'Redirecting to dashboard...';
                     isLoading.value = false;
                     
-                    // 设置处理完成标记
+                    // Set the processing-complete flag
                     callbackProcessed.value = true;
                     sessionStorage.setItem('auth_callback_processed', 'true');
                     
-                    // 直接重定向，无需延迟
+                    // Redirect directly without a delay
                     window.location.href = '/dashboard';
                     return;
                 }
                 
-                // 如果没有授权码或状态，且未登录，显示错误
+                // Show an error when there is no authorization code or state and the user is not logged in
                 if (!code || !state) {
                     console.error("Missing authorization code or state in URL parameters");
                     message.value = 'Missing authorization parameters';
@@ -166,14 +166,14 @@ export default defineComponent({
                     return;
                 }
                 
-                // 获取认证令牌流程 - 其余代码保持不变
+                // Authentication token flow; keep the rest of the code unchanged
                 // ...existing code...
-                // 获取URL中的授权码和状态
+                // Get the authorization code and state from the URL
                 const currentToken = casdoorService.getToken();
                 if (currentToken) {
                     console.log("Token already exists in storage, validating...");
                     
-                    // 验证已有token是否有效，而不是盲目创建新token
+                    // Validate the existing token instead of blindly creating a new one
                     try {
                         const isValid = await casdoorService.validateLocalToken();
                         if (isValid) {
@@ -183,30 +183,30 @@ export default defineComponent({
                             isLoading.value = false;
                             isProcessing.value = false;
                             
-                            // 设置处理完成标记，避免重复处理
+                            // Set the processing-complete flag to avoid duplicate handling
                             callbackProcessed.value = true;
                             sessionStorage.setItem('auth_callback_processed', 'true');
                             sessionStorage.setItem('casdoor_processed_code', code);
                             
-                            // 获取用户信息
+                            // Get user information
                             await userStore.refreshUserInfo();
                             
-                            // 延迟重定向以显示成功消息
+                            // Delay redirection so the success message can be shown
                             setTimeout(() => {
                                 window.location.href = '/dashboard';
                             }, 1000);
                             return;
                         } else {
                             console.log("Existing token is invalid, will get new token");
-                            // 继续获取新token的流程
+                            // Continue the flow for obtaining a new token
                         }
                     } catch (error) {
                         console.error("Error validating existing token:", error);
-                        // 继续获取新token的流程
+                        // Continue the flow for obtaining a new token
                     }
                 }
                 
-                // 先检查全局单例锁，防止其他页面可能存在的并发处理
+                // Check the global singleton lock first to prevent concurrent processing from other pages
                 if (localStorage.getItem(GLOBAL_SINGLETON_KEY) === 'true') {
                     console.log("Global auth callback processing already in progress, skipping");
                     message.value = 'Authentication already in progress';
@@ -216,7 +216,7 @@ export default defineComponent({
                     return;
                 }
                 
-                // 防止并发处理与重复处理
+                // Prevent concurrent and duplicate processing
                 if (isProcessing.value || callbackProcessed.value) {
                     console.log("Skipping login process - already processed or processing");
                     return;
@@ -231,23 +231,23 @@ export default defineComponent({
                     return;
                 }
                 
-                // 检查此授权码是否已处理过
+                // Check whether this authorization code has already been handled
                 const processedCode = sessionStorage.getItem('processed_auth_code');
                 if (processedCode === code) {
                     console.warn(`Authorization code ${code.substring(0,5)}... already processed, checking for tokens`);
                     
-                    // 如果授权码已处理但没有token，则可能是处理失败，需要清除标记并重试
+                    // If the authorization code was handled but no token exists, processing may have failed; clear the flag and retry
                     if (!casdoorService.getToken()) {
                         console.log("No token found for processed code, clearing processed flag to retry");
                         sessionStorage.removeItem('processed_auth_code');
                     } else {
-                        // 授权码已处理且有token存在，直接使用
+                        // The authorization code has already been handled and a token exists, so use it directly
                         message.value = 'This authorization code has already been used';
                         subMessage.value = 'Redirecting to dashboard...';
                         isLoading.value = false;
                         showRetryButton.value = false;
                         
-                        // 延迟重定向以显示成功消息
+                        // Delay redirection so the success message can be shown
                         setTimeout(() => {
                             window.location.href = '/dashboard';
                         }, 1500);
@@ -262,22 +262,22 @@ export default defineComponent({
                 subMessage.value = `Attempt ${retryCount.value}/${maxRetries}`;
                 showRetryButton.value = false;
                 
-                // 添加回调处理标记 - 使用多种方式确保防重复
+                // Add callback-processing markers and use multiple safeguards against duplication
                 sessionStorage.setItem('auth_callback_in_progress', 'true');
                 localStorage.setItem(GLOBAL_SINGLETON_KEY, 'true');
                 
-                // 记录正在处理的code
+                // Record the code currently being processed
                 sessionStorage.setItem('processed_auth_code', code);
                 
-                // 使用提取好的授权码和状态，不需要再次从URL获取
+                // Use the extracted authorization code and state without reading the URL again
                 console.log(`Processing authorization code: ${code.substring(0, 5)}...`);
                 
-                // 在登录前清除任何可能存在的旧令牌，以确保获取新令牌
+                // Clear any existing old tokens before login to ensure a new one is acquired
                 if (retryCount.value > 1) {
                     console.log('Forcing token refresh on retry attempt');
                     sessionStorage.setItem('force_token_refresh', 'true');
                     
-                    // 清除casdoor的本地状态
+                    // Clear Casdoor local state
                     sessionStorage.removeItem('casdoor-state');
                     sessionStorage.removeItem('casdoor-code-verifier');
                     sessionStorage.removeItem('casdoor-code-challenge');
@@ -285,7 +285,7 @@ export default defineComponent({
                     sessionStorage.removeItem('casdoor_auth_processed');
                 }
                 
-                // 获取认证令牌 - 使用提供的code和state
+                // Obtain the authentication token using the provided code and state
                 const token = await casdoorService.signinWithCode(code, state);
                 console.log('Token obtained successfully:', !!token);
                 
@@ -293,55 +293,55 @@ export default defineComponent({
                     throw new Error('Failed to obtain authentication token');
                 }
                 
-                // 设置处理完成标记，避免重复处理
+                // Set the processing-complete flag to avoid duplicate handling
                 callbackProcessed.value = true;
                 sessionStorage.setItem('auth_callback_processed', 'true');
                 
-                // 获取用户信息
+                // Get user information
                 await userStore.refreshUserInfo();
                 
-                // 登录成功
+                // Login succeeded
                 message.value = 'Login successful!';
                 subMessage.value = 'Redirecting to dashboard...';
                 isLoading.value = false;
                 isProcessing.value = false;
                 
-                // 记录认证完成时间，避免页面刷新后重复验证
-                // 这个时间戳会被AuthManager和其他组件用来确定是否在信任期内（10分钟）
+                // Record the authentication completion time to avoid repeated validation after refresh
+                // This timestamp is used by AuthManager and other components to determine whether the 10-minute trust window is still active
                 localStorage.setItem('auth_callback_completed_time', Date.now().toString());
                 
-                // 设置验证标记，表示token已通过初始验证
+                // Set the validation flag to indicate the token passed initial validation
                 localStorage.setItem('token_verified', 'true');
                 
-                // 设置信任标记，但这只在10分钟内有效
-                // AuthManager组件会在超过10分钟后清除此标记，确保令牌被重新验证
+                // Set the trust flag, but keep it valid for only 10 minutes
+                // AuthManager clears this flag after 10 minutes to ensure the token is revalidated
                 localStorage.setItem('token_trusted', 'true');
                 
-                // 为信任标记设置过期时间，防止无限期信任
+                // Set an expiration time for the trust flag to prevent indefinite trust
                 localStorage.setItem('trust_flags_expire_at', (Date.now() + 10 * 60 * 1000).toString());
 
-                // 清除全局处理标记
+                // Clear the global processing flag
                 localStorage.removeItem(GLOBAL_SINGLETON_KEY);
                 
-                // 延迟重定向以显示成功消息
+                // Delay redirection so the success message can be shown
                 setTimeout(() => {
-                    // 使用页面刷新方式重定向到dashboard
+                    // Redirect to the dashboard with a full page refresh
                     window.location.href = '/dashboard';
-                }, 1000); // 缩短延迟时间，加快转向
+                }, 1000); // Shorten the delay to speed up the redirect
             } catch (error) {
                 console.error('Authentication error:', error);
                 isProcessing.value = false;
                 localStorage.removeItem(GLOBAL_SINGLETON_KEY);
                 
                 if (retryCount.value < maxRetries) {
-                    // 自动重试但添加延迟 - 每次重试增加延迟时间
+                    // Automatically retry with a delay that increases on each attempt
                     message.value = 'Login attempt failed';
                     subMessage.value = `Will retry in ${retryCount.value * 2} seconds...`;
                     
-                    // 每次重试的延迟时间递增
+                    // Increase the delay time for each retry
                     const retryDelay = retryCount.value * 2000;
                     
-                    // 清除进行中标记，允许下一次重试
+                    // Clear the in-progress flag to allow the next retry
                     sessionStorage.removeItem('auth_callback_in_progress');
                     
                     setTimeout(() => {
@@ -355,7 +355,7 @@ export default defineComponent({
                     isLoading.value = false;
                     generateDebugInfo();
                     
-                    // 清除进行中标记
+                    // Clear the in-progress flag
                     sessionStorage.removeItem('auth_callback_in_progress');
                 }
             }
@@ -363,12 +363,12 @@ export default defineComponent({
 
         onMounted(async () => {
             try {
-                // 立即检查是否已有token - 完全信任它，不做任何验证
+                // Immediately check whether a token already exists; trust it completely without validation
                 const token = casdoorService.getToken();
                 if (token) {
                     console.log("Token exists - setting absolute trust flags and redirecting");
                     
-                    // 设置最高级别的信任标记
+                    // Set the highest-level trust flag
                     localStorage.setItem('token_absolute_trust', 'true');
                     localStorage.setItem('token_trusted', 'true');
                     localStorage.setItem('token_verified', 'true');
@@ -380,23 +380,23 @@ export default defineComponent({
                     isLoading.value = false;
                     showRetryButton.value = false;
                     
-                    // 直接重定向
+                    // Redirect directly
                     window.location.href = '/dashboard';
                     return;
                 }
                 
-                // 清除过时的全局标记（预防通过刷新页面重试）
+                // Clear stale global flags to support retrying after a refresh
                 if (localStorage.getItem(GLOBAL_SINGLETON_KEY) === 'true') {
                     const processingStartTime = parseInt(localStorage.getItem('auth_processing_start_time') || '0');
-                    if (Date.now() - processingStartTime > 30000) { // 30秒超时
+                    if (Date.now() - processingStartTime > 30000) { // 30-second timeout
                         localStorage.removeItem(GLOBAL_SINGLETON_KEY);
                     }
                 }
                 
-                // 设置处理开始时间
+                // Set the processing start time
                 localStorage.setItem('auth_processing_start_time', Date.now().toString());
                 
-                // 检查是否已经处理过此回调
+                // Check whether this callback has already been handled
                 if (sessionStorage.getItem('auth_callback_processed') === 'true' || 
                     sessionStorage.getItem('auth_callback_in_progress') === 'true' ||
                     localStorage.getItem(GLOBAL_SINGLETON_KEY) === 'true') {
@@ -411,7 +411,7 @@ export default defineComponent({
                     return;
                 }
 
-                // 检查URL中是否有授权码
+                // Check whether the URL contains an authorization code
                 const urlParams = new URLSearchParams(window.location.search);
                 if (!urlParams.has('code')) {
                     message.value = 'Missing authorization code';
@@ -421,10 +421,10 @@ export default defineComponent({
                     return;
                 }
                 
-                // 安全地清除可能卡住的状态
+                // Safely clear potentially stuck state
                 try {
                     const lockAge = parseInt(localStorage.getItem('auth_validation_start_time') || '0');
-                    if (Date.now() - lockAge > 30000) { // 30秒超时
+                    if (Date.now() - lockAge > 30000) { // 30-second timeout
                         console.log('Clearing possible stale auth locks');
                         releaseAuthLock(AUTH_LOCKS.SIGNIN);
                         releaseAuthLock(AUTH_LOCKS.REFRESH);
@@ -434,13 +434,13 @@ export default defineComponent({
                     }
                 } catch (lockError) {
                     console.error('Error clearing auth locks:', lockError);
-                    // 继续执行后续流程，不要因为清理锁失败而中断整个登录流程
+                    // Continue with the rest of the flow; do not stop the login process just because lock cleanup failed
                 }
 
-                // 生成调试信息
+                // Generate debug information
                 generateDebugInfo();
                 
-                // 开始登录流程
+                // Start the login flow
                 await processLogin();
             } catch (error) {
                 console.error("Error during callback setup:", error);
@@ -451,11 +451,11 @@ export default defineComponent({
             }
         });
 
-        // 手动触发登录流程
+        // Manually trigger the login flow
         const handleManualLogin = async () => {
             if (isProcessing.value) return;
             
-            // 重置处理状态
+            // Reset the processing state
             callbackProcessed.value = false;
             sessionStorage.removeItem('auth_callback_processed');
             sessionStorage.removeItem('auth_callback_in_progress');
@@ -471,11 +471,11 @@ export default defineComponent({
             await processLogin();
         };
 
-        // 直接重定向到 Casdoor 登录页
+        // Redirect directly to the Casdoor login page
         const handleDirectLogin = () => {
             if (isProcessing.value) return;
             
-            // 清除所有相关存储
+            // Clear all related storage
             sessionStorage.clear();
             localStorage.removeItem('auth_callback_processed');
             localStorage.removeItem('auth_callback_in_progress');
@@ -483,7 +483,7 @@ export default defineComponent({
             localStorage.removeItem('casdoor-refresh-token');
             localStorage.removeItem('casdoor-user-info');
             
-            // 重定向到登录页
+            // Redirect to the login page
             casdoorService.startLogin();
         };
 
@@ -501,3 +501,4 @@ export default defineComponent({
     }
 });
 </script>
+

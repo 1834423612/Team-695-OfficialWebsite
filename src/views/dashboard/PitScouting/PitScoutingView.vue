@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="min-h-screen bg-gray-50">
     <div class="bg-gradient-to-r from-blue-500 to-indigo-600 pb-32 rounded-b-md md:rounded-b-xl w-full">
       <header class="py-10">
@@ -1735,7 +1735,7 @@ const loadUserAssignments = async () => {
     if (data.success) {
       userAssignments.value = data.data || [];
       
-      // 检查哪些团队已经完成了pit-scouting
+      // Check which teams have already completed pit scouting
       checkCompletedPitTeams();
     } else {
       throw new Error(data.message || 'Failed to load user assignments');
@@ -1745,10 +1745,10 @@ const loadUserAssignments = async () => {
   }
 };
 
-// 检查已完成pit-scouting的团队
+// Check teams that have completed pit scouting
 const checkCompletedPitTeams = async () => {
   try {
-    // 从所有pit-scouting任务中提取团队号码
+    // Extract team numbers from all pit-scouting tasks
     const teamNumbers: number[] = [];
     filteredPitAssignments.value.forEach(assignment => {
       if (assignment.assigned_team_numbers && Array.isArray(assignment.assigned_team_numbers)) {
@@ -1756,16 +1756,16 @@ const checkCompletedPitTeams = async () => {
       }
     });
 
-    // 如果没有团队号码，不需要继续检查
+    // Stop early if there are no team numbers to check
     if (teamNumbers.length === 0) return;
 
     const token = casdoorService.getToken();
     if (!token) return;
 
-    // 转换eventId格式
+    // Normalize the eventId format
     const formattedEventId = eventId.value.replace('_', '').toLowerCase();
 
-    // 对每个团队号码检查pit状态
+    // Check the pit status for each team number
     const promises = teamNumbers.map(async (teamNumber) => {
       try {
         const response = await fetch(`https://api.team695.com/team-matches/event/${formattedEventId}`, {
@@ -1795,7 +1795,7 @@ const checkCompletedPitTeams = async () => {
   }
 };
 
-// 更新pit状态
+// Update the pit status
 const updatePitStatus = async (teamNumber: number, isPit: boolean) => {
   try {
     const token = casdoorService.getToken();
@@ -1803,10 +1803,10 @@ const updatePitStatus = async (teamNumber: number, isPit: boolean) => {
       throw new Error('Authentication token not found');
     }
 
-    // 转换eventId格式
+    // Normalize the eventId format
     const formattedEventId = eventId.value.replace('_', '').toLowerCase();
 
-    // 发送API请求更新状态
+    // Send the API request to update the status
     const response = await fetch(`https://api.team695.com/team-matches/pit-status/${formattedEventId}/frc${teamNumber}`, {
       method: 'PUT',
       headers: {
@@ -1826,7 +1826,7 @@ const updatePitStatus = async (teamNumber: number, isPit: boolean) => {
     if (data.success) {
       console.log(`Pit status for team ${teamNumber} updated to ${isPit}`);
       
-      // 更新本地状态
+      // Update the local state
       if (isPit) {
         pitCompletedTeams.value.add(teamNumber);
       } else {
@@ -1837,7 +1837,7 @@ const updatePitStatus = async (teamNumber: number, isPit: boolean) => {
     }
   } catch (error) {
     console.error('Error updating pit status:', error);
-    throw error; // 重新抛出错误以便调用者处理
+    throw error; // Re-throw the error so the caller can handle it
   }
 };
 
@@ -1873,7 +1873,7 @@ onMounted(() => {
 
 const copyToClipboard = (text: string) => {
   navigator.clipboard.writeText(text).then(() => {
-    // 显示短暂的成功提示
+    // Show a brief success message
     Swal.fire({
       title: "Copied!",
       text: "ID has been copied to clipboard",

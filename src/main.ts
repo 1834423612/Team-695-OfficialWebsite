@@ -8,14 +8,14 @@ import { lazyLoad } from './directives/lazyLoad';
 
 const app = createApp(App);
 
-// 在开发环境中启用头像缓存调试工具
+// Enable the avatar cache debugging tool in development
 if (process.env.NODE_ENV === 'development') {
     import('@/utils/avatarDebug').catch(e => {
         console.warn('Failed to load avatar debug tool:', e);
     });
 }
 
-// 在开发环境中加载头像缓存调试工具
+// Load the avatar cache debugging tool in development
 if (process.env.NODE_ENV === 'development') {
     import('./utils/avatarCacheDebug').catch(e => {
         console.warn('Failed to load avatar cache debugger:', e);
@@ -32,13 +32,13 @@ pinia.use(piniaPluginPersistedstate);
 // Configure stores after pinia is installed
 configureStores();
 
-// 延迟注册全局组件，避免阻塞初始加载
-// Icon组件按需导入，不再全局注册
-// 全局组件改为在各自使用的地方局部导入
+// Delay global component registration to avoid blocking the initial load
+// The Icon component is imported on demand instead of being registered globally
+// Global components are now imported locally where they are used
 
 app.mount('#app');
 
-// 移除加载屏幕
+// Remove the loading screen
 setTimeout(() => {
     const loadingScreen = document.getElementById('loading-screen');
     if (loadingScreen) {

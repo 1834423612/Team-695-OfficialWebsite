@@ -1,5 +1,5 @@
-<template>
-    <!-- 该组件没有UI，只用于处理API错误 -->
+﻿<template>
+    <!-- This component has no UI and is only used to handle API errors -->
 </template>
 
 <script lang="ts">
@@ -9,7 +9,7 @@ import { casdoorService } from '@/services/auth';
 import { isRecentLogin, AUTH_FLAGS, clearTrustFlags } from '@/utils/authConfig';
 import { logger } from '@/utils/logger';
 
-// 定义全局通知函数类型
+// Define the global notification function type
 declare global {
     interface Window {
         $notify?: (title: string, message: string, type?: string, actionText?: string, callback?: () => void) => void;
@@ -21,48 +21,48 @@ export default defineComponent({
     setup() {
         const userStore = useUserStore();
 
-        // 记录错误次数，避免循环提示
+        // Track the error count to avoid repetitive alerts
         const errorCount = ref(0);
         const lastErrorTime = ref(0);
-        const ERROR_THRESHOLD = 3; // 在30秒内最多显示3次错误
-        const ERROR_RESET_TIME = 30000; // 30秒
+        const ERROR_THRESHOLD = 3; // Show at most 3 errors within 30 seconds
+        const ERROR_RESET_TIME = 30000; // 30 seconds
 
-        // 上次验证时间
+        // Last validation time
         const lastValidationCheck = ref(0);
-        const VALIDATION_INTERVAL = 5 * 60 * 1000; // 修正为标准5分钟验证间隔
+        const VALIDATION_INTERVAL = 5 * 60 * 1000; // Adjust to the standard 5-minute validation interval
 
-        // 标记是否已显示通知
+        // Track whether a notification has already been shown
         const hasShownNotification = ref(false);
 
-        // 处理认证错误事件
+        // Handle authentication error events
         const handleAuthError = async (event: CustomEvent) => {
-            // 如果已显示通知，则不再显示
+            // Do not show another notification if one is already visible
             if (hasShownNotification.value) {
                 return;
             }
 
             const now = Date.now();
 
-            // 重置错误计数器（如果超过了重置时间）
+            // Reset the error counter when the reset window has passed
             if (now - lastErrorTime.value > ERROR_RESET_TIME) {
                 errorCount.value = 0;
             }
 
-            // 更新错误时间
+            // Update the error timestamp
             lastErrorTime.value = now;
 
-            // 增加错误计数
+            // Increase the error count
             errorCount.value++;
 
-            // 如果错误次数超过阈值，就不再显示提示
+            // Stop showing alerts once the error threshold is exceeded
             if (errorCount.value <= ERROR_THRESHOLD) {
-                // 获取错误消息
+                // Get the error message
                 const message = event.detail?.message || 'Your session has expired. Please login again.';
 
-                // 标记已显示通知
+                // Mark the notification as shown
                 hasShownNotification.value = true;
 
-                // 使用全局通知组件显示消息
+                // Show the message through the global notification component
                 if (window.$notify) {
                     window.$notify(
                         'Authentication Error',
@@ -74,55 +74,55 @@ export default defineComponent({
                         }
                     );
                 } else {
-                    // 降级方案：使用原生alert
+                    // Fallback: use the native alert
                     alert(message);
                     forceLogout();
                 }
             } else {
                 console.warn('Too many auth errors in short period, suppressing alerts');
-                // 静默登出
+                // Log out silently
                 forceLogout();
             }
         };
 
-        // 强制登出并刷新页面
+        // Force logout and refresh the page
         const forceLogout = async () => {
             try {
-                // 清除用户信息
+                // Clear user information
                 userStore.clearUserInfo();
 
-                // 登出
+                // Log out
                 await casdoorService.logout();
 
-                // 直接刷新页面跳转到登录页，而不是用router.push
+                // Refresh the page and go directly to the login page instead of using router.push
                 window.location.href = '/login';
             } catch (error) {
                 console.error('Error during automatic logout:', error);
-                // 确保无论如何都跳转到登录页
+                // Ensure the user is redirected to the login page no matter what
                 window.location.href = '/login';
             }
         };
 
-        // 监听全局ajax错误
+        // Listen for global AJAX errors
         const handleAjaxError = (event: ErrorEvent) => {
             const target = event.target as XMLHttpRequest;
 
-            // 检查是否是API调用的错误
+            // Check whether the error came from an API call
             if (target && target instanceof XMLHttpRequest) {
-                // 检查是否是认证错误
+                // Check whether it is an authentication error
                 if (target.status === 401 || target.status === 403) {
                     console.warn('Caught XHR auth error:', target.status, target.statusText);
 
-                    // 触发认证错误处理
+                    // Trigger authentication error handling
                     casdoorService.handleInvalidAuthResponse().catch(console.error);
                 }
 
-                // 尝试解析返回的JSON以检测错误消息
+                // Try to parse the returned JSON to detect an error message
                 try {
                     if (target.responseText) {
                         const response = JSON.parse(target.responseText);
 
-                        // 检查特定的错误格式
+                        // Check for specific error formats
                         if (response.success === true && response.data &&
                             response.data.status === 'error' && response.data.msg) {
 
@@ -139,24 +139,24 @@ export default defineComponent({
                         }
                     }
                 } catch (e) {
-                    // 解析错误，可能不是JSON
+                    // Failed to parse the response; it may not be JSON
                 }
             }
         };
 
-        // 定期验证令牌
+        // Periodically validate the token
         const setupPeriodicValidation = () => {
-            // 刷新页面时重置上次验证时间
+            // Reset the last validation time when the page refreshes
             lastValidationCheck.value = Date.now();
 
-            // 避免页面加载时立即执行，允许 AuthManager 先处理验证
-            // 首次验证延迟到5秒后执行，避免和AuthManager冲突
+            // Avoid running immediately on page load and let AuthManager validate first
+            // Delay the first validation by 5 seconds to avoid conflicting with AuthManager
             setTimeout(() => {
-                // 立即检查信任标记和验证状态，而不是尝试验证
+                // Immediately check trust flags and validation state instead of validating right away
                 checkTokenStatus();
             }, 5000);
 
-            // 设置定期验证
+            // Set up periodic validation
             const intervalId = setInterval(() => {
                 checkTokenStatus();
             }, VALIDATION_INTERVAL);
@@ -164,69 +164,69 @@ export default defineComponent({
             return intervalId;
         };
 
-        // 新方法：检查令牌状态但不触发新token请求
+        // New method: check token state without requesting a new token
         const checkTokenStatus = async () => {
             const now = Date.now();
             
-            // 检查是否在10分钟信任期内
+            // Check whether the user is within the 10-minute trust window
             if (isRecentLogin(10)) {
                 logger.debug('ApiErrorHandler: Recent login detected (<10min), skipping validation');
                 return;
             }
             
-            // 10分钟后清除绝对信任标记
+            // Clear the absolute-trust flag after 10 minutes
             clearTrustFlags();
             
-            // 避免频繁验证
+            // Avoid validating too frequently
             if (now - lastValidationCheck.value < VALIDATION_INTERVAL) {
                 return;
             }
             
-            // 检查AuthManager是否已经最近验证过
+            // Check whether AuthManager validated recently
             const lastAuthCheck = localStorage.getItem(AUTH_FLAGS.AUTH_CHECK_TIME);
             if (lastAuthCheck && now - parseInt(lastAuthCheck) < VALIDATION_INTERVAL / 2) {
                 logger.debug('ApiErrorHandler: AuthManager recently verified, skipping validation');
-                lastValidationCheck.value = now; // 更新时间戳，但跳过验证
+                lastValidationCheck.value = now; // Update the timestamp while skipping validation
                 return;
             }
             
-            // 检查是否有验证正在进行中
+            // Check whether validation is already in progress
             if (localStorage.getItem('auth_validation_in_progress') === 'true' ||
                 localStorage.getItem('api_error_handler_validating') === 'true') {
                 logger.debug('ApiErrorHandler: Validation already in progress, skipping');
                 return;
             }
             
-            // 更新时间戳
+            // Update the timestamp
             lastValidationCheck.value = now;
             
             try {
-                // 只在用户已登录时验证
+                // Validate only when the user is logged in
                 if (casdoorService.isLoggedIn()) {
-                    // 设置锁，防止冲突
+                    // Set a lock to prevent conflicts
                     localStorage.setItem('api_error_handler_validating', 'true');
                     
                     try {
                         logger.info('ApiErrorHandler: Performing token validation against Casdoor API');
                         
-                        // 直接使用Casdoor API验证，确保检测到服务器端撤销的令牌
+                        // Validate directly with the Casdoor API to detect server-side revoked tokens
                         const validationResult = await casdoorService.validateWithTeamApi();
                         
                         if (!validationResult.valid) {
                             logger.warn('ApiErrorHandler: Casdoor API validation failed - token is invalid');
                             
-                            // 如果token无效，直接触发登出，不尝试刷新
+                            // Trigger logout immediately when the token is invalid without trying to refresh it
                             handleAuthError(new CustomEvent('auth:invalid', {
                                 detail: { message: 'Your session has expired or been revoked. Please login again.' }
                             }));
                         } else {
-                            // 记录验证结果
+                            // Record the validation result
                             logger.info('ApiErrorHandler: Casdoor API validation successful');
                             localStorage.setItem(AUTH_FLAGS.VALIDATION_TIME, Date.now().toString());
                             localStorage.setItem(AUTH_FLAGS.AUTH_CHECK_TIME, Date.now().toString());
                         }
                     } finally {
-                        // 完成验证，删除锁
+                        // Remove the lock after validation completes
                         localStorage.removeItem('api_error_handler_validating');
                     }
                 }
@@ -236,42 +236,42 @@ export default defineComponent({
             }
         };
 
-        // 保存定时器ID
+        // Store the timer ID
         let validationIntervalId: ReturnType<typeof setInterval> | null = null;
 
         onMounted(() => {
-            // 监听认证无效事件
+            // Listen for invalid-authentication events
             window.addEventListener('auth:invalid', handleAuthError as unknown as EventListener);
 
-            // 监听全局ajax错误
+            // Listen for global AJAX errors
             window.addEventListener('error', handleAjaxError);
 
-            // 设置定期验证
+            // Set up periodic validation
             validationIntervalId = setupPeriodicValidation();
 
-            // 监听fetch请求的响应
+            // Listen to fetch responses
             const originalFetch = window.fetch;
             window.fetch = async function (input: RequestInfo | URL, init?: RequestInit) {
                 try {
                     const response = await originalFetch(input, init);
 
-                    // 克隆响应以便检查内容
+                    // Clone the response so the content can be inspected
                     const clone = response.clone();
 
-                    // 检查状态
+                    // Check the status
                     if (!response.ok && (response.status === 401 || response.status === 403)) {
                         console.warn('Caught fetch auth error:', response.status);
                         casdoorService.handleInvalidAuthResponse().catch(console.error);
                         return response;
                     }
 
-                    // 异步检查响应内容
+                    // Inspect the response content asynchronously
                     clone.text().then(text => {
                         if (text) {
                             try {
                                 const data = JSON.parse(text);
 
-                                // 检查特定的错误格式
+                                // Check for specific error formats
                                 if (data.success === true && data.data &&
                                     data.data.status === 'error' && data.data.msg) {
 
@@ -287,21 +287,21 @@ export default defineComponent({
                                     }
                                 }
                             } catch (e) {
-                                // 解析错误，可能不是JSON
+                                // Failed to parse the response; it may not be JSON
                             }
                         }
                     }).catch(_e => {
-                        // 忽略响应解析错误
+                        // Ignore response parsing errors
                     });
 
                     return response;
                 } catch (error) {
-                    // 传递错误
+                    // Propagate the error
                     throw error;
                 }
             };
 
-            // 清除通知标记
+            // Clear the notification flag
             hasShownNotification.value = false;
         });
 
@@ -309,17 +309,18 @@ export default defineComponent({
             window.removeEventListener('auth:invalid', handleAuthError as unknown as EventListener);
             window.removeEventListener('error', handleAjaxError);
 
-            // 清除定期验证定时器
+            // Clear the periodic-validation timer
             if (validationIntervalId !== null) {
                 clearInterval(validationIntervalId);
             }
 
-            // 恢复原始fetch
-            // 注意：在实际应用中，你可能需要保存和还原原始的fetch
-            // 但由于组件通常不会被卸载，这里简化处理
+            // Restore the original fetch
+            // Note: in a real application, you may need to save and restore the original fetch
+            // This is simplified here because the component is usually never unmounted
         });
 
         return {};
     }
 });
 </script>
+

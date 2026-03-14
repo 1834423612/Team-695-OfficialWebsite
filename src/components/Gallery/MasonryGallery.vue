@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="masonry-container">
         <div class="masonry-columns" :style="{ columnCount: columnCount }">
             <div v-for="item in items" :key="item.id" class="masonry-item mb-4 break-inside-avoid">
@@ -76,24 +76,24 @@ const handleResize = () => {
 // Download image
 const downloadImage = async (imageUrl: string, title: string) => {
     try {
-        // 创建新的a标签，直接使用href属性指向图片URL
+        // Create a new anchor element and point its href directly to the image URL
         const a = document.createElement('a');
         a.href = imageUrl;
         
-        // 设置下载属性和文件名
+        // Set the download attribute and filename
         const filename = title
             ? `${title.replace(/[^\w\s]/gi, '').replace(/\s+/g, '_')}.jpg`
             : 'team695_image.jpg';
         
         a.download = filename;
-        a.target = '_blank'; // 为了兼容性，添加target属性
-        a.rel = 'noopener noreferrer'; // 安全考虑
+        a.target = '_blank'; // Add the target attribute for compatibility
+        a.rel = 'noopener noreferrer'; // Security consideration
         
-        // 模拟点击下载
+        // Simulate a click to start the download
         document.body.appendChild(a);
         a.click();
         
-        // 清理
+        // Clean up
         setTimeout(() => {
             document.body.removeChild(a);
         }, 100);

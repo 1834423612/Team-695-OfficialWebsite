@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="min-h-screen bg-gray-50">
         <!-- Page Header -->
         <div class="px-4 py-6 sm:px-0 mb-6">
@@ -717,10 +717,10 @@ import { useUserStore } from '@/stores/userStore';
 import { storeToRefs } from 'pinia';
 import { casdoorService } from '@/services/auth';
 import Swal from 'sweetalert2';
-import CachedAvatar from '@/components/common/CachedAvatar.vue'; // 导入CachedAvatar组件
-import { avatarPreloader } from '@/utils/avatarPreloader'; // 导入avatarPreloader
+import CachedAvatar from '@/components/common/CachedAvatar.vue'; // Import the CachedAvatar component
+import { avatarPreloader } from '@/utils/avatarPreloader'; // Import avatarPreloader
 
-// 添加一个工具函数来确保用户ID安全
+// Add a helper to ensure user IDs are safe
 function ensureSafeUserId(user: any): string {
     if (!user) return 'default';
     return user.id || user.userId || user.userInitials || 'default';
@@ -730,7 +730,7 @@ export default defineComponent({
     name: 'ScoutingAssignments',
     components: {
         Icon,
-        CachedAvatar // 注册组件
+        CachedAvatar // Register the component
     },
     setup() {
         // User store
@@ -953,14 +953,14 @@ export default defineComponent({
                 if (data.success) {
                     assignments.value = data.data || [];
                     
-                    // 收集所有任务中的用户头像并预加载
+                    // Collect user avatars from all tasks and preload them
                     const allAssignees: any[] = [];
                     assignments.value.forEach(assignment => {
                         const assignees = getAssigneesList(assignment);
                         allAssignees.push(...assignees);
                     });
                     
-                    // 预加载所有用户头像
+                    // Preload all user avatars
                     avatarPreloader.preloadFromUsersList(allAssignees);
                 } else {
                     throw new Error(data.message || 'Failed to load assignments');
@@ -997,7 +997,7 @@ export default defineComponent({
                 if (data.success && data.data && data.data.data) {
                     teamMembers.value = data.data.data;
                     
-                    // 加载团队成员列表后预加载他们的头像
+                    // Preload team-member avatars after loading the member list
                     avatarPreloader.preloadFromUsersList(teamMembers.value);
                 } else {
                     throw new Error(data.message || 'Failed to load team members');
@@ -1138,11 +1138,11 @@ export default defineComponent({
 
         // Add a user to selected assignees
         const addSelectedAssignee = (user: any) => {
-            // 确保用户对象中有ID和其他必要属性
+            // Ensure the user object includes an ID and other required properties
             const safeUser = { 
                 ...user,
                 id: ensureSafeUserId(user),
-                // 确保有这些属性
+                // Ensure these properties exist
                 firstName: user.firstName || '',
                 lastName: user.lastName || '',
                 displayName: user.displayName || formatUsername(user.name) || ''
@@ -1464,7 +1464,7 @@ export default defineComponent({
                     }
                 }
                 
-                // 同样处理团队下拉菜单
+                // Handle the team dropdown the same way
                 if (showTeamDropdown.value) {
                     const target = e.target as HTMLElement;
                     const dropdown = document.querySelector('.team-dropdown');
@@ -1476,17 +1476,17 @@ export default defineComponent({
                 }
             });
 
-            // 页面加载完成后延迟执行扫描以预加载可见的头像
+            // Delay scanning until the page finishes loading so visible avatars can be preloaded
             setTimeout(() => {
                 avatarPreloader.scanAndPreload();
             }, 1000);
         });
 
-        // 添加获取用户初始字母值的函数
+        // Add a helper for getting user initials
         const getUserInitialsValue = (user: any): string => {
             if (!user) return '';
             
-            // 从各种可能的来源生成初始字母
+            // Generate initials from all possible sources
             if (user.firstName && user.lastName) {
                 return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
             }
@@ -1510,13 +1510,13 @@ export default defineComponent({
             return (user.id || 'XX').substring(0, 2).toUpperCase();
         };
 
-        // 添加团队数据相关状态
+        // Add team-data-related state
         const eventTeams = ref<any[]>([]);
         const teamSearchQuery = ref('');
         const showTeamDropdown = ref(false);
         // const assignedTeamNumbers = ref<number[]>([]);
 
-        // 加载事件队伍数据
+        // Load event team data
         const loadEventTeams = async () => {
             if (!selectedEvent.value) return;
 
@@ -1555,15 +1555,15 @@ export default defineComponent({
             }
         };
 
-        // 获取分配的团队列表 - 用于检查团队是否已被分配
+        // Get the assigned team list to check whether a team is already assigned
         const getAssignedTeams = computed(() => {
             const assignedTeams = new Set<number>();
             
-            // 如果当前正在编辑，则跳过当前任务的团队
+            // Skip the current task's team while editing
             const currentEditingId = editingAssignment.value?.id;
             
             assignments.value.forEach(assignment => {
-                // 跳过当前正在编辑的任务，以便它可以保留其当前选择的团队
+                // Skip the task currently being edited so it can keep its current team selection
                 if (currentEditingId && assignment.id === currentEditingId) {
                     return;
                 }
@@ -1578,18 +1578,18 @@ export default defineComponent({
             return assignedTeams;
         });
 
-        // 筛选可用的未分配团队
+        // Filter available unassigned teams
         const filteredAvailableTeams = computed(() => {
-            // 获取已分配的团队集合
+            // Build the set of assigned teams
             const assignedTeams = getAssignedTeams.value;
             
-            // 过滤掉已分配的团队，除非它们已经在当前表单中选择
+            // Filter out assigned teams unless they are already selected in the current form
             let availableTeams = eventTeams.value.filter(team => 
                 !assignedTeams.has(team.team_number) && 
                 !formData.value.assigned_team_numbers.includes(team.team_number)
             );
             
-            // 如果有搜索查询，筛选匹配的团队
+            // Filter matching teams when a search query exists
             if (teamSearchQuery.value) {
                 const query = teamSearchQuery.value.toLowerCase();
                 availableTeams = availableTeams.filter(team =>
@@ -1601,47 +1601,47 @@ export default defineComponent({
             return availableTeams;
         });
         
-        // 检查团队是否为维修区团队
+        // Check whether the team is a pit team
         const isTeamPit = (teamNumber: number): boolean => {
             const team = eventTeams.value.find(t => t.team_number === teamNumber);
             return team ? team.is_pit : false;
         };
 
-        // 添加选定的团队
+        // Add the selected team
         const addSelectedTeam = (team: any) => {
-            // 检查团队是否已经被选中
+            // Check whether the team has already been selected
             if (!formData.value.assigned_team_numbers.includes(team.team_number)) {
                 formData.value.assigned_team_numbers.push(team.team_number);
             }
             teamSearchQuery.value = '';
         };
 
-        // 移除选定的团队
+        // Remove the selected team
         const removeSelectedTeam = (teamNumber: number) => {
             formData.value.assigned_team_numbers = formData.value.assigned_team_numbers.filter(
                 num => num !== teamNumber
             );
         };
 
-        // 获取团队昵称
+        // Get the team nickname
         const getTeamNickname = (teamNumber: number): string => {
             const team = eventTeams.value.find(t => t.team_number === teamNumber);
             return team ? team.nickname : '';
         };
 
-        // 监听任务类型变化，清除不相关的字段
+        // Watch for task-type changes and clear irrelevant fields
         watch(() => formData.value.task_type, (newType) => {
             if (newType === 'scouting') {
-                // 如果切换到比赛任务，清除团队号码
+                // Clear team numbers when switching to a match task
                 formData.value.assigned_team_numbers = [];
             } else if (newType === 'pit-scouting') {
-                // 如果切换到维修区任务，清除联盟和比赛范围
+                // Clear alliance and match range when switching to a pit task
                 formData.value.assigned_alliance = 'red';
                 formData.value.assigned_matches = '';
             }
         });
 
-        // 切换队伍的Pit状态
+        // Toggle the team's pit status
         const toggleTeamPitStatus = async (teamNumber: number) => {
             try {
                 const token = casdoorService.getToken();
@@ -1649,14 +1649,14 @@ export default defineComponent({
                     throw new Error('Authentication token not found');
                 }
 
-                // 确定当前状态和新状态
+                // Determine the current status and the new status
                 const currentStatus = isTeamPit(teamNumber);
                 const newStatus = !currentStatus;
                 
                 // Convert event key to database format for API
                 const dbEventKey = toDbEventKey(selectedEvent.value);
                 
-                // 发送API请求更新状态
+                // Send the API request to update the status
                 const response = await fetch(`https://api.team695.com/team-matches/pit-status/${dbEventKey}/frc${teamNumber}`, {
                     method: 'PUT',
                     headers: {
@@ -1674,13 +1674,13 @@ export default defineComponent({
 
                 const data = await response.json();
                 if (data.success) {
-                    // 更新本地团队数据
+                    // Update the local team data
                     const teamIndex = eventTeams.value.findIndex(t => t.team_number === teamNumber);
                     if (teamIndex !== -1) {
                         eventTeams.value[teamIndex].is_pit = newStatus;
                     }
 
-                    // 显示成功消息
+                    // Show a success message
                     Swal.fire({
                         title: 'Success',
                         text: `Team ${teamNumber} pit status ${newStatus ? 'confirmed' : 'removed'}`,
@@ -1742,7 +1742,7 @@ export default defineComponent({
             addSelectedAssignee,
             removeSelectedAssignee,
             ensureSafeUserId,
-            getUserInitialsValue, // 导出函数
+            getUserInitialsValue, // Export the helper
             eventTeams,
             teamSearchQuery,
             showTeamDropdown,
@@ -1807,7 +1807,7 @@ export default defineComponent({
     z-index: 60;
 }
 
-/* 确保卡片底部操作区域对齐 */
+/* Keep the card footer action area aligned */
 .grid > div {
     display: flex;
     flex-direction: column;

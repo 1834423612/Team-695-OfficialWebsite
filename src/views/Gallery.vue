@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="min-h-screen bg-gradient-to-br from-slate-50 to-sky-100">
         <!-- Header Banner -->
         <header class="relative">
@@ -246,19 +246,19 @@ interface GalleryItem {
     category: string;
 }
 
-// 动态导入Gallery数据
+// Dynamically import gallery data
 const galleryData = ref<any>({ items: [] });
 const loadGalleryData = async () => {
     try {
         const data = await import('@/Data/Gallery-data.json');
         galleryData.value = data.default || data;
         
-        // 初始化categories和items
+        // Initialize categories and items
         if (galleryData.value.category) {
             categories.value = galleryData.value.category;
         }
         if (galleryData.value.items) {
-            // 转换items格式
+            // Normalize the item format
             const transformedItems: Record<string, GalleryItem[]> = {};
             Object.keys(galleryData.value.items).forEach(categoryKey => {
                 transformedItems[categoryKey] = galleryData.value.items[categoryKey].map((item: any) => ({
@@ -554,21 +554,21 @@ const handleKeyDown = (e: KeyboardEvent) => {
     }
 };
 
-// 移动菜单状态
+// Mobile menu state
 const mobileMenuOpen = ref(false);
 
-// 切换移动菜单
+// Toggle the mobile menu
 const toggleMobileMenu = () => {
     mobileMenuOpen.value = !mobileMenuOpen.value;
 };
 
-// 移动端选择分类
+// Select a category on mobile
 const setActiveCategoryMobile = (category: string) => {
     setActiveCategory(category);
     mobileMenuOpen.value = false;
 };
 
-// 点击外部关闭移动菜单
+// Close the mobile menu when clicking outside
 const closeMenuOnOutsideClick = (event: MouseEvent) => {
     if (mobileMenuOpen.value) {
         const target = event.target as HTMLElement;
@@ -579,12 +579,12 @@ const closeMenuOnOutsideClick = (event: MouseEvent) => {
     }
 };
 
-// 滚动处理
+// Scroll handling
 let headerHeight = 0;
 let navHeight = 0;
 let mainHeaderHeight = 0;
 
-// 更新导航栏状态
+// Update the navigation bar state
 const updateNavStatus = () => {
     if (!nav.value) return;
     
@@ -594,14 +594,14 @@ const updateNavStatus = () => {
     const mainHeader = document.querySelector('header.sticky.top-0') as HTMLElement;
     
     if (headerElement && mainHeader) {
-        // 计算各元素高度
+        // Calculate the height of each element
         headerHeight = headerElement.offsetHeight;
         mainHeaderHeight = mainHeader.offsetHeight;
         
         if (isMobile) {
-            // 移动端逻辑
+            // Mobile logic
             if (scrollPosition >= headerHeight - mainHeaderHeight) {
-                // 导航栏应吸附在顶部导航栏下方
+                // The navigation bar should stick below the top header
                 nav.value.style.position = 'fixed';
                 nav.value.style.top = `${mainHeaderHeight}px`;
                 nav.value.style.left = '0';
@@ -609,50 +609,50 @@ const updateNavStatus = () => {
                 document.body.style.paddingTop = `${navHeight}px`;
                 isSticky.value = true;
             } else {
-                // 导航栏回到正常位置
+                // Return the navigation bar to its normal position
                 nav.value.style.position = 'static';
                 document.body.style.paddingTop = '0';
                 isSticky.value = false;
             }
         } else {
-            // 桌面端逻辑
+            // Desktop logic
             if (scrollPosition >= headerHeight) {
-                // 导航栏应吸附在顶部
+                // The navigation bar should stick to the top
                 nav.value.style.position = 'sticky';
                 nav.value.style.top = '0';
                 isSticky.value = true;
             } else {
-                // 导航栏回到正常位置
+                // Return the navigation bar to its normal position
                 nav.value.style.position = 'static';
                 isSticky.value = false;
             }
         }
     }
 };
-// 监听事件并设置导航栏
+// Listen for events and configure the navigation bar
 onMounted(async () => {
-    // 首先加载数据
+    // Load the data first
     await loadGalleryData();
     
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('click', closeMenuOnOutsideClick);
     window.addEventListener('scroll', updateNavStatus);
     window.addEventListener('resize', () => {
-        // 窗口大小改变时重新计算
+        // Recalculate when the window size changes
         if (nav.value) {
             navHeight = nav.value.offsetHeight;
         }
         updateNavStatus();
     });
     
-    // 初始化导航栏高度
+    // Initialize the navigation bar height
     setTimeout(() => {
         if (nav.value) {
             navHeight = nav.value.offsetHeight;
         }
         updateNavStatus();
         
-        // 为所有已经缓存的图片添加loaded类
+        // Add the loaded class to all already-cached images
         document.querySelectorAll('img').forEach(img => {
             if (img.complete) {
                 img.classList.add('loaded');
@@ -660,12 +660,12 @@ onMounted(async () => {
         });
     }, 100);
     
-    // 检查是否为移动端视图
+    // Check whether the current view is mobile
     const isMobileView = window.innerWidth < 768; // md breakpoint is typically 768px
     
-    // 仅为移动端设置导航栏位置，电脑版使用默认的 top-0
+    // Set the navigation bar position only on mobile; desktop keeps the default top-0
     if (isMobileView && nav.value) {
-        // 在移动端，设置nav紧贴在母header下方
+        // On mobile, place the nav directly below the main header
         const mainHeader = document.querySelector('header.sticky.top-0');
         if (mainHeader) {
             const mainHeaderHeight = mainHeader.getBoundingClientRect().height;
@@ -673,7 +673,7 @@ onMounted(async () => {
         }
     }
     
-    // 监听窗口大小变化，仅在移动端更新导航栏位置
+    // Watch window size changes and update nav positioning only on mobile
     const handleResize = () => {
         const isMobile = window.innerWidth < 768;
         if (isMobile && nav.value) {
@@ -683,14 +683,14 @@ onMounted(async () => {
                 nav.value.style.top = `${mainHeaderHeight}px`;
             }
         } else if (nav.value) {
-            // 在桌面端恢复默认行为
+            // Restore default behavior on desktop
             nav.value.style.top = '0';
         }
     };
     
     window.addEventListener('resize', handleResize);
     
-    // 添加一个 MutationObserver 以检测DOM变化后的主header高度变化
+    // Add a MutationObserver to detect main-header height changes after DOM updates
     const observer = new MutationObserver(() => {
         if (window.innerWidth < 768 && nav.value) {
             const mainHeader = document.querySelector('header.sticky.top-0');
@@ -706,7 +706,7 @@ onMounted(async () => {
         observer.observe(mainHeader, { attributes: true, childList: true, subtree: true });
     }
     
-    // 在组件卸载时清理
+    // Clean up when the component is unmounted
     onUnmounted(() => {
         window.removeEventListener('keydown', handleKeyDown);
         window.removeEventListener('click', closeMenuOnOutsideClick);
@@ -716,25 +716,25 @@ onMounted(async () => {
     });
 });
 
-// 导航栏状态
+// Navigation bar state
 const isSticky = ref(false);
-let navOffset = ref(0); // 用于平滑动画的偏移量
+let navOffset = ref(0); // Offset used for smooth animation
 
 
-// 监听事件并设置导航栏
+// Listen for events and configure the navigation bar
 onMounted(() => {
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('click', closeMenuOnOutsideClick);
     window.addEventListener('scroll', updateNavStatus);
     
-    // 获取关键元素高度
+    // Get the height of key elements
     setTimeout(() => {
         if (nav.value) {
             navHeight = nav.value.offsetHeight;
-            updateNavStatus(); // 初始计算一次
+            updateNavStatus(); // Perform the initial calculation once
         }
         
-        // 为所有已经缓存的图片添加loaded类
+        // Add the loaded class to all already-cached images
         document.querySelectorAll('img').forEach(img => {
             if (img.complete) {
                 img.classList.add('loaded');
@@ -742,7 +742,7 @@ onMounted(() => {
         });
     }, 100);
     
-    // 监听窗口大小变化，重新计算高度和状态
+    // Recalculate height and state when the window size changes
     const handleResize = () => {
         if (nav.value) {
             navHeight = nav.value.offsetHeight;
@@ -752,7 +752,7 @@ onMounted(() => {
     
     window.addEventListener('resize', handleResize);
     
-    // 卸载时清理
+    // Clean up on unmount
     onUnmounted(() => {
         window.removeEventListener('keydown', handleKeyDown);
         window.removeEventListener('click', closeMenuOnOutsideClick);
@@ -828,7 +828,7 @@ img.loaded {
     min-height: 200px;
 }
 
-/* Nav 过渡动画 */
+/* Navigation transition animation */
 .rotate-180 {
     transform: rotate(180deg);
 }
@@ -842,17 +842,17 @@ img.loaded {
     animation: slideDown 0.2s ease-out;
 }
 
-/* 为导航栏添加过渡效果 */
+/* Add transition effects to the navigation bar */
 nav {
     transition: top 0.3s ease-in-out, position 0.3s ease-in-out;
 }
 
-/* 避免内容跳动 */
+/* Prevent content jumping */
 body.has-sticky-nav {
     transition: padding-top 0.3s ease;
 }
 
-/* 导航栏样式增强 */
+/* Enhanced navigation bar styling */
 .nav-fixed {
     position: fixed;
     left: 0;
@@ -870,7 +870,7 @@ body.has-sticky-nav {
     }
 }
 
-/* 确保内容不会因导航栏固定而跳动 */
+/* Ensure content does not jump when the navigation bar becomes fixed */
 body.has-padding-top {
     transition: padding-top 0.3s ease;
 }

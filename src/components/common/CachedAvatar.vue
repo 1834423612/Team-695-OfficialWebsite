@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="avatar-container" :style="containerStyle">
         <img v-if="avatarSrc" :src="avatarSrc" :alt="alt" class="avatar-image"
             :class="{ 'rounded-full': rounded, 'border': border }" @error="handleImageError" v-bind="$attrs"
@@ -15,7 +15,7 @@
 <script lang="ts">
 import { defineComponent, ref, computed, PropType, onMounted, watch } from 'vue';
 import { avatarCache } from '@/services/avatarCache';
-import { logger } from '@/utils/logger'; // 导入logger工具
+import { logger } from '@/utils/logger'; // Import the logger utility
 
 // Helper function for throttling
 function throttle(fn: Function, delay: number): (...args: any[]) => void {
@@ -48,11 +48,11 @@ export default defineComponent({
         userId: {
             type: String,
             required: false,
-            default: '' // 将required改为false，允许不提供userId
+            default: '' // Set required to false so userId can be omitted
         },
         initial: {
             type: String,
-            default: '' // 添加新的initial属性
+            default: '' // Add the new initial property
         },
         src: {
             type: String as PropType<string | null | undefined>,
@@ -107,13 +107,13 @@ export default defineComponent({
             height: typeof props.size === 'number' ? `${props.size}px` : props.size
         }));
 
-        // 修改有效ID的计算属性，优先使用userId
+        // Update the effective-ID computed property to prefer userId
         const effectiveId = computed(() => {
-            // 确保先使用实际的userId作为缓存键，而不是initial
+            // Always prefer the real userId as the cache key instead of the initial
             if (props.userId && props.userId.length > 2) {
                 return props.userId;
             }
-            // 只有在没有userId的情况下，才使用initial作为备用
+            // Use the initial only as a fallback when no userId is available
             return props.userId || props.initial || 'default';
         });
 
@@ -135,7 +135,7 @@ export default defineComponent({
                 // Generate background color based on user ID for consistency
                 let seed = props.displayName || props.name || props.firstName || props.initial || '';
                 if (!seed) {
-                    // 如果没有名字相关信息，再回退到userId，确保seed不为undefined
+                    // Fall back to userId when no name information exists so the seed is never undefined
                     seed = props.userId || 'default';
                 }
                 
@@ -173,12 +173,12 @@ export default defineComponent({
                 return props.name.substring(0, 2).toUpperCase();
             }
             
-            // Last resort: use userId (保证不会是undefined)
+            // Last resort: use userId (so the result is never undefined)
             return (props.userId || 'XX').substring(0, 2).toUpperCase();
         });
 
-        // 增加：导出获取用户首字母的函数 
-        // 这可以被外部组件通过ref调用
+        // Also expose a helper for retrieving user initials 
+        // External components can call it through a ref
         const getUserInitials = (userInfo?: {
             firstName?: string,
             lastName?: string,
@@ -186,14 +186,14 @@ export default defineComponent({
             name?: string,
             userId?: string
         }): string => {
-            // 首先使用传入的信息
+            // Prefer the passed-in data first
             if (userInfo) {
-                // 优先尝试firstName + lastName
+                // First try firstName + lastName
                 if (userInfo.firstName && userInfo.lastName) {
                     return `${userInfo.firstName[0]}${userInfo.lastName[0]}`.toUpperCase();
                 }
                 
-                // 然后尝试displayName
+                // Then try displayName
                 if (userInfo.displayName) {
                     const parts = userInfo.displayName.trim().split(/\s+/);
                     if (parts.length >= 2) {
@@ -202,7 +202,7 @@ export default defineComponent({
                     return userInfo.displayName.substring(0, 2).toUpperCase();
                 }
                 
-                // 然后是name
+                // Then try name
                 if (userInfo.name) {
                     const parts = userInfo.name.trim().split(/\s+/);
                     if (parts.length >= 2) {
@@ -211,17 +211,17 @@ export default defineComponent({
                     return userInfo.name.substring(0, 2).toUpperCase();
                 }
                 
-                // 最后用userId
+                // Finally fall back to userId
                 if (userInfo.userId) {
                     return userInfo.userId.substring(0, 2).toUpperCase();
                 }
             }
             
-            // 如果没有传入信息，使用组件自身的属性
+            // If nothing was passed in, use the component's own props
             return initials.value;
         };
 
-        // 修改loadAvatarImpl方法，确保总是返回某种头像
+        // Update loadAvatarImpl to always return some kind of avatar
         const loadAvatarImpl = async () => {
             loading.value = true;
             loadFailed.value = false;
@@ -232,7 +232,7 @@ export default defineComponent({
                 
                 logger.debug(`Loading avatar for ${props.userId ? 'userId: ' + props.userId : 'initial: ' + props.initial}${url ? ` with URL: ${url}` : ' (no URL)'}`);
                 
-                // 始终尝试获取头像，无论有没有URL
+                // Always try to fetch an avatar, regardless of whether a URL exists
                 const cachedAvatar = await avatarCache.getAvatar(
                     cacheId, 
                     url || undefined,
@@ -243,7 +243,7 @@ export default defineComponent({
                         name: props.name,
                         initial: props.initial
                     },
-                    !url // 如果没有URL，则使用cacheOnly模式
+                    !url // Use cacheOnly mode when no URL exists
                 );
                 
                 avatarSrc.value = cachedAvatar;
@@ -272,7 +272,7 @@ export default defineComponent({
             loadFailed.value = true;
             avatarSrc.value = null;
             
-            // 错误时重新尝试加载默认头像
+            // Retry with the default avatar if an error occurs
             if (effectiveId.value) {
                 avatarCache.getAvatar(
                     effectiveId.value, 
@@ -288,7 +288,7 @@ export default defineComponent({
                 ).then(defaultAvatar => {
                     avatarSrc.value = defaultAvatar;
                 }).catch(() => {
-                    // 如果获取默认头像也失败，保持avatarSrc为null
+                    // Leave avatarSrc as null if even the default avatar fails
                 });
             }
         };
@@ -301,9 +301,9 @@ export default defineComponent({
 
         // Helper function: compute hash code for a string
         const hashCode = (str: string): number => {
-            // 防御性编程: 确保str不为undefined或null
+            // Defensive guard: make sure str is not undefined or null
             if (!str) {
-                return 0; // 返回默认值
+                return 0; // Return the default value
             }
             
             let hash = 0;
@@ -317,7 +317,7 @@ export default defineComponent({
         // Watch for property changes, including all props that might affect the avatar
         watch(
             [
-                () => effectiveId.value, // 监听计算出的effectiveId
+                () => effectiveId.value, // Watch the computed effectiveId
                 () => props.src,
                 () => props.firstName,
                 () => props.lastName,
@@ -326,7 +326,7 @@ export default defineComponent({
                 () => props.initial
             ],
             () => {
-                // 只有当effectiveId存在时才加载头像
+                // Load the avatar only when effectiveId exists
                 if (effectiveId.value) {
                     loadAvatar();
                 }
@@ -336,14 +336,14 @@ export default defineComponent({
 
         // Initialize on component mount
         onMounted(() => {
-            // 只有当effectiveId存在时才加载头像
+            // Load the avatar only when effectiveId exists
             if (effectiveId.value) {
                 loadAvatar();
             }
             
-            // 如果有URL，则添加到预加载队列中
+            // Add it to the preload queue when a URL exists
             if (props.src) {
-                // 使用Image对象预加载
+                // Preload it with an Image object
                 const img = new Image();
                 img.src = props.src;
                 img.onload = () => {
@@ -352,24 +352,24 @@ export default defineComponent({
             }
         });
 
-        // 将getUserInitials方法暴露给父组件
+        // Expose getUserInitials to parent components
         expose({
             getUserInitials,
-            // 同时导出当前用户的initials便于快速访问
+            // Also expose the current user's initials for quick access
             initials
         });
 
         return {
             avatarSrc,
             loading,
-            effectiveId, // 导出effectiveId
+            effectiveId, // Expose effectiveId
             containerStyle,
             fallbackStyle,
             initials,
             handleImageError,
             handleImageLoaded,
             hashCode,
-            getUserInitials // 也返回给template使用
+            getUserInitials // Also return it for template usage
         };
     }
 });
@@ -404,7 +404,7 @@ export default defineComponent({
     color: white;
     font-weight: 600;
     text-transform: uppercase;
-    overflow: hidden; /* 确保内容不超出容器 */
+    overflow: hidden; /* Ensure content does not overflow the container */
 }
 
 .avatar-loading {
@@ -442,3 +442,4 @@ export default defineComponent({
     }
 }
 </style>
+

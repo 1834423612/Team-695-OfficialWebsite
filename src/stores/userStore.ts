@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia';
+﻿import { defineStore } from 'pinia';
 import { casdoorService, isInvalidAuthResponse, AUTH_LOCKS } from '@/services/auth';
 import { setAuthLock, releaseAuthLock, isLockActive } from '@/utils/authUtils';
 import { logger } from '@/utils/logger';
@@ -237,7 +237,7 @@ export const useUserStore = defineStore('user', {
                 logger.error('Store initialization error:', error);
                 throw error;
             } finally {
-                // 确保无论成功失败都正确关闭日志组
+                // Ensure the log group closes correctly whether the operation succeeds or fails
                 logger.safeGroupEnd('User Store Initialization');
             }
         },
@@ -296,7 +296,7 @@ export const useUserStore = defineStore('user', {
                         this.lastFetchTime = Date.now();
                         this.isInitialized = true;
                         
-                        // 注册用户ID映射，帮助迁移缓存
+                        // Register the user ID mapping to help migrate cached data
                         if (userInfo && userInfo.id) {
                             AvatarMigrationTool.registerUserOnLogin(userInfo);
                         }
@@ -389,7 +389,7 @@ export const useUserStore = defineStore('user', {
                                     // If successful, try to get user info again
                                     logger.pretty('Handle Success', 'Retrying to get user info', 'info');
                                     
-                                    // 确保关闭当前嵌套组
+                                    // Ensure the current nested group is closed
                                     logger.safeGroupEnd('API Validation Flow');
                                     return this.refreshUserInfo(showLoading);
                                 } else {
@@ -405,7 +405,7 @@ export const useUserStore = defineStore('user', {
                             this.lastFetchTime = Date.now();
                             this.isInitialized = true;
                             
-                            // 注册用户ID映射，帮助迁移缓存
+                            // Register the user ID mapping to help migrate cached data
                             if (userInfo && userInfo.id) {
                                 AvatarMigrationTool.registerUserOnLogin(userInfo);
                             }
@@ -420,7 +420,7 @@ export const useUserStore = defineStore('user', {
                             logger.pretty('Result', 'User info refresh successful', 'success');
                             return userInfo;
                         } finally {
-                            // 确保关闭验证流程组
+                            // Ensure the validation flow group is closed
                             logger.safeGroupEnd('API Validation Flow');
                         }
                     } catch (error) {
@@ -448,7 +448,7 @@ export const useUserStore = defineStore('user', {
                 logger.error('User info refresh error:', error);
                 throw error;
             } finally {
-                // 确保主组正确关闭
+                // Ensure the main group is closed correctly
                 logger.safeGroupEnd('Refresh User Info');
             }
         },
@@ -472,7 +472,7 @@ export const useUserStore = defineStore('user', {
                 
                 logger.pretty('Status', 'User info cleared', 'info');
             } finally {
-                // 确保清除组正确关闭
+                // Ensure the clear group is closed correctly
                 logger.safeGroupEnd('Clear User Info');
             }
         },
@@ -512,7 +512,7 @@ export const useUserStore = defineStore('user', {
             this.isInitialized = true;
             this.error = null;
             
-            // 注册用户ID映射，帮助迁移缓存
+            // Register the user ID mapping to help migrate cached data
             if (this.userInfo && this.userInfo.id) {
                 AvatarMigrationTool.registerUserOnLogin(this.userInfo);
             }

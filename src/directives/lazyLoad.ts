@@ -1,4 +1,4 @@
-// 图片懒加载指令
+// Image lazy-loading directive
 export const lazyLoad = {
     mounted(el: HTMLImageElement) {
         function loadImage() {

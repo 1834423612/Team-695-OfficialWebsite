@@ -1,18 +1,18 @@
 /**
- * 头像缓存迁移工具
- * 用于修复使用initial代替真实用户ID的历史缓存问题
+ * Avatar cache migration utility
+ * Fixes legacy cache entries that used initials instead of real user IDs
  */
 
 import { logger } from '@/utils/logger';
 
 export class AvatarMigrationTool {
-    // 已知用户的initial到ID的映射
+    // Mapping from known user initials to IDs
     private static knownUserMap: Record<string, string> = {};
     
     /**
-     * 注册用户映射
-     * @param initial 用户初始字母
-     * @param userId 用户真实ID
+     * Register a user mapping
+     * @param initial User initials
+     * @param userId Real user ID
      */
     public static registerUserIdMapping(initial: string, userId: string): void {
         if (!initial || !userId) return;
@@ -22,21 +22,21 @@ export class AvatarMigrationTool {
     }
     
     /**
-     * 批量注册用户映射
-     * @param mappings 映射对象
+     * Register multiple user mappings
+     * @param mappings Mapping object
      */
     public static registerUserMappings(mappings: Record<string, string>): void {
         Object.assign(this.knownUserMap, mappings);
     }
     
     /**
-     * 在用户登录时自动注册映射
-     * @param user 用户对象
+     * Automatically register a mapping when a user logs in
+     * @param user User object
      */
     public static registerUserOnLogin(user: any): void {
         if (!user || !user.id) return;
         
-        // 计算用户的initial
+        // Compute the user's initials
         let initial = '';
         
         if (user.firstName && user.lastName) {
@@ -59,23 +59,23 @@ export class AvatarMigrationTool {
     }
     
     /**
-     * 获取用户ID映射
-     * @param initial 用户初始字母
-     * @returns 映射的用户ID或undefined
+     * Get a mapped user ID
+     * @param initial User initials
+     * @returns The mapped user ID, or undefined
      */
     public static getUserIdByInitial(initial: string): string | undefined {
         return this.knownUserMap[initial];
     }
     
     /**
-     * 获取所有已知映射
+     * Get all known mappings
      */
     public static getAllMappings(): Record<string, string> {
         return { ...this.knownUserMap };
     }
 }
 
-// 为了方便调试，添加到全局对象
+// Add to the global object for easier debugging
 if (typeof window !== 'undefined') {
     (window as any).avatarMigration = AvatarMigrationTool;
 }

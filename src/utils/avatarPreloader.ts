@@ -1,8 +1,8 @@
 /**
- * 头像预加载工具
+ * Avatar preloading utility
  * 
- * 用于在页面加载时预先加载和缓存可能会用到的头像
- * 避免用户滚动到看到头像区域时才开始加载和缓存
+ * Preloads and caches avatars that may be needed during page load
+ * Avoids waiting until the user scrolls to avatar sections before loading them
  */
 
 import { avatarCache } from '@/services/avatarCache';
@@ -21,20 +21,20 @@ interface AvatarInfo {
 class AvatarPreloader {
     private queue: AvatarInfo[] = [];
     private isProcessing: boolean = false;
-    private concurrentLimit: number = 3; // 并发请求数量限制
-    private intervalMs: number = 1000; // 请求间隔，避免请求过于频繁
-    private logOperations: boolean = false; // 控制是否记录详细日志
+    private concurrentLimit: number = 3; // Maximum number of concurrent requests
+    private intervalMs: number = 1000; // Delay between requests to avoid excessive frequency
+    private logOperations: boolean = false; // Controls whether detailed logs are recorded
 
-    // 构造函数，只在开发环境记录详细日志
+    // Constructor: detailed logging is enabled only in development
     constructor() {
         this.logOperations = process.env.NODE_ENV === 'development';
     }
 
     /**
-     * 添加头像到预加载队列
+     * Add an avatar to the preload queue
      */
     public add(info: AvatarInfo): void {
-        // 避免重复添加相同的URL
+        // Avoid adding the same URL more than once
         if (info.url && this.queue.some(item => item.url === info.url)) {
             return;
         }
@@ -45,19 +45,19 @@ class AvatarPreloader {
             logger.debug(`Added avatar to preload queue: ${info.url || '(default)'} (${info.userId})`);
         }
         
-        // 如果当前没有处理中的任务，启动处理
+        // Start processing if nothing is currently running
         if (!this.isProcessing) {
             this.processQueue();
         }
     }
     
     /**
-     * 批量添加头像到预加载队列
+     * Add multiple avatars to the preload queue
      */
     public addBatch(items: AvatarInfo[]): void {
         if (!items || items.length === 0) return;
         
-        // 过滤掉重复URL（对于有URL的项）
+        // Filter out duplicate URLs for entries that have a URL
         const uniqueItems = items.filter(info => 
             !info.url || !this.queue.some(item => item.url === info.url)
         );
@@ -68,15 +68,15 @@ class AvatarPreloader {
             logger.debug(`Added ${uniqueItems.length} avatars to preload queue (${items.length - uniqueItems.length} duplicates skipped)`);
         }
         
-        // 如果当前没有处理中的任务，启动处理
+        // Start processing if nothing is currently running
         if (!this.isProcessing) {
             this.processQueue();
         }
     }
     
     /**
-     * 处理预加载队列
-     * 使用批处理和延迟确保不会过载服务器
+     * Process the preload queue
+     * Uses batching and delays to avoid overloading the server
      */
     private async processQueue(): Promise<void> {
         if (this.queue.length === 0) {
@@ -87,19 +87,19 @@ class AvatarPreloader {
         this.isProcessing = true;
         
         try {
-            // 每次处理并发限制数量的请求
+            // Process up to the concurrency limit in each batch
             const batch = this.queue.splice(0, this.concurrentLimit);
             
-            // 输出调试信息
+            // Output debug information
             if (this.logOperations) {
                 logger.debug(`Preloading ${batch.length} avatars, ${this.queue.length} remaining in queue`);
             }
             
-            // 并行处理当前批次
+            // Process the current batch in parallel
             await Promise.all(batch.map(async info => {
                 try {
                     if (info.url) {
-                        // 如果有URL，缓存头像
+                        // Cache the avatar when a URL is available
                         await avatarCache.cacheAvatar(
                             info.userId,
                             info.url,
@@ -110,7 +110,7 @@ class AvatarPreloader {
                             }
                         );
                     } else {
-                        // 如果没有URL，生成默认头像
+                        // Generate the default avatar when no URL is available
                         await this.preloadDefault(
                             info.userId, 
                             {
@@ -123,12 +123,12 @@ class AvatarPreloader {
                         );
                     }
                 } catch (error) {
-                    // 单个头像加载失败不应阻止其他头像继续加载
+                    // A single avatar failure should not stop the rest of the batch
                     logger.warn(`Failed to preload avatar for ${info.userId}: ${info.url || '(default)'}`, error);
                 }
             }));
             
-            // 添加延迟，避免请求过于频繁
+            // Add a delay to avoid sending requests too frequently
             if (this.queue.length > 0) {
                 setTimeout(() => this.processQueue(), this.intervalMs);
             } else {
@@ -141,7 +141,7 @@ class AvatarPreloader {
             logger.error('Error processing avatar preload queue:', e);
             this.isProcessing = false;
             
-            // 若出现错误，稍后重试剩余队列
+            // Retry the remaining queue later if an error occurs
             if (this.queue.length > 0) {
                 setTimeout(() => this.processQueue(), this.intervalMs * 3);
             }
@@ -149,9 +149,9 @@ class AvatarPreloader {
     }
 
     /**
-     * 预加载默认头像（无URL）
-     * @param userId 用户ID
-     * @param userInfo 用户信息
+     * Preload the default avatar when no URL exists
+     * @param userId User ID
+     * @param userInfo User information
      */
     public preloadDefault(userId: string, userInfo?: any): Promise<string> {
         if (!userId) return Promise.resolve('');
@@ -164,22 +164,22 @@ class AvatarPreloader {
     }
     
     /**
-     * 预加载用户列表中的头像
-     * @param users 用户列表
+     * Preload avatars from a user list
+     * @param users User list
      */
     public preloadFromUsersList(users: any[]): void {
         if (!users || !Array.isArray(users) || users.length === 0) return;
         
-        // 提前准备好队列项数组，包含所有用户
+        // Prepare the queue items array in advance for all users
         const queueItems: AvatarInfo[] = users
-            .filter(user => user && (user.id || user.userId)) // 只过滤掉没有ID的用户
+            .filter(user => user && (user.id || user.userId)) // Filter out only users with no ID
             .map(user => {
                 const userId = user.id || user.userId;
                 const hasValidUrl = user.avatar && typeof user.avatar === 'string' && user.avatar.startsWith('http');
                 
                 return {
                     userId,
-                    url: hasValidUrl ? user.avatar : '', // 如果没有有效URL，则设为空字符串
+                    url: hasValidUrl ? user.avatar : '', // Use an empty string when no valid URL exists
                     userName: user.name,
                     displayName: user.displayName,
                     firstName: user.firstName,
@@ -198,25 +198,25 @@ class AvatarPreloader {
             );
         }
         
-        // 批量添加到预加载队列
+        // Add everything to the preload queue in one batch
         if (queueItems.length > 0) {
             this.addBatch(queueItems);
         }
     }
 
     /**
-     * 扫描页面并预加载可见的头像
+     * Scan the page and preload visible avatars
      */
     public scanAndPreload(): void {
-        // 查找页面上所有可能是头像的图片
+        // Find all images on the page that may be avatars
         const avatarImgs = document.querySelectorAll('img[alt*="avatar" i], img[alt*="user" i], [data-avatar-url]');
         
         const toPreload: AvatarInfo[] = [];
         const defaultsToPreload: AvatarInfo[] = [];
         
-        // 收集需要预加载的头像信息
+        // Collect avatar data that should be preloaded
         avatarImgs.forEach((elem: Element) => {
-            // 处理data-avatar-url属性的元素
+            // Handle elements with the data-avatar-url attribute
             const dataUrl = elem.getAttribute('data-avatar-url');
             if (dataUrl) {
                 const userId = elem.getAttribute('data-user-id') || 'unknown';
@@ -229,27 +229,27 @@ class AvatarPreloader {
                 return;
             }
             
-            // 处理img元素
+            // Handle img elements
             const img = elem as HTMLImageElement;
             const src = img.getAttribute('src');
             
-            // 跳过已经是data URL的头像(已经缓存过的)
+            // Skip avatars that are already data URLs because they have already been cached
             if (src && !src.startsWith('data:')) {
                 const imgElement = img as HTMLElement;
                 let userId = imgElement.getAttribute('data-user-id') || '';
                 
-                // 如果图像本身没有用户ID，尝试从父元素或属性获取
+                // If the image itself does not contain a user ID, try reading it from a parent element or attribute
                 if (!userId) {
                     const parentElement = imgElement.parentElement;
                     userId = parentElement?.getAttribute('data-user-id') || '';
                 }
                 
-                // 如果没有找到用户ID，生成一个基于URL的唯一ID
+                // Generate a unique ID from the URL when no user ID can be found
                 if (!userId && src) {
                     userId = `url_${hashCode(src)}`;
                 }
                 
-                // 收集其他可能的用户信息
+                // Collect any other user information that may be available
                 const userInfo = {
                     userName: imgElement.getAttribute('data-user-name') || undefined,
                     displayName: imgElement.getAttribute('data-display-name') || undefined,
@@ -264,7 +264,7 @@ class AvatarPreloader {
                     ...userInfo
                 });
             } else if (!src) {
-                // 如果没有src属性但有data-user-id，可能需要生成默认头像
+                // If no src exists but data-user-id does, a default avatar may need to be generated
                 const imgElement = img as HTMLElement;
                 const userId = imgElement.getAttribute('data-user-id') || `default_${Math.random().toString(36).substring(2, 9)}`;
                 
@@ -284,7 +284,7 @@ class AvatarPreloader {
             logger.info(`Scanning found ${toPreload.length} external avatars to preload and ${defaultsToPreload.length} default avatars to generate`);
         }
         
-        // 添加到预加载队列
+        // Add the collected entries to the preload queue
         if (toPreload.length > 0) {
             this.addBatch(toPreload);
         }
@@ -295,14 +295,14 @@ class AvatarPreloader {
     }
 
     /**
-     * 从用户对象获取用户首字母
-     * @param user 用户对象
-     * @returns 用户首字母
+     * Get user initials from a user object
+     * @param user User object
+     * @returns User initials
      */
     private getUserInitials(user: any): string {
         if (!user) return '';
             
-        // 从各种可能的来源生成初始字母
+        // Generate initials from all possible sources
         if (user.firstName && user.lastName) {
             return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
         }
@@ -327,7 +327,7 @@ class AvatarPreloader {
     }
 
     /**
-     * 切换日志记录
+     * Toggle logging
      */
     public setLogging(enabled: boolean): void {
         this.logOperations = enabled;
@@ -335,7 +335,7 @@ class AvatarPreloader {
     }
 
     /**
-     * 设置并发限制和请求间隔
+     * Set the concurrency limit and request interval
      */
     public setLimits(concurrentLimit: number, intervalMs: number): void {
         this.concurrentLimit = concurrentLimit;
@@ -347,20 +347,20 @@ class AvatarPreloader {
     }
 }
 
-// 辅助函数：计算字符串的哈希码
+// Helper function: compute a string hash code
 function hashCode(str: string): number {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
         hash = ((hash << 5) - hash) + str.charCodeAt(i);
-        hash |= 0; // 转换为32位整数
+        hash |= 0; // Convert to a 32-bit integer
     }
     return Math.abs(hash);
 }
 
-// 导出单例
+// Export a singleton instance
 export const avatarPreloader = new AvatarPreloader();
 
-// 添加到window对象方便调试
+// Add to the window object for easier debugging
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
     (window as any).avatarPreloader = avatarPreloader;
 }

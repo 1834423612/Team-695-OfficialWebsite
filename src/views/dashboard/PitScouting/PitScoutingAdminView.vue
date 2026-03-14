@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 mt-4 pb-8">
         <!-- Header with enhanced gradient background -->
         <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 pb-32 rounded-b-xl md:rounded-b-2xl w-full shadow-2xl">
@@ -1704,12 +1704,12 @@ const exportToCSV = () => {
     }
     
     try {
-        // 创建表头
+        // Create the header row
         const headers = ['Team Number', 'Submitted By', 'Timestamp', ...selectedFields.value];
         
-        // 创建数据行
+        // Create data rows
         const rows = filteredSurveyData.value.map(survey => {
-            // 使用类型断言确保访问安全
+            // Use a type assertion to keep access safe
             const userData = (survey.user_data || survey.userData || {}) as {
                 displayName?: string;
                 username?: string;
@@ -1721,7 +1721,7 @@ const exportToCSV = () => {
                 formatDate(survey.timestamp)
             ];
             
-            // 为每个选定的字段添加数据
+            // Add data for each selected field
             selectedFields.value.forEach(field => {
                 row.push(formatFieldValue(survey.data, field));
             });

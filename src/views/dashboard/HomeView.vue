@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="px-2 py-2 md:px-6 min-h-screen bg-gray-50">
         <!-- Welcome Banner -->
         <div class="px-2 py-6 sm:px-0 mb-6">
@@ -741,17 +741,17 @@ export default defineComponent({
         VersionInfo
     },
     setup() {
-        // 使用 Pinia 存储
+        // Use the Pinia store
         const userStore = useUserStore();
 
-        // 使用 storeToRefs 来保持响应性
+        // Use storeToRefs to preserve reactivity
         const { userInfo, orgData } = storeToRefs(userStore);
 
-        // 直接从存储访问其他属性
+        // Access other properties directly from the store
         const storeIsLoading = computed(() => userStore.isLoading);
         const storeError = computed(() => userStore.error);
 
-        // 用户数据计算属性
+        // Computed user-data property
         const userData = computed(() => {
             return userInfo.value || {};
         });
@@ -883,13 +883,13 @@ export default defineComponent({
         };
 
         const openAttachment = (attachment: NotificationAttachment) => {
-            // 如果是链接类型，直接在新标签页打开
+            // Open link-type items directly in a new tab
             if (attachment.type === 'link') {
                 window.open(attachment.url, '_blank');
                 return;
             }
             
-            // 其他类型则显示预览模态框
+            // Show the preview modal for other types
             currentAttachment.value = attachment;
             showPreviewModal.value = true;
         };
@@ -994,7 +994,7 @@ export default defineComponent({
         };
 
         const logout = () => {
-            userStore.clearUserInfo(); // 清除存储中的用户信息
+            userStore.clearUserInfo(); // Clear user information from the store
         };
 
         return {

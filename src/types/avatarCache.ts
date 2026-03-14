@@ -1,6 +1,6 @@
 /**
- * Avatar Cache Service 类型定义
- * 定义头像缓存服务的接口，用于解决类型检查问题
+ * Avatar Cache Service type definitions
+ * Defines the avatar cache service interfaces to resolve type-checking issues
  */
 
 export interface CacheUserInfo {
@@ -47,16 +47,16 @@ export interface RequestStats {
 }
 
 /**
- * 头像缓存服务接口
+ * Avatar cache service interface
  */
 export interface AvatarCacheService {
-    // 核心缓存方法
+    // Core cache methods
     cacheAvatar(userId: string, url: string, userInfo?: CacheUserInfo): Promise<string | null>;
     getAvatar(userId: string, url: string, userInfo?: CacheUserInfo): Promise<string>;
     clearCache(userId: string): Promise<void>;
     clearAllCache(): void;
 
-    // 统计和调试方法
+    // Statistics and debugging methods
     getCacheStats(): Promise<CacheStats>;
     getRequestStats?(): Promise<RequestStats>;
     dumpAllCaches?(): Promise<Record<string, any>>;

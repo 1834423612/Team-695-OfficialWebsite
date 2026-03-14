@@ -22,35 +22,35 @@ export default defineConfig({
     }
   },
   build: {
-    // 代码分割优化
+    // Optimize code splitting
     rollupOptions: {
       output: {
         manualChunks: {
-          // 将Vue核心库分离
+          // Split Vue core libraries
           'vue-vendor': ['vue', 'vue-router', 'pinia'],
-          // 将UI组件库分离
+          // Split UI component libraries
           'ui-vendor': ['@iconify/vue', '@headlessui/vue', '@heroicons/vue'],
-          // 将大型库分离
+          // Split large libraries
           'chart-vendor': ['chart.js', 'vue-chartjs'],
-          // 其他工具库
+          // Other utility libraries
           'utils': ['axios', 'lodash', 'js-cookie']
         },
-        // 优化chunk文件名
+        // Optimize chunk filenames
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
         assetFileNames: 'assets/[ext]/[name]-[hash].[ext]'
       }
     },
-    // 增加chunk大小警告阈值
+    // Increase the chunk size warning threshold
     chunkSizeWarningLimit: 1000,
-    // 启用CSS代码分割
+    // Enable CSS code splitting
     cssCodeSplit: true,
-    // 生成source map用于生产环境调试（可选）
+    // Generate source maps for production debugging (optional)
     sourcemap: false,
-    // 使用esbuild进行压缩（更快）
+    // Use esbuild for minification (faster)
     minify: 'esbuild'
   },
-  // 优化依赖预构建
+  // Optimize dependency pre-bundling
   optimizeDeps: {
     include: [
       'vue',
@@ -60,7 +60,7 @@ export default defineConfig({
       '@iconify/vue'
     ],
     exclude: [
-      // 排除不需要预构建的包
+      // Exclude packages that do not need pre-bundling
     ]
   },
   server: {

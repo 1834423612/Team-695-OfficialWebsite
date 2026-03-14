@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="flex flex-col min-h-[100vh]">
     <main class="flex-1">
       <section class="bg-muted py-12 px-6 md:py-24 h-full">
@@ -30,13 +30,13 @@
             </div>
           </div>
 
-          <!-- 单图展示 -->
+          <!-- Single-image layout -->
           <img
             src="https://r2.fastbirdcdn.online/Robotics/Robots/2025-695-Robot_Gold-Fish.jpeg"
             alt="2025 695 Robot - Gold Fish"
             class="my-10 aspect-[8/7] w-full max-w-lg rounded-2xl object-cover sm:mt-16 lg:mt-0 lg:max-w-none " />
 
-          <!-- 图片瀑布样式 -->
+          <!-- Masonry image layout -->
           <!-- <div class="hidden lg:flex justify-evenly mt-4">
             <div class="relative">
               <img src="https://images.unsplash.com/photo-1557804506-669a67965ba0?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&h=528&q=80" alt="" class="aspect-[2/3] rounded-xl bg-gray-900/5 object-cover shadow-lg" />
@@ -83,3 +83,4 @@ export default defineComponent({
   },
 });
 </script>
+
