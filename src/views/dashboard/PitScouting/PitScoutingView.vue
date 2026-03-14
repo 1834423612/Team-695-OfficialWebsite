@@ -651,18 +651,18 @@ const initializeDefaultFormFields = () => {
     },
 
     {
-      question: "FUEL scoring method",
-      description: "How does your robot score FUEL into the HUB?",
+      question: "Primary FUEL scoring target",
+      description: "Where does your robot mainly score FUEL?",
       type: "radio",
       options: [
-        "Low goal / direct dump",
-        "High goal / shooting",
+        "Lower HUB",
+        "Upper HUB",
         "Both",
-        "Does not score"
+        "Does not score FUEL"
       ],
       optionValues: [
-        "Low",
-        "High",
+        "Lower HUB",
+        "Upper HUB",
         "Both",
         "None"
       ],
