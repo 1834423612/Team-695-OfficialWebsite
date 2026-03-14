@@ -204,6 +204,49 @@ class CasdoorService {
         this.cleanupStaleLocks();
     }
 
+    private normalizeAndCacheUserInfo(userInfo: any): UserInfo {
+        const normalized = normalizeUserInfo(userInfo);
+        this.userInfoCache = normalized;
+
+        localStorage.setItem(USER_INFO_CACHE, JSON.stringify(normalized));
+        localStorage.setItem(USER_INFO_TIMESTAMP, Date.now().toString());
+        localStorage.setItem('userInfo', JSON.stringify(normalized));
+
+        return normalized;
+    }
+
+    getCachedUserInfo(allowExpired = false): UserInfo | null {
+        if (this.userInfoCache) {
+            return this.userInfoCache;
+        }
+
+        const cachedUserInfo = localStorage.getItem(USER_INFO_CACHE) || localStorage.getItem('userInfo');
+        const cachedTimestamp = localStorage.getItem(USER_INFO_TIMESTAMP);
+
+        if (!cachedUserInfo) {
+            return null;
+        }
+
+        if (!allowExpired) {
+            const timestamp = cachedTimestamp ? parseInt(cachedTimestamp, 10) : NaN;
+            if (isNaN(timestamp) || Date.now() - timestamp >= USER_INFO_CACHE_DURATION) {
+                return null;
+            }
+        }
+
+        try {
+            const parsedUserInfo = JSON.parse(cachedUserInfo);
+            return this.normalizeAndCacheUserInfo(parsedUserInfo);
+        } catch (error) {
+            console.warn('Failed to parse cached user info:', error);
+            return null;
+        }
+    }
+
+    setCachedUserInfo(userInfo: any): UserInfo {
+        return this.normalizeAndCacheUserInfo(userInfo);
+    }
+
     // Cleanup stale locks based on predefined timeouts - using `authUtils`
     private cleanupStaleLocks(): void {
         const timeouts: Record<string, number> = {
@@ -307,19 +350,7 @@ class CasdoorService {
             }
             
             // Check for cached user info
-            const cachedUserInfo = localStorage.getItem(USER_INFO_CACHE);
-            const cachedTimestamp = localStorage.getItem(USER_INFO_TIMESTAMP);
-            
-            if (cachedUserInfo && cachedTimestamp) {
-                const timestamp = parseInt(cachedTimestamp, 10);
-                if (!isNaN(timestamp) && Date.now() - timestamp < USER_INFO_CACHE_DURATION) {
-                    try {
-                        this.userInfoCache = JSON.parse(cachedUserInfo);
-                    } catch (e) {
-                        console.warn('Failed to parse cached user info:', e);
-                    }
-                }
-            }
+            this.getCachedUserInfo();
         } catch (error) {
             console.error('Error checking localStorage backup:', error);
         }
@@ -618,6 +649,7 @@ class CasdoorService {
         this.userInfoCache = null;
         localStorage.removeItem(USER_INFO_CACHE);
         localStorage.removeItem(USER_INFO_TIMESTAMP);
+        localStorage.removeItem('userInfo');
         
         // Setup token refresh timer
         this.setupTokenRefresh();
@@ -645,6 +677,7 @@ class CasdoorService {
         this.userInfoCache = null;
         localStorage.removeItem(USER_INFO_CACHE);
         localStorage.removeItem(USER_INFO_TIMESTAMP);
+        localStorage.removeItem('userInfo');
         
         // Setup token refresh timer
         this.setupTokenRefresh();
@@ -905,20 +938,9 @@ class CasdoorService {
             }
             
             // Then check localStorage cache
-            const cachedUserInfo = localStorage.getItem(USER_INFO_CACHE);
-            const cachedTimestamp = localStorage.getItem(USER_INFO_TIMESTAMP);
-            
-            if (cachedUserInfo && cachedTimestamp) {
-                const timestamp = parseInt(cachedTimestamp, 10);
-                if (!isNaN(timestamp) && Date.now() - timestamp < USER_INFO_CACHE_DURATION) {
-                    try {
-                        const userInfo = JSON.parse(cachedUserInfo);
-                        this.userInfoCache = userInfo;
-                        return userInfo;
-                    } catch (e) {
-                        console.warn('Failed to parse cached user info:', e);
-                    }
-                }
+            const cachedUserInfo = this.getCachedUserInfo();
+            if (cachedUserInfo) {
+                return cachedUserInfo;
             }
         }
         
@@ -954,12 +976,7 @@ class CasdoorService {
                 });
             }
             
-            // Cache the user info
-            this.userInfoCache = userInfo;
-            localStorage.setItem(USER_INFO_CACHE, JSON.stringify(userInfo));
-            localStorage.setItem(USER_INFO_TIMESTAMP, Date.now().toString());
-            
-            return userInfo;
+            return this.normalizeAndCacheUserInfo(userInfo);
         } catch (primaryError) {
             console.error('Primary user info endpoint failed:', primaryError);
             
@@ -984,12 +1001,7 @@ class CasdoorService {
                 const userData = await response.json();
                 const normalizedUserData = normalizeUserInfo(userData, basicUserInfo || undefined);
                 
-                // Cache the user info
-                this.userInfoCache = normalizedUserData;
-                localStorage.setItem(USER_INFO_CACHE, JSON.stringify(normalizedUserData));
-                localStorage.setItem(USER_INFO_TIMESTAMP, Date.now().toString());
-                
-                return normalizedUserData;
+                return this.normalizeAndCacheUserInfo(normalizedUserData);
             } catch (secondaryError) {
                 console.error('Secondary user info endpoint failed:', secondaryError);
                 
@@ -1013,14 +1025,14 @@ class CasdoorService {
                     const userInfo: UserInfo = await response.json();
                     const normalizedUserInfo = normalizeUserInfo(userInfo, basicUserInfo || undefined);
                     
-                    // Cache the user info
-                    this.userInfoCache = normalizedUserInfo;
-                    localStorage.setItem(USER_INFO_CACHE, JSON.stringify(normalizedUserInfo));
-                    localStorage.setItem(USER_INFO_TIMESTAMP, Date.now().toString());
-                    
-                    return normalizedUserInfo;
+                    return this.normalizeAndCacheUserInfo(normalizedUserInfo);
                 } catch (tertiaryError) {
                     console.error('All user info endpoints failed:', tertiaryError);
+
+                    const cachedUserInfo = this.getCachedUserInfo(true);
+                    if (cachedUserInfo) {
+                        return normalizeUserInfo(cachedUserInfo, basicUserInfo || undefined);
+                    }
                     
                     // If we have basic info from token, return that as fallback
                     if (basicUserInfo) {
@@ -1133,6 +1145,7 @@ class CasdoorService {
             localStorage.removeItem(REFRESH_TOKEN_COOKIE);
             localStorage.removeItem(USER_INFO_CACHE);
             localStorage.removeItem(USER_INFO_TIMESTAMP);
+            localStorage.removeItem('userInfo');
             
             // Try to clear cookies
             try {

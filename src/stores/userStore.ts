@@ -91,6 +91,11 @@ export const useUserStore = defineStore('user', {
         refreshTimer: null
     }),
 
+    persist: {
+        storage: localStorage,
+        pick: ['userInfo', 'orgData', 'lastFetchTime', 'isInitialized']
+    },
+
     getters: {
         isLoggedIn(): boolean {
             return casdoorService.isLoggedIn();
@@ -125,6 +130,7 @@ export const useUserStore = defineStore('user', {
             
             try {
                 logger.pretty('Validation Strategy', skipValidation ? 'Skip validation' : 'Requires validation', skipValidation ? 'warn' : 'info');
+                let restoredFromCache = false;
 
                 // First check absolute trust flag, if exists, force skip validation
                 if (localStorage.getItem('token_absolute_trust') === 'true' || 
@@ -141,8 +147,20 @@ export const useUserStore = defineStore('user', {
                     skipValidation = true;
                 }
 
+                if (!this.userInfo) {
+                    const cachedUserInfo = normalizeStoreUserInfo(casdoorService.getCachedUserInfo(true));
+                    if (cachedUserInfo) {
+                        this.userInfo = cachedUserInfo;
+                        this.orgData = cachedUserInfo.data2 || null;
+                        this.error = null;
+                        restoredFromCache = true;
+
+                        logger.pretty('Cache Restore', 'Recovered user info from auth cache', 'info');
+                    }
+                }
+
                 // If already initialized and has data, avoid re-initializing
-                if (this.isInitialized && this.userInfo) {
+                if (this.isInitialized && this.userInfo && !restoredFromCache) {
                     logger.pretty('Status', 'Already initialized with user data', 'success');
                     
                     // If skip validation is set, return without validating
@@ -194,6 +212,7 @@ export const useUserStore = defineStore('user', {
 
                 // If not logged in, don't initialize
                 if (!casdoorService.isLoggedIn()) {
+                    this.clearUserInfo();
                     logger.pretty('Status', 'User not logged in, skipping initialization', 'warn');
                     return null;
                 }
@@ -469,6 +488,8 @@ export const useUserStore = defineStore('user', {
                 this.orgData = null;
                 this.lastFetchTime = null;
                 this.isInitialized = false;
+                this.error = null;
+                localStorage.removeItem('userInfo');
                 
                 logger.pretty('Status', 'User info cleared', 'info');
             } finally {
@@ -517,8 +538,9 @@ export const useUserStore = defineStore('user', {
                 AvatarMigrationTool.registerUserOnLogin(this.userInfo);
             }
             
-            // Store in localStorage for persistence
-            localStorage.setItem('userInfo', JSON.stringify(this.userInfo));
+            if (this.userInfo) {
+                casdoorService.setCachedUserInfo(this.userInfo);
+            }
             logger.pretty('Status', 'User info updated', 'success');
             logger.groupEnd();
             return Promise.resolve();

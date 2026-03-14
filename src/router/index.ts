@@ -201,6 +201,14 @@ router.beforeEach(async (to, _from, next) => {
     // Check for admin-only routes
     if (to.matched.some(record => record.meta.requiresAdmin)) {
       const userStore = await import('@/stores/userStore').then(m => m.useUserStore());
+      if (!userStore.userInfo) {
+        try {
+          await userStore.initializeStore(true);
+        } catch (error) {
+          console.warn('Failed to initialize user store before admin route check:', error);
+        }
+      }
+
       const userData = userStore.userInfo;
       const hasAdminAccess = userStore.isAdmin;
       
