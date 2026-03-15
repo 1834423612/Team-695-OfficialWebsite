@@ -362,7 +362,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from "vue";
+import { ref, onMounted, onBeforeUnmount, watch, computed } from "vue";
 import { Icon } from "@iconify/vue";
 import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
@@ -515,30 +515,83 @@ const formFields = ref<FormField[]>([]);
 const currentTab = ref(0);
 const eventId = ref("");
 
-const currentFormId = computed(() => tabs.value[currentTab.value].formId);
+const currentFormId = computed(() => tabs.value[currentTab.value]?.formId ?? "");
 
 
 // Form versioning control
 const FORM_VERSION = "2026.03_PROD_ED8"; // Update this when you want to force a form reset
 const FORM_VERSION_KEY = "pit-scouting-form-version";
-
+const STORAGE_KEYS = {
+  tabs: "pit-scouting-survey-tabs",
+  currentTab: "pit-scouting-current-tab",
+  legacyTabs: "surveyTabs",
+  legacyCurrentTab: "currentTab",
+} as const;
 
 // For reset modal
 const showResetModal = ref(false);
 const resetReason = ref("manual"); // "manual" or "version-change"
 
-// onMounted lifecycle hook to check for form version changes
-onMounted(async () => {
-  // Check if form version has changed
-  const storedVersion = localStorage.getItem(FORM_VERSION_KEY);
-  if (storedVersion !== FORM_VERSION) {
-    resetReason.value = "version-change";
-    showResetModal.value = true;
+const getFormDataStorageKey = (formId: string) => `formData_${formId}`;
+const getFullRobotImagesStorageKey = (formId: string) => `fullRobotImages_${formId}`;
+const getDriveTrainImagesStorageKey = (formId: string) => `driveTrainImages_${formId}`;
+
+const cloneFormFields = (fields: FormField[]): FormField[] =>
+  JSON.parse(JSON.stringify(fields));
+
+const safeParseJson = <T>(value: string | null): T | null => {
+  if (!value) {
+    return null;
   }
-});
+
+  try {
+    return JSON.parse(value) as T;
+  } catch (error) {
+    console.error("Error parsing localStorage JSON:", error);
+    return null;
+  }
+};
+
+const createClearedFormFields = (fields?: FormField[]): FormField[] => {
+  const sourceFields = fields ? cloneFormFields(fields) : getDefaultFormFields();
+
+  return sourceFields.map((field) => ({
+    ...field,
+    value: field.type === "checkbox" ? [] : null,
+    otherValue: "",
+    error: undefined,
+  }));
+};
+
+const saveStorageMetadata = () => {
+  localStorage.setItem(STORAGE_KEYS.tabs, JSON.stringify(tabs.value));
+  localStorage.setItem(STORAGE_KEYS.currentTab, currentTab.value.toString());
+
+  // Remove legacy keys after writing the canonical ones.
+  localStorage.removeItem(STORAGE_KEYS.legacyTabs);
+  localStorage.removeItem(STORAGE_KEYS.legacyCurrentTab);
+};
+
+const migrateLegacyTabStorage = () => {
+  const savedTabs = localStorage.getItem(STORAGE_KEYS.tabs);
+  const legacyTabs = localStorage.getItem(STORAGE_KEYS.legacyTabs);
+
+  if (!savedTabs && legacyTabs) {
+    localStorage.setItem(STORAGE_KEYS.tabs, legacyTabs);
+  }
+
+  const savedCurrentTab = localStorage.getItem(STORAGE_KEYS.currentTab);
+  const legacyCurrentTab = localStorage.getItem(STORAGE_KEYS.legacyCurrentTab);
+
+  if (!savedCurrentTab && legacyCurrentTab) {
+    localStorage.setItem(STORAGE_KEYS.currentTab, legacyCurrentTab);
+  }
+};
 
 // Function to reset the form
 const resetForm = () => {
+  migrateLegacyTabStorage();
+
   // Get all localStorage keys
   const keys = Object.keys(localStorage);
   
@@ -547,7 +600,10 @@ const resetForm = () => {
     key.startsWith('driveTrainImages_') || 
     key.startsWith('formData_') || 
     key.startsWith('fullRobotImages_') || 
-    key === 'surveyTabs'
+    key === STORAGE_KEYS.tabs ||
+    key === STORAGE_KEYS.currentTab ||
+    key === STORAGE_KEYS.legacyTabs ||
+    key === STORAGE_KEYS.legacyCurrentTab
   );
   
   // Remove all form-related items
@@ -576,8 +632,7 @@ const cancelReset = () => {
 };
 
 // Form Questions and Fields info
-const initializeDefaultFormFields = () => {
-  // Make sure we're working with the original form field definitions
+const getDefaultFormFields = (): FormField[] => {
   const defaultFields = [
     {
       question: "Team number",
@@ -804,14 +859,20 @@ const initializeDefaultFormFields = () => {
     }
   ];
   
+  return cloneFormFields(defaultFields);
+};
+
+const initializeDefaultFormFields = () => {
+  const defaultFields = getDefaultFormFields();
+
   // Set formFields to the default fields
-  formFields.value = JSON.parse(JSON.stringify(defaultFields));
+  formFields.value = cloneFormFields(defaultFields);
   
   // Create a new tab with these default fields
   tabs.value = [
     {
       name: "Tab 1",
-      formData: JSON.parse(JSON.stringify(defaultFields)),
+      formData: cloneFormFields(defaultFields),
       formId: uuidv4(),
     },
   ];
@@ -830,46 +891,11 @@ const ensureFormFieldsExist = () => {
   }
 };
 
-onMounted(async () => {
-  // Initialize the store to get user data
-  userStore.initializeStore();
-  
-  await loadTeams('');
-  await loadEventId();
-  
-  // Load data from localStorage
-  loadFromLocalStorage();
-  
-  // Ensure form fields exist after loading
-  ensureFormFieldsExist();
-  
-  // Check if form version has changed
-  const storedVersion = localStorage.getItem(FORM_VERSION_KEY);
-  if (storedVersion !== FORM_VERSION) {
-    resetReason.value = "version-change";
-    showResetModal.value = true;
-  }
-});
-
 const fullRobotImages = ref<ImageData[]>([]);
 const driveTrainImages = ref<ImageData[]>([]);
 const imageRefs = ref<{ [key: string]: HTMLInputElement | null }>({});
 const teamSuggestions = ref<Team[]>([]);
 const showTeamSuggestions = ref(false);
-
-onMounted(async () => {
-  // Initialize the store to get user data
-  userStore.initializeStore();
-  
-  await loadTeams('');
-  await loadEventId();
-  const isNewUser = !localStorage.getItem("surveyTabs");
-  if (isNewUser) {
-    saveToLocalStorage();
-  } else {
-    loadFromLocalStorage();
-  }
-});
 
 // Function to extract clean option value without descriptions
 const getOptionValue = (option: string): string => {
@@ -955,33 +981,60 @@ const loadEventId = async () => {
   }
 };
 
+const normalizeStoredTabs = (storedTabs: unknown): Tab[] => {
+  if (!Array.isArray(storedTabs)) {
+    return [];
+  }
+
+  return storedTabs.map((tab, index) => {
+    const storedTab = (tab ?? {}) as Partial<Tab>;
+    const storedFormData = Array.isArray(storedTab.formData) && storedTab.formData.length > 0
+      ? cloneFormFields(storedTab.formData)
+      : createClearedFormFields();
+
+    return {
+      name: typeof storedTab.name === "string" && storedTab.name.trim()
+        ? storedTab.name
+        : `Tab ${index + 1}`,
+      formData: storedFormData,
+      formId: typeof storedTab.formId === "string" && storedTab.formId.trim()
+        ? storedTab.formId
+        : uuidv4(),
+    };
+  });
+};
+
 watch(
-  [tabs, currentTab],
-  (newValues, oldValues) => {
-    if (JSON.stringify(newValues) !== JSON.stringify(oldValues)) {
-      saveToLocalStorage();
+  formFields,
+  () => {
+    if (tabs.value.length > 0 && currentFormId.value) {
+      debouncedSaveFormData();
+    }
+  },
+  { deep: true }
+);
+
+watch(
+  [fullRobotImages, driveTrainImages],
+  () => {
+    if (currentFormId.value) {
+      saveImagesToLocalStorage();
     }
   },
   { deep: true }
 );
 
 const addTab = () => {
+  saveToLocalStorage();
+
   const newTab: Tab = {
     name: `Tab ${tabs.value.length + 1}`,
-    formData: JSON.parse(
-      JSON.stringify(
-        formFields.value.map((field) => ({
-          ...field,
-          value: field.type === "checkbox" ? [] : null,
-          error: undefined,
-        }))
-      )
-    ),
+    formData: createClearedFormFields(),
     formId: uuidv4(),
   };
   tabs.value.push(newTab);
   switchTab(tabs.value.length - 1);
-  saveToLocalStorage(); // Once the new tab is added, save it to localStorage immediately
+  saveStorageMetadata();
 };
 
 const confirmRemoveTab = (index: number) => {
@@ -1016,44 +1069,86 @@ const confirmRemoveTab = (index: number) => {
 };
 
 const removeTab = (index: number) => {
+  saveToLocalStorage();
+
   const removedTab = tabs.value[index];
   tabs.value.splice(index, 1);
 
   if (tabs.value.length === 0) {
-    addTab();
+    const defaultFields = createClearedFormFields();
+    tabs.value = [{
+      name: "Tab 1",
+      formData: cloneFormFields(defaultFields),
+      formId: uuidv4(),
+    }];
+    currentTab.value = 0;
+  } else if (currentTab.value > index) {
+    currentTab.value -= 1;
   } else if (currentTab.value >= tabs.value.length) {
     currentTab.value = tabs.value.length - 1;
   }
 
-  switchTab(currentTab.value);
-
   // Remove localStorage data for the deleted tab
-  localStorage.removeItem(`formData_${removedTab.formId}`);
-  localStorage.removeItem(`fullRobotImages_${removedTab.formId}`);
-  localStorage.removeItem(`driveTrainImages_${removedTab.formId}`);
+  if (removedTab?.formId) {
+    localStorage.removeItem(getFormDataStorageKey(removedTab.formId));
+    localStorage.removeItem(getFullRobotImagesStorageKey(removedTab.formId));
+    localStorage.removeItem(getDriveTrainImagesStorageKey(removedTab.formId));
+  }
+
+  loadTabState(currentTab.value);
+  saveToLocalStorage();
+};
+
+const loadTabState = (index: number) => {
+  const targetTab = tabs.value[index];
+
+  if (!targetTab) {
+    formFields.value = createClearedFormFields();
+    fullRobotImages.value = [];
+    driveTrainImages.value = [];
+    return;
+  }
+
+  const savedFormData = safeParseJson<FormField[]>(
+    localStorage.getItem(getFormDataStorageKey(targetTab.formId))
+  );
+
+  const nextFields =
+    savedFormData && savedFormData.length > 0
+      ? cloneFormFields(savedFormData)
+      : targetTab.formData?.length > 0
+        ? cloneFormFields(targetTab.formData)
+        : createClearedFormFields();
+
+  tabs.value[index].formData = cloneFormFields(nextFields);
+  formFields.value = cloneFormFields(nextFields);
+  loadImagesFromLocalStorage(targetTab.formId);
+  saveStorageMetadata();
 };
 
 const switchTab = (index: number) => {
+  if (index < 0 || index >= tabs.value.length) {
+    return;
+  }
+
+  if (index === currentTab.value) {
+    loadTabState(index);
+    return;
+  }
+
+  saveToLocalStorage();
   currentTab.value = index;
-  formFields.value = JSON.parse(JSON.stringify(tabs.value[index].formData));
-  loadImagesFromLocalStorage();
+  loadTabState(index);
 };
 
 const clearCurrentTab = () => {
-  tabs.value[currentTab.value].formData = JSON.parse(
-    JSON.stringify(
-      formFields.value.map((field) => ({
-        ...field,
-        value: field.type === "checkbox" ? [] : null,
-        otherValue: "", // Ensure otherValue is cleared
-        error: undefined,
-      }))
-    )
-  );
-  formFields.value = tabs.value[currentTab.value].formData;
+  const clearedFields = createClearedFormFields();
+
+  tabs.value[currentTab.value].formData = cloneFormFields(clearedFields);
+  formFields.value = cloneFormFields(clearedFields);
   fullRobotImages.value = [];
   driveTrainImages.value = [];
-  saveFormData();
+  saveToLocalStorage();
 };
 
 const confirmClearCurrentTab = () => {
@@ -1090,6 +1185,7 @@ const confirmClearCurrentTab = () => {
 const selectTeam = (team: Team) => {
   formFields.value[0].value = team.team_number;
   showTeamSuggestions.value = false;
+  saveFormData();
 };
 
 const loadTeams = async (query: string) => {
@@ -1115,13 +1211,6 @@ const hideTeamSuggestions = () => {
     showTeamSuggestions.value = false;
   }, 200);
 };
-
-onMounted(() => {
-  imageRefs.value = {
-    fullRobotInput: document.querySelector('input[ref="fullRobotInput"]') as HTMLInputElement,
-    driveTrainInput: document.querySelector('input[ref="driveTrainInput"]') as HTMLInputElement,
-  };
-});
 
 const handleFileSelect = async (
   type: "fullRobot" | "driveTrain",
@@ -1295,6 +1384,10 @@ const escapeInput = (input: string): string => {
 };
 
 const saveFormData = () => {
+  if (!tabs.value[currentTab.value] || !currentFormId.value) {
+    return;
+  }
+
   // Deep copy the formFields to avoid directly modifying the reactive data
   const updatedFields = formFields.value.map(field => {
     // Only escape string values
@@ -1317,111 +1410,100 @@ const saveFormData = () => {
   });
 
   // Update the current tab's formData with the updated fields
-  tabs.value[currentTab.value].formData = updatedFields;
+  tabs.value[currentTab.value].formData = cloneFormFields(updatedFields);
 
-  // Fix: Use the currentFormId to save the form data
   localStorage.setItem(
-    `formData_${currentFormId.value}`,
+    getFormDataStorageKey(currentFormId.value),
     JSON.stringify(updatedFields)
   );
+
+  saveStorageMetadata();
 };
 
-const debounce = (func: Function, delay: number) => {
-  let timer: NodeJS.Timeout;
+const debounce = (func: (...args: any[]) => void, delay: number) => {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+
   return (...args: any[]) => {
-    clearTimeout(timer);
+    if (timer) {
+      clearTimeout(timer);
+    }
+
     timer = setTimeout(() => func(...args), delay);
   };
 };
 
 const debouncedSaveFormData = debounce(saveFormData, 300);
 
-const saveImagesToLocalStorage = () => {
+const saveImagesToLocalStorage = (formId = currentFormId.value) => {
+  if (!formId) {
+    return;
+  }
+
   localStorage.setItem(
-    `fullRobotImages_${currentFormId.value}`,
+    getFullRobotImagesStorageKey(formId),
     JSON.stringify(fullRobotImages.value)
   );
   localStorage.setItem(
-    `driveTrainImages_${currentFormId.value}`,
+    getDriveTrainImagesStorageKey(formId),
     JSON.stringify(driveTrainImages.value)
   );
 };
 
-const loadImagesFromLocalStorage = () => {
-  const savedFullRobotImages = localStorage.getItem(
-    `fullRobotImages_${currentFormId.value}`
-  );
-  const savedDriveTrainImages = localStorage.getItem(
-    `driveTrainImages_${currentFormId.value}`
-  );
-
-  if (savedFullRobotImages) {
-    fullRobotImages.value = JSON.parse(savedFullRobotImages);
-  } else {
+const loadImagesFromLocalStorage = (formId = currentFormId.value) => {
+  if (!formId) {
     fullRobotImages.value = [];
+    driveTrainImages.value = [];
+    return;
   }
 
-  if (savedDriveTrainImages) {
-    driveTrainImages.value = JSON.parse(savedDriveTrainImages);
-  } else {
-    driveTrainImages.value = [];
-  }
+  const savedFullRobotImages = safeParseJson<ImageData[]>(
+    localStorage.getItem(getFullRobotImagesStorageKey(formId))
+  );
+  const savedDriveTrainImages = safeParseJson<ImageData[]>(
+    localStorage.getItem(getDriveTrainImagesStorageKey(formId))
+  );
+
+  fullRobotImages.value = Array.isArray(savedFullRobotImages)
+    ? savedFullRobotImages
+    : [];
+  driveTrainImages.value = Array.isArray(savedDriveTrainImages)
+    ? savedDriveTrainImages
+    : [];
 };
 
 const saveToLocalStorage = () => {
-  localStorage.setItem("surveyTabs", JSON.stringify(tabs.value));
-  localStorage.setItem("currentTab", currentTab.value.toString());
   saveFormData();
   saveImagesToLocalStorage();
+  saveStorageMetadata();
 };
 
 const loadFromLocalStorage = () => {
-  const savedTabs = localStorage.getItem("surveyTabs");
-  const savedCurrentTab = localStorage.getItem("currentTab");
+  migrateLegacyTabStorage();
 
-  if (savedTabs) {
-    try {
-      // Parse stored tab data
-      tabs.value = JSON.parse(savedTabs);
-      currentTab.value = savedCurrentTab ? parseInt(savedCurrentTab) : 0;
+  const normalizedTabs = normalizeStoredTabs(
+    safeParseJson<unknown>(localStorage.getItem(STORAGE_KEYS.tabs))
+  );
 
-      // Ensure current tab exists
-      if (currentTab.value >= tabs.value.length) {
-        currentTab.value = 0;
-      }
-
-      // Load form data for the current tab
-      const savedFormData = localStorage.getItem(`formData_${tabs.value[currentTab.value].formId}`);
-      
-      if (savedFormData) {
-        // If we have saved form data, use it
-        formFields.value = JSON.parse(savedFormData);
-      } else {
-        // If no saved form data exists for this tab, use the default form fields
-        // This ensures we always have form fields even after a refresh
-        formFields.value = JSON.parse(JSON.stringify(
-          formFields.value.map(field => ({
-            ...field,
-            value: field.type === "checkbox" ? [] : null,
-            error: undefined,
-          }))
-        ));
-        
-        // Save these default fields to the tab
-        tabs.value[currentTab.value].formData = formFields.value;
-        saveFormData();
-      }
-    } catch (error) {
-      console.error("Error parsing saved tabs from localStorage:", error);
-      initializeDefaultFormFields();
-    }
-  } else {
-    // If no saved tabs exist, initialize default form fields
+  if (normalizedTabs.length === 0) {
     initializeDefaultFormFields();
+    return;
   }
 
-  // Load images
-  loadImagesFromLocalStorage();
+  tabs.value = normalizedTabs;
+
+  const savedCurrentTab = Number.parseInt(
+    localStorage.getItem(STORAGE_KEYS.currentTab) ?? "0",
+    10
+  );
+
+  currentTab.value =
+    Number.isInteger(savedCurrentTab) &&
+    savedCurrentTab >= 0 &&
+    savedCurrentTab < tabs.value.length
+      ? savedCurrentTab
+      : 0;
+
+  loadTabState(currentTab.value);
 };
 
 const isAllowedImageType = (file: File): boolean => {
@@ -1585,9 +1667,9 @@ const submitForm = async () => {
       }
 
       // Clear localStorage for the current form ID
-      localStorage.removeItem(`formData_${currentFormId.value}`);
-      localStorage.removeItem(`fullRobotImages_${currentFormId.value}`);
-      localStorage.removeItem(`driveTrainImages_${currentFormId.value}`);
+      localStorage.removeItem(getFormDataStorageKey(currentFormId.value));
+      localStorage.removeItem(getFullRobotImagesStorageKey(currentFormId.value));
+      localStorage.removeItem(getDriveTrainImagesStorageKey(currentFormId.value));
 
       // Show success message and refresh the page after user confirmation
       Swal.fire({
@@ -1630,22 +1712,30 @@ const submitForm = async () => {
   }
 };
 
+const handleBeforeUnload = () => {
+  saveToLocalStorage();
+};
+
 // Added to ensure the store is initialized and data is loaded correctly
 onMounted(async () => {
+  window.addEventListener("beforeunload", handleBeforeUnload);
+
   // Initialize the store to get user data
   userStore.initializeStore();
   
   await loadTeams('');
   await loadEventId();
-  
-  // Load user assignments
-  await loadUserAssignments();
-  
+
   // Load data from localStorage
   loadFromLocalStorage();
   
   // Ensure form fields exist after loading
   ensureFormFieldsExist();
+
+  // Load user assignments
+  if (eventId.value) {
+    await loadUserAssignments();
+  }
   
   // Check if form version has changed
   const storedVersion = localStorage.getItem(FORM_VERSION_KEY);
@@ -1653,6 +1743,11 @@ onMounted(async () => {
     resetReason.value = "version-change";
     showResetModal.value = true;
   }
+});
+
+onBeforeUnmount(() => {
+  saveToLocalStorage();
+  window.removeEventListener("beforeunload", handleBeforeUnload);
 });
 
 // Added to manage user assignments and pit completion status
@@ -1679,7 +1774,7 @@ const selectAssignedTeam = (teamNumber: number) => {
   if (formFields.value[0]) {
     formFields.value[0].value = teamNumber.toString();
     // Save the form data after setting the team number
-    debouncedSaveFormData();
+    saveFormData();
   }
 };
 
