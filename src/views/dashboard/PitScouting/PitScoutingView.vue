@@ -519,7 +519,7 @@ const currentFormId = computed(() => tabs.value[currentTab.value].formId);
 
 
 // Form versioning control
-const FORM_VERSION = "2026.03_PROD_ED6"; // Update this when you want to force a form reset
+const FORM_VERSION = "2026.03_PROD_ED8"; // Update this when you want to force a form reset
 const FORM_VERSION_KEY = "pit-scouting-form-version";
 
 
@@ -691,7 +691,7 @@ const initializeDefaultFormFields = () => {
     },
 
     {
-      question: "Autonomous capabilities",
+      question: "Which of these can your robot do during AUTO?",
       description: "Select all that apply during AUTO.",
       type: "checkbox",
       options: [
@@ -752,7 +752,7 @@ const initializeDefaultFormFields = () => {
 
     {
       question: "Robot Dimensions (without bumpers)",
-      description: "Enter dimensions in inches.",
+      description: "Enter dimensions in inches. Format: Length x Width x Height (e.g. 30x28x40)",
       type: "text",
       required: true,
       value: null,
