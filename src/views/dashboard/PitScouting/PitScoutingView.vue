@@ -519,7 +519,7 @@ const currentFormId = computed(() => tabs.value[currentTab.value].formId);
 
 
 // Form versioning control
-const FORM_VERSION = "2026.03_PROD_ED5"; // Update this when you want to force a form reset
+const FORM_VERSION = "2026.03_PROD_ED6"; // Update this when you want to force a form reset
 const FORM_VERSION_KEY = "pit-scouting-form-version";
 
 
@@ -651,22 +651,20 @@ const initializeDefaultFormFields = () => {
     },
 
     {
-      question: "How does your robot score FUEL into the HUB?",
+      question: "How does your robot manipulate FUEL?",
       description: "Select the primary method used by your robot.",
-      type: "radio",
+      type: "checkbox",
       options: [
         "Shoots FUEL",
-        "Directly dumps FUEL",
-        "Both shooting and dumping",
+        "Herd FUEL",
         "Does not score FUEL"
       ],
       optionValues: [
         "Shoot",
-        "Dump",
-        "Both",
+        "Herd",
         "None"
       ],
-      value: null,
+      value: [],
       required: true,
       originalIndex: 4
     },
@@ -674,20 +672,20 @@ const initializeDefaultFormFields = () => {
     {
       question: "Preferred scoring range",
       description: "From where does your robot usually score into the HUB?",
-      type: "radio",
+      type: "checkbox",
       options: [
-        "Close range only",
+        "Against HUB (close range)",
         "Mid range",
         "Long range",
-        "Multiple ranges"
+        "Adjustable range"
       ],
       optionValues: [
-        "Close",
+        "Against HUB",
         "Mid",
         "Long",
-        "Multiple"
+        "Adjustable"
       ],
-      value: null,
+      value: [],
       required: true,
       originalIndex: 5
     },
@@ -699,14 +697,12 @@ const initializeDefaultFormFields = () => {
       options: [
         "Leaves ALLIANCE ZONE",
         "Scores FUEL in HUB",
-        "Uses vision (AprilTags)",
         "Climbs TOWER in AUTO",
         "No autonomous scoring"
       ],
       optionValues: [
         "Leaves Zone",
         "Auto Fuel",
-        "Vision",
         "Auto Climb",
         "None"
       ],
@@ -737,35 +733,12 @@ const initializeDefaultFormFields = () => {
     },
 
     {
-      question: "Endgame role preference",
-      description: "Primary intended role during END GAME.",
-      type: "radio",
-      options: [
-        "Primary climber",
-        "Secondary climber",
-        "Fuel scoring",
-        "Defense",
-        "Support only"
-      ],
-      optionValues: [
-        "Primary Climb",
-        "Secondary Climb",
-        "Fuel",
-        "Defense",
-        "Support"
-      ],
-      value: null,
-      required: true,
-      originalIndex: 8
-    },
-
-    {
       question: "Robot Weight (without bumpers)",
       description: "Weight in pounds.",
       type: "number",
       required: true,
       value: null,
-      originalIndex: 9
+      originalIndex: 8
     },
 
     {
@@ -774,7 +747,7 @@ const initializeDefaultFormFields = () => {
       type: "number",
       required: true,
       value: null,
-      originalIndex: 10
+      originalIndex: 9
     },
 
     {
@@ -783,7 +756,7 @@ const initializeDefaultFormFields = () => {
       type: "text",
       required: true,
       value: null,
-      originalIndex: 11
+      originalIndex: 10
     },
 
     {
@@ -792,7 +765,7 @@ const initializeDefaultFormFields = () => {
       type: "number",
       required: true,
       value: null,
-      originalIndex: 12
+      originalIndex: 11
     },
 
     {
@@ -810,7 +783,7 @@ const initializeDefaultFormFields = () => {
       ],
       value: null,
       required: true,
-      originalIndex: 13
+      originalIndex: 12
     },
 
     {
@@ -819,7 +792,7 @@ const initializeDefaultFormFields = () => {
       type: "text",
       required: true,
       value: null,
-      originalIndex: 14
+      originalIndex: 13
     },
 
     {
@@ -827,7 +800,7 @@ const initializeDefaultFormFields = () => {
       type: "textarea",
       required: false,
       value: null,
-      originalIndex: 15
+      originalIndex: 14
     }
   ];
   
