@@ -1132,7 +1132,7 @@ watch(
 );
 
 watch(
-  [fullRobotImages, driveTrainImages],
+  [fullRobotImages, driveTrainImages, intakeImages],
   () => {
     if (currentFormId.value) {
       saveImagesToLocalStorage();
@@ -1491,15 +1491,18 @@ const removeImage = async (type: ImageType, index: number) => {
   try {
     const images = getImageCollection(type).value;
     const imageId = images[index]?.id;
+    const imageUrl = images[index]?.url;
 
-    if (!imageId) {
+    if (!imageId && !imageUrl) {
       return;
     }
+
+    const imageIdentifier = encodeURIComponent(imageId || imageUrl);
     
     // Get the access token
     const token = casdoorService.getToken();
     
-    await axios.delete(`https://api.team695.com/api/images/${imageId}`, {
+    await axios.delete(`https://api.team695.com/api/upload/images/${imageIdentifier}`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }

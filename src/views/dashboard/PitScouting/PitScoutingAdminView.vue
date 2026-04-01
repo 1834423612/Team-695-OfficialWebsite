@@ -1155,6 +1155,7 @@ interface SurveyData {
     upload: {
         fullRobotImages: { url: string; name: string; size: number }[];
         driveTrainImages: { url: string; name: string; size: number }[];
+        intakeImages: { url: string; name: string; size: number }[];
     };
     timestamp: string;
     user_data?: {
@@ -1445,13 +1446,17 @@ const fetchData = async () => {
                     item.upload = JSON.parse(item.upload);
                 } catch (e) {
                     console.warn("Failed to parse item.upload:", e);
-                    item.upload = { fullRobotImages: [], driveTrainImages: [] };
+                    item.upload = { fullRobotImages: [], driveTrainImages: [], intakeImages: [] };
                 }
             }
             // Guard against non-object upload to avoid runtime crashes
             if (!item.upload || typeof item.upload !== 'object' || Array.isArray(item.upload)) {
-                item.upload = { fullRobotImages: [], driveTrainImages: [] };
+                item.upload = { fullRobotImages: [], driveTrainImages: [], intakeImages: [] };
             }
+
+            item.upload.fullRobotImages = Array.isArray(item.upload.fullRobotImages) ? item.upload.fullRobotImages : [];
+            item.upload.driveTrainImages = Array.isArray(item.upload.driveTrainImages) ? item.upload.driveTrainImages : [];
+            item.upload.intakeImages = Array.isArray(item.upload.intakeImages) ? item.upload.intakeImages : [];
 
             // Map user_data to userData for backward compatibility
             if (item.user_data && !item.userData) {
@@ -2223,7 +2228,8 @@ const getChartOptions = (): ChartOptions => {
 const hasImages = (survey: SurveyData): boolean => {
     return (
         (survey.upload?.fullRobotImages && survey.upload.fullRobotImages.length > 0) ||
-        (survey.upload?.driveTrainImages && survey.upload.driveTrainImages.length > 0)
+        (survey.upload?.driveTrainImages && survey.upload.driveTrainImages.length > 0) ||
+        (survey.upload?.intakeImages && survey.upload.intakeImages.length > 0)
     );
 };
 
@@ -2237,6 +2243,10 @@ const openImageModal = (survey: SurveyData) => {
 
     if (survey.upload?.driveTrainImages) {
         modalImages.value.push(...survey.upload.driveTrainImages.map(img => ({ ...img, category: 'Drive Train' })));
+    }
+
+    if (survey.upload?.intakeImages) {
+        modalImages.value.push(...survey.upload.intakeImages.map(img => ({ ...img, category: 'Intake' })));
     }
 
     showImageModal.value = true;
