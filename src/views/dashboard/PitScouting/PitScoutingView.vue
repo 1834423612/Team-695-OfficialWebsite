@@ -57,10 +57,10 @@
                 Reset Form
               </button>
 
-              <!-- Form Version Display (center) -->
+              <!-- Form Schema Display (center) -->
               <div class="text-center">
                 <span class="px-3 py-1 bg-gray-100 rounded-full text-sm font-medium text-gray-700">
-                  Form Version: {{ FORM_VERSION }}
+                  Form Schema: {{ FORM_SCHEMA_LABEL }}
                 </span>
               </div>
 
@@ -537,10 +537,9 @@ const isStorageSyncPaused = ref(false);
 
 const currentFormId = computed(() => tabs.value[currentTab.value]?.formId ?? "");
 
-
-// Form versioning control
-const FORM_VERSION = "2026.04_PROD_ED10"; // Update this when you want to force a form reset
-const FORM_VERSION_KEY = "pit-scouting-form-version";
+const FORM_SCHEMA_SIGNATURE_KEY = "pit-scouting-form-schema-signature";
+const LEGACY_FORM_VERSION_KEY = "pit-scouting-form-version";
+const FORM_SCHEMA_DIGEST_VERSION = 1;
 const STORAGE_KEYS = {
   tabs: "pit-scouting-survey-tabs",
   currentTab: "pit-scouting-current-tab",
@@ -598,12 +597,47 @@ const withStorageSyncPaused = <T>(callback: () => T): T => {
   }
 };
 
+const stableStringify = (value: unknown): string => {
+  if (value === null || value === undefined) {
+    return "null";
+  }
+
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableStringify(item)).join(",")}]`;
+  }
+
+  if (typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .filter(([, entryValue]) => entryValue !== undefined)
+      .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey));
+
+    return `{${entries
+      .map(([key, entryValue]) => `${JSON.stringify(key)}:${stableStringify(entryValue)}`)
+      .join(",")}}`;
+  }
+
+  return JSON.stringify(value);
+};
+
+const createSchemaHash = (value: string): string => {
+  let hash = 2166136261;
+
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+
+  return (hash >>> 0).toString(36).toUpperCase().padStart(7, "0");
+};
+
 const hasPersistedPitScoutingData = (): boolean => {
   return Object.keys(localStorage).some((key) =>
     key.startsWith("formData_") ||
     key.startsWith("fullRobotImages_") ||
     key.startsWith("driveTrainImages_") ||
     key.startsWith("intakeImages_") ||
+    key === FORM_SCHEMA_SIGNATURE_KEY ||
+    key === LEGACY_FORM_VERSION_KEY ||
     key === STORAGE_KEYS.tabs ||
     key === STORAGE_KEYS.currentTab ||
     key === STORAGE_KEYS.legacyTabs ||
@@ -625,6 +659,8 @@ const clearPersistedPitScoutingStorage = () => {
     key.startsWith("fullRobotImages_") ||
     key.startsWith("driveTrainImages_") ||
     key.startsWith("intakeImages_") ||
+    key === FORM_SCHEMA_SIGNATURE_KEY ||
+    key === LEGACY_FORM_VERSION_KEY ||
     key === STORAGE_KEYS.tabs ||
     key === STORAGE_KEYS.currentTab ||
     key === STORAGE_KEYS.legacyTabs ||
@@ -650,6 +686,16 @@ const initializeLatestFormState = (persist = true) => {
   }
 };
 
+const getStoredSchemaSignature = (): string =>
+  localStorage.getItem(FORM_SCHEMA_SIGNATURE_KEY) ??
+  localStorage.getItem(LEGACY_FORM_VERSION_KEY) ??
+  "";
+
+const persistCurrentSchemaSignature = () => {
+  localStorage.setItem(FORM_SCHEMA_SIGNATURE_KEY, FORM_SCHEMA_SIGNATURE);
+  localStorage.removeItem(LEGACY_FORM_VERSION_KEY);
+};
+
 const saveStorageMetadata = () => {
   if (isStorageSyncPaused.value) {
     return;
@@ -657,6 +703,7 @@ const saveStorageMetadata = () => {
 
   localStorage.setItem(STORAGE_KEYS.tabs, JSON.stringify(tabs.value));
   localStorage.setItem(STORAGE_KEYS.currentTab, currentTab.value.toString());
+  persistCurrentSchemaSignature();
 
   // Remove legacy keys after writing the canonical ones.
   localStorage.removeItem(STORAGE_KEYS.legacyTabs);
@@ -684,7 +731,7 @@ const resetForm = () => {
   debouncedSaveFormData.cancel();
   withStorageSyncPaused(() => {
     clearPersistedPitScoutingStorage();
-    localStorage.setItem(FORM_VERSION_KEY, FORM_VERSION);
+    persistCurrentSchemaSignature();
   });
   initializeLatestFormState(true);
 };
@@ -697,10 +744,6 @@ const confirmReset = () => {
 
 // Cancel reset
 const cancelReset = () => {
-  if (resetReason.value === "version-change") {
-    // If it was a version change, we still need to update the version
-    localStorage.setItem(FORM_VERSION_KEY, FORM_VERSION);
-  }
   showResetModal.value = false;
 };
 
@@ -968,7 +1011,26 @@ const ensureFormFieldsExist = () => {
   }
 };
 
-const reconcileStoredFormFields = (storedFields: unknown): FormField[] => {
+type FieldReconciliationMode = "normal" | "schema-change";
+
+const createFieldSchemaSnapshot = (field: Partial<FormField>) => ({
+  originalIndex: typeof field.originalIndex === "number" ? field.originalIndex : null,
+  question: typeof field.question === "string" ? field.question : "",
+  type: typeof field.type === "string" ? field.type : "",
+  required: Boolean(field.required),
+  options: Array.isArray(field.options) ? field.options.map((option) => String(option)) : [],
+  optionValues: Array.isArray(field.optionValues)
+    ? field.optionValues.map((option) => String(option))
+    : [],
+});
+
+const getFieldSchemaFingerprint = (field: Partial<FormField>): string =>
+  stableStringify(createFieldSchemaSnapshot(field));
+
+const reconcileStoredFormFields = (
+  storedFields: unknown,
+  mode: FieldReconciliationMode = "normal"
+): FormField[] => {
   const defaultFields = getDefaultFormFields();
 
   if (!Array.isArray(storedFields) || storedFields.length === 0) {
@@ -993,11 +1055,22 @@ const reconcileStoredFormFields = (storedFields: unknown): FormField[] => {
   });
 
   return defaultFields.map((defaultField) => {
-    const storedField =
-      (typeof defaultField.originalIndex === "number"
+    const candidateByIndex =
+      typeof defaultField.originalIndex === "number"
         ? storedByOriginalIndex.get(defaultField.originalIndex)
-        : undefined) ??
-      storedByQuestion.get(defaultField.question);
+        : undefined;
+    const candidateByQuestion = storedByQuestion.get(defaultField.question);
+    const candidate = candidateByIndex ?? candidateByQuestion;
+
+    const storedField =
+      candidate &&
+      (
+        mode === "schema-change"
+          ? getFieldSchemaFingerprint(candidate) === getFieldSchemaFingerprint(defaultField)
+          : candidate.type === defaultField.type
+      )
+        ? candidate
+        : undefined;
 
     if (!storedField) {
       return {
@@ -1066,6 +1139,21 @@ const imageSections: ImageSectionConfig[] = [
     required: true,
   },
 ];
+
+const createFormSchemaDescriptor = () => ({
+  digestVersion: FORM_SCHEMA_DIGEST_VERSION,
+  fields: getDefaultFormFields().map((field) => createFieldSchemaSnapshot(field)),
+  images: imageSections.map((section) => ({
+    type: section.type,
+    required: section.required,
+  })),
+});
+
+const FORM_SCHEMA_DESCRIPTOR = createFormSchemaDescriptor();
+const FORM_SCHEMA_SIGNATURE = createSchemaHash(
+  stableStringify(FORM_SCHEMA_DESCRIPTOR)
+);
+const FORM_SCHEMA_LABEL = `SC-${FORM_SCHEMA_SIGNATURE}`;
 
 const getImageCollection = (type: ImageType): typeof fullRobotImages => {
   switch (type) {
@@ -1198,14 +1286,17 @@ const loadEventId = async () => {
   }
 };
 
-const normalizeStoredTabs = (storedTabs: unknown): Tab[] => {
+const normalizeStoredTabs = (
+  storedTabs: unknown,
+  mode: FieldReconciliationMode = "normal"
+): Tab[] => {
   if (!Array.isArray(storedTabs)) {
     return [];
   }
 
   return storedTabs.map((tab, index) => {
     const storedTab = (tab ?? {}) as Partial<Tab>;
-    const storedFormData = reconcileStoredFormFields(storedTab.formData);
+    const storedFormData = reconcileStoredFormFields(storedTab.formData, mode);
 
     return {
       name: typeof storedTab.name === "string" && storedTab.name.trim()
@@ -1315,7 +1406,7 @@ const removeTab = (index: number) => {
   saveToLocalStorage();
 };
 
-const loadTabState = (index: number) => {
+const loadTabState = (index: number, mode: FieldReconciliationMode = "normal") => {
   const targetTab = tabs.value[index];
 
   if (!targetTab) {
@@ -1339,7 +1430,7 @@ const loadTabState = (index: number) => {
         ? targetTab.formData
         : undefined;
 
-  const nextFields = reconcileStoredFormFields(sourceFields);
+  const nextFields = reconcileStoredFormFields(sourceFields, mode);
 
   withStorageSyncPaused(() => {
     tabs.value[index].formData = cloneFormFields(nextFields);
@@ -1804,11 +1895,12 @@ const saveToLocalStorage = () => {
   saveStorageMetadata();
 };
 
-const loadFromLocalStorage = () => {
+const loadFromLocalStorage = (mode: FieldReconciliationMode = "normal") => {
   migrateLegacyTabStorage();
 
   const normalizedTabs = normalizeStoredTabs(
-    safeParseJson<unknown>(localStorage.getItem(STORAGE_KEYS.tabs))
+    safeParseJson<unknown>(localStorage.getItem(STORAGE_KEYS.tabs)),
+    mode
   );
 
   if (normalizedTabs.length === 0) {
@@ -1832,8 +1924,8 @@ const loadFromLocalStorage = () => {
       ? savedCurrentTab
       : 0;
 
-  loadTabState(currentTab.value);
-  localStorage.setItem(FORM_VERSION_KEY, FORM_VERSION);
+  loadTabState(currentTab.value, mode);
+  persistCurrentSchemaSignature();
 };
 
 const isAllowedImageType = (file: File): boolean => {
@@ -2122,21 +2214,26 @@ onMounted(async () => {
   userStore.initializeStore();
   await loadEventId();
 
-  const storedVersion = localStorage.getItem(FORM_VERSION_KEY);
   const hasStoredData = hasPersistedPitScoutingData();
-  const hasVersionMismatch = Boolean(storedVersion && storedVersion !== FORM_VERSION && hasStoredData);
+  const storedSchemaSignature = getStoredSchemaSignature();
+  const hasSchemaMismatch = Boolean(
+    storedSchemaSignature && storedSchemaSignature !== FORM_SCHEMA_SIGNATURE && hasStoredData
+  );
 
-  if (hasVersionMismatch) {
-    resetReason.value = "version-change";
-    showResetModal.value = true;
-    initializeLatestFormState(false);
-  } else {
-    // Load data from localStorage
-    loadFromLocalStorage();
-    
-    // Ensure form fields exist after loading
-    ensureFormFieldsExist();
-    localStorage.setItem(FORM_VERSION_KEY, FORM_VERSION);
+  loadFromLocalStorage(hasSchemaMismatch ? "schema-change" : "normal");
+  ensureFormFieldsExist();
+
+  if (hasSchemaMismatch) {
+    Swal.fire({
+      title: "Form Schema Updated",
+      text: "Your saved pit scouting draft was refreshed to match the latest form structure. Answers for changed questions were cleared automatically.",
+      icon: "info",
+      toast: true,
+      position: "top-end",
+      showConfirmButton: false,
+      timer: 3200,
+      timerProgressBar: true,
+    });
   }
   
   // Load user assignments
