@@ -24,9 +24,8 @@
     "noFallthroughCasesInSwitch": true,
 
     /* Type checking */
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     },
     "types": ["vite/client", "@types/node", "pinia-plugin-persistedstate"],
   },
