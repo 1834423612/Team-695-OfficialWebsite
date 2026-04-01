@@ -538,7 +538,7 @@ const currentFormId = computed(() => tabs.value[currentTab.value]?.formId ?? "")
 
 
 // Form versioning control
-const FORM_VERSION = "2026.04_PROD_ED9"; // Update this when you want to force a form reset
+const FORM_VERSION = "2026.04_PROD_ED10"; // Update this when you want to force a form reset
 const FORM_VERSION_KEY = "pit-scouting-form-version";
 const STORAGE_KEYS = {
   tabs: "pit-scouting-survey-tabs",
@@ -730,19 +730,23 @@ const getDefaultFormFields = (): FormField[] => {
     },
 
     {
-      question: "Is your intake always deployed during the match?",
-      description: "Ask whether the intake stays deployed for the whole match or only when needed.",
+      question: "When is the intake typically deployed during a match?",
+      description: "Ask when the intake is usually deployed in Autonomous or Teleop.",
       type: "radio",
       options: [
-        "Yes",
-        "No",
-        "Only when needed",
+        "Always deployed",
+        "Autonomous only",
+        "Teleop only",
+        "Only while intaking",
+        "Rarely / only situationally",
         "No intake"
       ],
       optionValues: [
-        "Yes",
-        "No",
-        "Only when needed",
+        "Always deployed",
+        "Autonomous only",
+        "Teleop only",
+        "Only while intaking",
+        "Rarely / only situationally",
         "No intake"
       ],
       value: null,
