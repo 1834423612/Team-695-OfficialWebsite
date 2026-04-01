@@ -533,6 +533,7 @@ const tabs = ref<Tab[]>([{ name: "Tab 1", formData: [], formId: uuidv4() }]);
 const formFields = ref<FormField[]>([]);
 const currentTab = ref(0);
 const eventId = ref("");
+const isStorageSyncPaused = ref(false);
 
 const currentFormId = computed(() => tabs.value[currentTab.value]?.formId ?? "");
 
@@ -586,7 +587,74 @@ const createClearedFormFields = (fields?: FormField[]): FormField[] => {
   }));
 };
 
+const withStorageSyncPaused = <T>(callback: () => T): T => {
+  const previousValue = isStorageSyncPaused.value;
+  isStorageSyncPaused.value = true;
+
+  try {
+    return callback();
+  } finally {
+    isStorageSyncPaused.value = previousValue;
+  }
+};
+
+const hasPersistedPitScoutingData = (): boolean => {
+  return Object.keys(localStorage).some((key) =>
+    key.startsWith("formData_") ||
+    key.startsWith("fullRobotImages_") ||
+    key.startsWith("driveTrainImages_") ||
+    key.startsWith("intakeImages_") ||
+    key === STORAGE_KEYS.tabs ||
+    key === STORAGE_KEYS.currentTab ||
+    key === STORAGE_KEYS.legacyTabs ||
+    key === STORAGE_KEYS.legacyCurrentTab
+  );
+};
+
+const createDefaultTab = (name = "Tab 1"): Tab => ({
+  name,
+  formData: getDefaultFormFields(),
+  formId: uuidv4(),
+});
+
+const clearPersistedPitScoutingStorage = () => {
+  migrateLegacyTabStorage();
+
+  const formKeys = Object.keys(localStorage).filter((key) =>
+    key.startsWith("formData_") ||
+    key.startsWith("fullRobotImages_") ||
+    key.startsWith("driveTrainImages_") ||
+    key.startsWith("intakeImages_") ||
+    key === STORAGE_KEYS.tabs ||
+    key === STORAGE_KEYS.currentTab ||
+    key === STORAGE_KEYS.legacyTabs ||
+    key === STORAGE_KEYS.legacyCurrentTab
+  );
+
+  formKeys.forEach((key) => localStorage.removeItem(key));
+};
+
+const initializeLatestFormState = (persist = true) => {
+  withStorageSyncPaused(() => {
+    const defaultTab = createDefaultTab();
+    tabs.value = [defaultTab];
+    currentTab.value = 0;
+    formFields.value = cloneFormFields(defaultTab.formData);
+    fullRobotImages.value = [];
+    driveTrainImages.value = [];
+    intakeImages.value = [];
+  });
+
+  if (persist) {
+    saveToLocalStorage();
+  }
+};
+
 const saveStorageMetadata = () => {
+  if (isStorageSyncPaused.value) {
+    return;
+  }
+
   localStorage.setItem(STORAGE_KEYS.tabs, JSON.stringify(tabs.value));
   localStorage.setItem(STORAGE_KEYS.currentTab, currentTab.value.toString());
 
@@ -613,37 +681,18 @@ const migrateLegacyTabStorage = () => {
 
 // Function to reset the form
 const resetForm = () => {
-  migrateLegacyTabStorage();
-
-  // Get all localStorage keys
-  const keys = Object.keys(localStorage);
-  
-  // Filter keys related to the form
-  const formKeys = keys.filter(key => 
-    key.startsWith('formData_') || 
-    key.startsWith('fullRobotImages_') || 
-    key.startsWith('driveTrainImages_') || 
-    key.startsWith('intakeImages_') || 
-    key === STORAGE_KEYS.tabs ||
-    key === STORAGE_KEYS.currentTab ||
-    key === STORAGE_KEYS.legacyTabs ||
-    key === STORAGE_KEYS.legacyCurrentTab
-  );
-  
-  // Remove all form-related items
-  formKeys.forEach(key => localStorage.removeItem(key));
-  
-  // Update the stored version
-  localStorage.setItem(FORM_VERSION_KEY, FORM_VERSION);
-  
-  // Refresh the page
-  window.location.reload();
+  debouncedSaveFormData.cancel();
+  withStorageSyncPaused(() => {
+    clearPersistedPitScoutingStorage();
+    localStorage.setItem(FORM_VERSION_KEY, FORM_VERSION);
+  });
+  initializeLatestFormState(true);
 };
 
 // Handle user confirmation
 const confirmReset = () => {
-  resetForm();
   showResetModal.value = false;
+  resetForm();
 };
 
 // Cancel reset
@@ -911,33 +960,80 @@ const getDefaultFormFields = (): FormField[] => {
   return cloneFormFields(defaultFields);
 };
 
-const initializeDefaultFormFields = () => {
-  const defaultFields = getDefaultFormFields();
-
-  // Set formFields to the default fields
-  formFields.value = cloneFormFields(defaultFields);
-  
-  // Create a new tab with these default fields
-  tabs.value = [
-    {
-      name: "Tab 1",
-      formData: cloneFormFields(defaultFields),
-      formId: uuidv4(),
-    },
-  ];
-  
-  currentTab.value = 0;
-  
-  // Save to localStorage to ensure persistence
-  saveToLocalStorage();
-};
-
 // Ensure form fields are always available
 const ensureFormFieldsExist = () => {
   if (!formFields.value || formFields.value.length === 0) {
     // If formFields is empty, reinitialize with default values
-    initializeDefaultFormFields();
+    initializeLatestFormState(true);
   }
+};
+
+const reconcileStoredFormFields = (storedFields: unknown): FormField[] => {
+  const defaultFields = getDefaultFormFields();
+
+  if (!Array.isArray(storedFields) || storedFields.length === 0) {
+    return createClearedFormFields(defaultFields);
+  }
+
+  const storedByOriginalIndex = new Map<number, FormField>();
+  const storedByQuestion = new Map<string, FormField>();
+
+  storedFields.forEach((field) => {
+    if (!field || typeof field !== "object") {
+      return;
+    }
+
+    const storedField = field as FormField;
+    if (typeof storedField.originalIndex === "number") {
+      storedByOriginalIndex.set(storedField.originalIndex, storedField);
+    }
+    if (typeof storedField.question === "string" && storedField.question.trim()) {
+      storedByQuestion.set(storedField.question, storedField);
+    }
+  });
+
+  return defaultFields.map((defaultField) => {
+    const storedField =
+      (typeof defaultField.originalIndex === "number"
+        ? storedByOriginalIndex.get(defaultField.originalIndex)
+        : undefined) ??
+      storedByQuestion.get(defaultField.question);
+
+    if (!storedField) {
+      return {
+        ...defaultField,
+        value: defaultField.type === "checkbox" ? [] : null,
+        otherValue: "",
+        error: undefined,
+      };
+    }
+
+    const mergedField: FormField = {
+      ...defaultField,
+      otherValue: typeof storedField.otherValue === "string" ? storedField.otherValue : "",
+      error: undefined,
+    };
+
+    if (defaultField.type === "checkbox") {
+      const nextValues = Array.isArray(storedField.value)
+        ? storedField.value.filter((value): value is string => typeof value === "string")
+        : [];
+      mergedField.value = orderSelectedCheckboxValues(defaultField, nextValues);
+      return mergedField;
+    }
+
+    if (defaultField.type === "radio") {
+      const allowedValues = defaultField.options?.map(getOptionValue) ?? [];
+      mergedField.value =
+        typeof storedField.value === "string" && allowedValues.includes(storedField.value)
+          ? storedField.value
+          : null;
+      return mergedField;
+    }
+
+    mergedField.value = storedField.value ?? null;
+    return mergedField;
+  });
 };
 
 const fullRobotImages = ref<ImageData[]>([]);
@@ -1109,9 +1205,7 @@ const normalizeStoredTabs = (storedTabs: unknown): Tab[] => {
 
   return storedTabs.map((tab, index) => {
     const storedTab = (tab ?? {}) as Partial<Tab>;
-    const storedFormData = Array.isArray(storedTab.formData) && storedTab.formData.length > 0
-      ? cloneFormFields(storedTab.formData)
-      : createClearedFormFields();
+    const storedFormData = reconcileStoredFormFields(storedTab.formData);
 
     return {
       name: typeof storedTab.name === "string" && storedTab.name.trim()
@@ -1225,10 +1319,12 @@ const loadTabState = (index: number) => {
   const targetTab = tabs.value[index];
 
   if (!targetTab) {
-    formFields.value = createClearedFormFields();
-    fullRobotImages.value = [];
-    driveTrainImages.value = [];
-    intakeImages.value = [];
+    withStorageSyncPaused(() => {
+      formFields.value = createClearedFormFields();
+      fullRobotImages.value = [];
+      driveTrainImages.value = [];
+      intakeImages.value = [];
+    });
     return;
   }
 
@@ -1236,17 +1332,22 @@ const loadTabState = (index: number) => {
     localStorage.getItem(getFormDataStorageKey(targetTab.formId))
   );
 
-  const nextFields =
+  const sourceFields =
     savedFormData && savedFormData.length > 0
-      ? cloneFormFields(savedFormData)
+      ? savedFormData
       : targetTab.formData?.length > 0
-        ? cloneFormFields(targetTab.formData)
-        : createClearedFormFields();
+        ? targetTab.formData
+        : undefined;
 
-  tabs.value[index].formData = cloneFormFields(nextFields);
-  formFields.value = cloneFormFields(nextFields);
-  loadImagesFromLocalStorage(targetTab.formId);
-  saveStorageMetadata();
+  const nextFields = reconcileStoredFormFields(sourceFields);
+
+  withStorageSyncPaused(() => {
+    tabs.value[index].formData = cloneFormFields(nextFields);
+    formFields.value = cloneFormFields(nextFields);
+    loadImagesFromLocalStorage(targetTab.formId);
+  });
+
+  saveToLocalStorage();
 };
 
 const switchTab = (index: number) => {
@@ -1265,13 +1366,16 @@ const switchTab = (index: number) => {
 };
 
 const clearCurrentTab = () => {
+  debouncedSaveFormData.cancel();
   const clearedFields = createClearedFormFields();
 
-  tabs.value[currentTab.value].formData = cloneFormFields(clearedFields);
-  formFields.value = cloneFormFields(clearedFields);
-  fullRobotImages.value = [];
-  driveTrainImages.value = [];
-  intakeImages.value = [];
+  withStorageSyncPaused(() => {
+    tabs.value[currentTab.value].formData = cloneFormFields(clearedFields);
+    formFields.value = cloneFormFields(clearedFields);
+    fullRobotImages.value = [];
+    driveTrainImages.value = [];
+    intakeImages.value = [];
+  });
   saveToLocalStorage();
 };
 
@@ -1607,7 +1711,7 @@ const prepareFieldForSubmission = (field: FormField): FormField => {
 };
 
 const saveFormData = () => {
-  if (!tabs.value[currentTab.value] || !currentFormId.value) {
+  if (isStorageSyncPaused.value || !tabs.value[currentTab.value] || !currentFormId.value) {
     return;
   }
 
@@ -1626,20 +1730,43 @@ const saveFormData = () => {
 
 function debounce<T extends (...args: any[]) => void>(func: T, delay: number) {
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let latestArgs: Parameters<T> | undefined;
 
-  return (...args: any[]) => {
+  const debounced = (...args: Parameters<T>) => {
+    latestArgs = args;
     if (timer) {
       clearTimeout(timer);
     }
 
     timer = setTimeout(() => func(...args), delay);
   };
+
+  debounced.cancel = () => {
+    if (timer) {
+      clearTimeout(timer);
+      timer = undefined;
+    }
+    latestArgs = undefined;
+  };
+
+  debounced.flush = () => {
+    if (timer) {
+      clearTimeout(timer);
+      timer = undefined;
+    }
+    if (latestArgs) {
+      func(...latestArgs);
+      latestArgs = undefined;
+    }
+  };
+
+  return debounced as typeof debounced & { cancel: () => void; flush: () => void };
 }
 
 const debouncedSaveFormData = debounce(saveFormData, 300);
 
 const saveImagesToLocalStorage = (formId = currentFormId.value) => {
-  if (!formId) {
+  if (isStorageSyncPaused.value || !formId) {
     return;
   }
 
@@ -1669,6 +1796,9 @@ const loadImagesFromLocalStorage = (formId = currentFormId.value) => {
 };
 
 const saveToLocalStorage = () => {
+  if (isStorageSyncPaused.value) {
+    return;
+  }
   saveFormData();
   saveImagesToLocalStorage();
   saveStorageMetadata();
@@ -1682,11 +1812,13 @@ const loadFromLocalStorage = () => {
   );
 
   if (normalizedTabs.length === 0) {
-    initializeDefaultFormFields();
+    initializeLatestFormState(true);
     return;
   }
 
-  tabs.value = normalizedTabs;
+  withStorageSyncPaused(() => {
+    tabs.value = normalizedTabs;
+  });
 
   const savedCurrentTab = Number.parseInt(
     localStorage.getItem(STORAGE_KEYS.currentTab) ?? "0",
@@ -1701,6 +1833,7 @@ const loadFromLocalStorage = () => {
       : 0;
 
   loadTabState(currentTab.value);
+  localStorage.setItem(FORM_VERSION_KEY, FORM_VERSION);
 };
 
 const isAllowedImageType = (file: File): boolean => {
@@ -1975,7 +2108,10 @@ const submitForm = async () => {
 };
 
 const handleBeforeUnload = () => {
-  saveToLocalStorage();
+  if (!isStorageSyncPaused.value) {
+    debouncedSaveFormData.flush();
+    saveToLocalStorage();
+  }
 };
 
 // Added to ensure the store is initialized and data is loaded correctly
@@ -1986,28 +2122,35 @@ onMounted(async () => {
   userStore.initializeStore();
   await loadEventId();
 
-  // Load data from localStorage
-  loadFromLocalStorage();
-  
-  // Ensure form fields exist after loading
-  ensureFormFieldsExist();
+  const storedVersion = localStorage.getItem(FORM_VERSION_KEY);
+  const hasStoredData = hasPersistedPitScoutingData();
+  const hasVersionMismatch = Boolean(storedVersion && storedVersion !== FORM_VERSION && hasStoredData);
 
+  if (hasVersionMismatch) {
+    resetReason.value = "version-change";
+    showResetModal.value = true;
+    initializeLatestFormState(false);
+  } else {
+    // Load data from localStorage
+    loadFromLocalStorage();
+    
+    // Ensure form fields exist after loading
+    ensureFormFieldsExist();
+    localStorage.setItem(FORM_VERSION_KEY, FORM_VERSION);
+  }
+  
   // Load user assignments
   if (eventId.value) {
     await loadUserAssignments();
-  }
-  
-  // Check if form version has changed
-  const storedVersion = localStorage.getItem(FORM_VERSION_KEY);
-  if (storedVersion !== FORM_VERSION) {
-    resetReason.value = "version-change";
-    showResetModal.value = true;
   }
 });
 
 onBeforeUnmount(() => {
   teamSearchController?.abort();
-  saveToLocalStorage();
+  if (!isStorageSyncPaused.value) {
+    debouncedSaveFormData.flush();
+    saveToLocalStorage();
+  }
   window.removeEventListener("beforeunload", handleBeforeUnload);
 });
 
