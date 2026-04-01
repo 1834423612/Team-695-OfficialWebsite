@@ -826,19 +826,13 @@ const getDefaultFormFields = (): FormField[] => {
       description: "Ask when the intake is usually deployed in Autonomous or Teleop.",
       type: "radio",
       options: [
-        "Always deployed",
-        "Autonomous only",
-        "Teleop only",
         "Only while intaking",
-        "Rarely / only situationally",
+        "Always down",
         "No intake"
       ],
       optionValues: [
-        "Always deployed",
-        "Autonomous only",
-        "Teleop only",
         "Only while intaking",
-        "Rarely / only situationally",
+        "Always down",
         "No intake"
       ],
       value: null,
@@ -1136,7 +1130,7 @@ const imageSections: ImageSectionConfig[] = [
     type: "intake",
     title: "Intake Images",
     description: "Please take at least one clear picture of the intake.",
-    required: true,
+    required: false,
   },
 ];
 
