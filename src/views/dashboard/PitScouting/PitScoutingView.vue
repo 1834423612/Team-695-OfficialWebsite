@@ -232,6 +232,9 @@
                   <Icon icon="mingcute:alert-fill" class="h-5 w-5 text-red-500" aria-hidden="true" />
                 </div>
               </div>
+              <p v-if="field.type === 'autocomplete'" class="mt-2 text-xs text-gray-500">
+                {{ teamSearchStatusMessage }}
+              </p>
 
               <!-- Input fields -->
               <div v-if="field.type === 'text' || field.type === 'number'" class="relative rounded-md shadow-sm">
@@ -309,17 +312,21 @@
 
             <!-- Image upload sections -->
             <div class="space-y-6">
-              <div v-for="(imageType, typeIndex) in ['fullRobot', 'driveTrain']" :key="typeIndex"
+              <div v-for="section in imageSections" :key="section.type"
                 class="bg-gray-50 p-6 rounded-lg shadow-sm">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">
-                  {{ imageType === 'fullRobot' ? 'Full Robots Images' : 'Drive Train Images' }}
+                  {{ section.title }}
                 </h2>
-                <div @dragover.prevent @drop.prevent="handleDrop(imageType as 'fullRobot' | 'driveTrain', $event)"
+                <p class="mb-4 text-sm text-gray-500">
+                  {{ section.description }}
+                  <span v-if="section.required" class="font-medium text-red-500">Required</span>
+                </p>
+                <div @dragover.prevent @drop.prevent="handleDrop(section.type, $event)"
                   class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-indigo-500 transition-colors duration-300"
-                  @click="imageRefs[imageType + 'Input']?.click()">
+                  @click="imageRefs[section.type + 'Input']?.click()">
                   <input type="file" accept="image/*"
-                    @change="handleFileSelect(imageType as 'fullRobot' | 'driveTrain', $event)" class="hidden"
-                    :ref="el => { if (el) imageRefs[imageType + 'Input'] = el as HTMLInputElement }" multiple />
+                    @change="handleFileSelect(section.type, $event)" class="hidden"
+                    :ref="el => { if (el) imageRefs[section.type + 'Input'] = el as HTMLInputElement }" multiple />
                   <Icon icon="fa6-solid:image" class="mx-auto h-12 w-12 text-gray-400" aria-hidden="true" />
                   <div class="mt-4 flex flex-col text-sm leading-6 text-gray-600 justify-center">
                     <span
@@ -331,14 +338,14 @@
                   <p class="text-xs leading-5 text-gray-400 md:text-gray-600">PNG, JPG, JPEG, HEIC, GIF up to 50MB each
                   </p>
                 </div>
-                <div v-if="(imageType === 'fullRobot' ? fullRobotImages : driveTrainImages).length > 0"
+                <div v-if="getImagesForType(section.type).length > 0"
                   class="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  <div v-for="(image, index) in (imageType === 'fullRobot' ? fullRobotImages : driveTrainImages)"
+                  <div v-for="(image, index) in getImagesForType(section.type)"
                     :key="index" class="relative bg-white p-2 rounded-lg shadow">
                     <img :src="image.url" :alt="image.name" class="w-full h-32 object-cover rounded-lg" />
                     <div class="mt-2 text-xs text-gray-600 truncate">{{ image.name }}</div>
                     <div class="text-xs text-gray-500">{{ formatFileSize(image.size) }}</div>
-                    <button @click.stop="confirmRemoveImage(imageType as 'fullRobot' | 'driveTrain', index)"
+                    <button type="button" @click.stop="confirmRemoveImage(section.type, index)"
                       class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 focus:outline-none">
                       <Icon icon="mdi:close" />
                     </button>
@@ -348,10 +355,13 @@
             </div>
 
             <div class="mt-8">
-              <button type="submit"
-                class="w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+              <button type="submit" :disabled="isSubmitLocked"
+                :class="[
+                  'w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200',
+                  isSubmitLocked ? 'bg-indigo-300 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'
+                ]">
                 <Icon icon="mdi:send" class="mr-2 w-4 h-4" />
-                Submit Form
+                {{ submitButtonLabel }}
               </button>
             </div>
           </form>
@@ -415,6 +425,15 @@ interface ImageData {
   url: string;
   name: string;
   size: number;
+}
+
+type ImageType = "fullRobot" | "driveTrain" | "intake";
+
+interface ImageSectionConfig {
+  type: ImageType;
+  title: string;
+  description: string;
+  required: boolean;
 }
 
 interface Team {
@@ -519,7 +538,7 @@ const currentFormId = computed(() => tabs.value[currentTab.value]?.formId ?? "")
 
 
 // Form versioning control
-const FORM_VERSION = "2026.03_PROD_ED8"; // Update this when you want to force a form reset
+const FORM_VERSION = "2026.04_PROD_ED9"; // Update this when you want to force a form reset
 const FORM_VERSION_KEY = "pit-scouting-form-version";
 const STORAGE_KEYS = {
   tabs: "pit-scouting-survey-tabs",
@@ -533,8 +552,12 @@ const showResetModal = ref(false);
 const resetReason = ref("manual"); // "manual" or "version-change"
 
 const getFormDataStorageKey = (formId: string) => `formData_${formId}`;
-const getFullRobotImagesStorageKey = (formId: string) => `fullRobotImages_${formId}`;
-const getDriveTrainImagesStorageKey = (formId: string) => `driveTrainImages_${formId}`;
+const IMAGE_STORAGE_PREFIX: Record<ImageType, string> = {
+  fullRobot: "fullRobotImages",
+  driveTrain: "driveTrainImages",
+  intake: "intakeImages",
+};
+const getImageStorageKey = (type: ImageType, formId: string) => `${IMAGE_STORAGE_PREFIX[type]}_${formId}`;
 
 const cloneFormFields = (fields: FormField[]): FormField[] =>
   JSON.parse(JSON.stringify(fields));
@@ -597,9 +620,10 @@ const resetForm = () => {
   
   // Filter keys related to the form
   const formKeys = keys.filter(key => 
-    key.startsWith('driveTrainImages_') || 
     key.startsWith('formData_') || 
     key.startsWith('fullRobotImages_') || 
+    key.startsWith('driveTrainImages_') || 
+    key.startsWith('intakeImages_') || 
     key === STORAGE_KEYS.tabs ||
     key === STORAGE_KEYS.currentTab ||
     key === STORAGE_KEYS.legacyTabs ||
@@ -706,6 +730,27 @@ const getDefaultFormFields = (): FormField[] => {
     },
 
     {
+      question: "Is your intake always deployed during the match?",
+      description: "Ask whether the intake stays deployed for the whole match or only when needed.",
+      type: "radio",
+      options: [
+        "Yes",
+        "No",
+        "Only when needed",
+        "No intake"
+      ],
+      optionValues: [
+        "Yes",
+        "No",
+        "Only when needed",
+        "No intake"
+      ],
+      value: null,
+      required: true,
+      originalIndex: 4
+    },
+
+    {
       question: "How does your robot manipulate FUEL?",
       description: "Select the primary method used by your robot.",
       type: "checkbox",
@@ -721,7 +766,7 @@ const getDefaultFormFields = (): FormField[] => {
       ],
       value: [],
       required: true,
-      originalIndex: 4
+      originalIndex: 5
     },
 
     {
@@ -742,7 +787,7 @@ const getDefaultFormFields = (): FormField[] => {
       ],
       value: [],
       required: true,
-      originalIndex: 5
+      originalIndex: 6
     },
 
     {
@@ -763,7 +808,7 @@ const getDefaultFormFields = (): FormField[] => {
       ],
       value: [],
       required: true,
-      originalIndex: 6
+      originalIndex: 7
     },
 
     {
@@ -784,7 +829,7 @@ const getDefaultFormFields = (): FormField[] => {
       ],
       value: [],
       required: true,
-      originalIndex: 7
+      originalIndex: 8
     },
 
     {
@@ -793,7 +838,7 @@ const getDefaultFormFields = (): FormField[] => {
       type: "number",
       required: true,
       value: null,
-      originalIndex: 8
+      originalIndex: 9
     },
 
     {
@@ -802,7 +847,7 @@ const getDefaultFormFields = (): FormField[] => {
       type: "number",
       required: true,
       value: null,
-      originalIndex: 9
+      originalIndex: 10
     },
 
     {
@@ -811,7 +856,7 @@ const getDefaultFormFields = (): FormField[] => {
       type: "text",
       required: true,
       value: null,
-      originalIndex: 10
+      originalIndex: 11
     },
 
     {
@@ -820,7 +865,7 @@ const getDefaultFormFields = (): FormField[] => {
       type: "number",
       required: true,
       value: null,
-      originalIndex: 11
+      originalIndex: 12
     },
 
     {
@@ -838,7 +883,7 @@ const getDefaultFormFields = (): FormField[] => {
       ],
       value: null,
       required: true,
-      originalIndex: 12
+      originalIndex: 13
     },
 
     {
@@ -847,7 +892,7 @@ const getDefaultFormFields = (): FormField[] => {
       type: "text",
       required: true,
       value: null,
-      originalIndex: 13
+      originalIndex: 14
     },
 
     {
@@ -855,7 +900,7 @@ const getDefaultFormFields = (): FormField[] => {
       type: "textarea",
       required: false,
       value: null,
-      originalIndex: 14
+      originalIndex: 15
     }
   ];
   
@@ -893,9 +938,71 @@ const ensureFormFieldsExist = () => {
 
 const fullRobotImages = ref<ImageData[]>([]);
 const driveTrainImages = ref<ImageData[]>([]);
+const intakeImages = ref<ImageData[]>([]);
 const imageRefs = ref<{ [key: string]: HTMLInputElement | null }>({});
 const teamSuggestions = ref<Team[]>([]);
 const showTeamSuggestions = ref(false);
+const isTeamSearchLoading = ref(false);
+const teamSearchError = ref("");
+const pendingImageUploads = ref(0);
+
+const imageSections: ImageSectionConfig[] = [
+  {
+    type: "fullRobot",
+    title: "Full Robot Images",
+    description: "Capture the full robot from one or more angles.",
+    required: false,
+  },
+  {
+    type: "driveTrain",
+    title: "Drive Train Images",
+    description: "Add close-up photos of the drivetrain if they are available.",
+    required: false,
+  },
+  {
+    type: "intake",
+    title: "Intake Images",
+    description: "Please take at least one clear picture of the intake.",
+    required: true,
+  },
+];
+
+const getImageCollection = (type: ImageType): typeof fullRobotImages => {
+  switch (type) {
+    case "fullRobot":
+      return fullRobotImages;
+    case "driveTrain":
+      return driveTrainImages;
+    case "intake":
+      return intakeImages;
+  }
+
+  return intakeImages;
+};
+
+const getImagesForType = (type: ImageType): ImageData[] => getImageCollection(type).value;
+
+const submitButtonLabel = computed(() => {
+  if (pendingImageUploads.value > 0) {
+    return `Uploading ${pendingImageUploads.value} image${pendingImageUploads.value > 1 ? "s" : ""}...`;
+  }
+
+  return isSubmitting.value ? "Submitting..." : "Submit Form";
+});
+
+const isSubmitLocked = computed(() => isSubmitting.value || pendingImageUploads.value > 0);
+
+const teamSearchStatusMessage = computed(() => {
+  if (teamSearchError.value) {
+    return teamSearchError.value;
+  }
+
+  if (isTeamSearchLoading.value) {
+    return "Searching teams...";
+  }
+
+  return "Type at least 2 characters to search by team number or name.";
+});
 
 // Function to extract clean option value without descriptions
 const getOptionValue = (option: string): string => {
@@ -908,13 +1015,18 @@ const getOptionValue = (option: string): string => {
   return option;
 };
 
-const handleTeamNumberInput = async (event: Event) => {
+const handleTeamNumberInput = (event: Event) => {
   const input = (event.target as HTMLInputElement).value;
-  if (input.length >= 2) { // Only search when at least 2 characters are entered
-    await loadTeams(input);
-  } else {
+
+  if (input.trim().length < 2) {
+    teamSearchController?.abort();
     teamSuggestions.value = [];
+    teamSearchError.value = "";
+    isTeamSearchLoading.value = false;
+  } else {
+    debouncedLoadTeams(input);
   }
+
   showTeamSuggestions.value = true;
 };
 
@@ -974,6 +1086,11 @@ const loadEventId = async () => {
         'Authorization': token ? `Bearer ${token}` : ''
       }
     });
+
+    if (!response.ok) {
+      throw new Error(`Failed to load event ID: ${response.statusText}`);
+    }
+
     const data = await response.json();
     eventId.value = data.eventId;
   } catch (error) {
@@ -1091,8 +1208,9 @@ const removeTab = (index: number) => {
   // Remove localStorage data for the deleted tab
   if (removedTab?.formId) {
     localStorage.removeItem(getFormDataStorageKey(removedTab.formId));
-    localStorage.removeItem(getFullRobotImagesStorageKey(removedTab.formId));
-    localStorage.removeItem(getDriveTrainImagesStorageKey(removedTab.formId));
+    (Object.keys(IMAGE_STORAGE_PREFIX) as ImageType[]).forEach((type) => {
+      localStorage.removeItem(getImageStorageKey(type, removedTab.formId));
+    });
   }
 
   loadTabState(currentTab.value);
@@ -1106,6 +1224,7 @@ const loadTabState = (index: number) => {
     formFields.value = createClearedFormFields();
     fullRobotImages.value = [];
     driveTrainImages.value = [];
+    intakeImages.value = [];
     return;
   }
 
@@ -1148,6 +1267,7 @@ const clearCurrentTab = () => {
   formFields.value = cloneFormFields(clearedFields);
   fullRobotImages.value = [];
   driveTrainImages.value = [];
+  intakeImages.value = [];
   saveToLocalStorage();
 };
 
@@ -1183,28 +1303,72 @@ const confirmClearCurrentTab = () => {
 };
 
 const selectTeam = (team: Team) => {
+  teamSearchController?.abort();
+  isTeamSearchLoading.value = false;
   formFields.value[0].value = team.team_number;
   showTeamSuggestions.value = false;
+  teamSearchError.value = "";
   saveFormData();
 };
 
+let teamSearchController: AbortController | null = null;
+let latestTeamSearchRequestId = 0;
+
 const loadTeams = async (query: string) => {
+  const normalizedQuery = query.trim();
+
+  if (normalizedQuery.length < 2) {
+    teamSuggestions.value = [];
+    isTeamSearchLoading.value = false;
+    teamSearchError.value = "";
+    return;
+  }
+
+  const requestId = ++latestTeamSearchRequestId;
+  teamSearchController?.abort();
+  teamSearchController = new AbortController();
+  isTeamSearchLoading.value = true;
+  teamSearchError.value = "";
+
   try {
     // Get the access token
     const token = casdoorService.getToken();
     
-    const response = await fetch(`https://api.team695.com/api/team/teams?query=${query}&limit=20`, {
+    const response = await fetch(`https://api.team695.com/api/team/teams?query=${encodeURIComponent(normalizedQuery)}&limit=20`, {
       headers: {
         'Authorization': token ? `Bearer ${token}` : ''
-      }
+      },
+      signal: teamSearchController.signal,
     });
+
+    if (!response.ok) {
+      throw new Error(`Failed to load teams: ${response.statusText}`);
+    }
+
     const data = await response.json();
-    teamSuggestions.value = normalizeTeamsFromApi(data);
+    if (requestId === latestTeamSearchRequestId) {
+      teamSuggestions.value = normalizeTeamsFromApi(data);
+    }
   } catch (error) {
+    if ((error as DOMException)?.name === "AbortError") {
+      return;
+    }
+
     console.error("Error loading teams:", error);
-    teamSuggestions.value = [];
+    if (requestId === latestTeamSearchRequestId) {
+      teamSuggestions.value = [];
+      teamSearchError.value = "Failed to load teams. Please try again.";
+    }
+  } finally {
+    if (requestId === latestTeamSearchRequestId) {
+      isTeamSearchLoading.value = false;
+    }
   }
 };
+
+const debouncedLoadTeams = debounce((query: string) => {
+  void loadTeams(query);
+}, 350);
 
 const hideTeamSuggestions = () => {
   setTimeout(() => {
@@ -1213,7 +1377,7 @@ const hideTeamSuggestions = () => {
 };
 
 const handleFileSelect = async (
-  type: "fullRobot" | "driveTrain",
+  type: ImageType,
   event: Event
 ) => {
   const files = (event.target as HTMLInputElement).files;
@@ -1230,10 +1394,15 @@ const handleFileSelect = async (
       }
     }
   }
+
+  const input = imageRefs.value[type + "Input"];
+  if (input) {
+    input.value = "";
+  }
 };
 
 const handleDrop = async (
-  type: "fullRobot" | "driveTrain",
+  type: ImageType,
   event: DragEvent
 ) => {
   event.preventDefault();
@@ -1253,12 +1422,14 @@ const handleDrop = async (
   }
 };
 
-const uploadImage = async (type: "fullRobot" | "driveTrain", file: File) => {
+const uploadImage = async (type: ImageType, file: File) => {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("type", type);
 
   try {
+    pendingImageUploads.value += 1;
+
     // Get the access token
     const token = casdoorService.getToken();
     
@@ -1269,6 +1440,11 @@ const uploadImage = async (type: "fullRobot" | "driveTrain", file: File) => {
       },
       body: formData,
     });
+
+    if (!response.ok) {
+      throw new Error(`Failed to upload image: ${response.statusText}`);
+    }
+
     const data = await response.json();
     const imageData: ImageData = {
       id: data.id, // Get the image ID from the response
@@ -1276,11 +1452,7 @@ const uploadImage = async (type: "fullRobot" | "driveTrain", file: File) => {
       name: file.name,
       size: file.size,
     };
-    if (type === "fullRobot") {
-      fullRobotImages.value.push(imageData);
-    } else {
-      driveTrainImages.value.push(imageData);
-    }
+    getImageCollection(type).value.push(imageData);
     saveImagesToLocalStorage();
   } catch (error) {
     console.error("Error uploading image:", error);
@@ -1289,11 +1461,13 @@ const uploadImage = async (type: "fullRobot" | "driveTrain", file: File) => {
       "There was an error uploading the image. Please try again.",
       "error"
     );
+  } finally {
+    pendingImageUploads.value = Math.max(0, pendingImageUploads.value - 1);
   }
 };
 
 const confirmRemoveImage = (
-  type: "fullRobot" | "driveTrain",
+  type: ImageType,
   index: number
 ) => {
   Swal.fire({
@@ -1313,9 +1487,14 @@ const confirmRemoveImage = (
   });
 };
 
-const removeImage = async (type: "fullRobot" | "driveTrain", index: number) => {
+const removeImage = async (type: ImageType, index: number) => {
   try {
-    const imageId = type === "fullRobot" ? fullRobotImages.value[index].id : driveTrainImages.value[index].id;
+    const images = getImageCollection(type).value;
+    const imageId = images[index]?.id;
+
+    if (!imageId) {
+      return;
+    }
     
     // Get the access token
     const token = casdoorService.getToken();
@@ -1326,11 +1505,7 @@ const removeImage = async (type: "fullRobot" | "driveTrain", index: number) => {
       }
     });
 
-    if (type === "fullRobot") {
-      fullRobotImages.value.splice(index, 1);
-    } else {
-      driveTrainImages.value.splice(index, 1);
-    }
+    images.splice(index, 1);
     saveImagesToLocalStorage();
   } catch (error) {
     console.error("Failed to delete image:", error);
@@ -1342,11 +1517,7 @@ const removeImage = async (type: "fullRobot" | "driveTrain", index: number) => {
       confirmButtonText: "Yes, remove it locally",
     }).then((result) => {
       if (result.isConfirmed) {
-        if (type === "fullRobot") {
-          fullRobotImages.value.splice(index, 1);
-        } else {
-          driveTrainImages.value.splice(index, 1);
-        }
+        getImageCollection(type).value.splice(index, 1);
         saveImagesToLocalStorage();
         Swal.fire("Removed!", "The image has been removed locally.", "success");
       }
@@ -1362,25 +1533,70 @@ const formatFileSize = (bytes: number): string => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 };
 
-// Escape special characters in input values to prevent JSON parsing issues
-const escapeInput = (input: string): string => {
-  // Don't escape these common characters that don't affect JSON structure
-  const needsEscape = /[\\"\{\}\[\]<>&]/g;
-  
-  if (!needsEscape.test(input)) {
-    return input; // No need to escape if no special characters
+const parseTeamNumber = (value: unknown): number | null => {
+  const parsed = Number.parseInt(String(value ?? "").trim(), 10);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const isBlankValue = (value: unknown): boolean => {
+  if (Array.isArray(value)) {
+    return value.length === 0;
   }
-  
-  return input
-    .replace(/\\/g, "\\\\") // Escape backslash
-    .replace(/"/g, '\\"')   // Escape double quotes
-    .replace(/\{/g, "\\{")  // Escape left curly brace
-    .replace(/\}/g, "\\}")  // Escape right curly brace
-    .replace(/\[/g, "\\[")  // Escape left square bracket
-    .replace(/\]/g, "\\]")  // Escape right square bracket
-    .replace(/</g, "&lt;")  // Escape less-than sign (HTML entity)
-    .replace(/>/g, "&gt;")  // Escape greater-than sign (HTML entity)
-    .replace(/&/g, "&amp;") // Escape ampersand (HTML entity)
+
+  if (typeof value === "string") {
+    return value.trim().length === 0;
+  }
+
+  return value === null || value === undefined;
+};
+
+const orderSelectedCheckboxValues = (field: FormField, values: string[]): string[] => {
+  const displayOrder = field.options?.map(getOptionValue) ?? [];
+
+  if (displayOrder.length === 0) {
+    return [...values];
+  }
+
+  return displayOrder.filter((option) => values.includes(option));
+};
+
+const prepareFieldForStorage = (field: FormField): FormField => {
+  const preparedField: FormField = {
+    ...field,
+    value: typeof field.value === "string" ? field.value.trim() : field.value,
+    otherValue: typeof field.otherValue === "string" ? field.otherValue.trim() : field.otherValue,
+  };
+
+  if (field.type === "checkbox" && Array.isArray(field.value)) {
+    preparedField.value = orderSelectedCheckboxValues(field, field.value);
+  }
+
+  return preparedField;
+};
+
+const prepareFieldForSubmission = (field: FormField): FormField => {
+  const preparedField = prepareFieldForStorage(field);
+
+  if (
+    preparedField.type === "radio" &&
+    preparedField.value === "Other" &&
+    preparedField.otherValue
+  ) {
+    preparedField.value = preparedField.otherValue;
+  }
+
+  if (
+    preparedField.type === "checkbox" &&
+    Array.isArray(preparedField.value) &&
+    preparedField.value.includes("Other") &&
+    preparedField.otherValue
+  ) {
+    preparedField.value = preparedField.value.map((value) =>
+      value === "Other" ? preparedField.otherValue! : value
+    );
+  }
+
+  return preparedField;
 };
 
 const saveFormData = () => {
@@ -1388,26 +1604,7 @@ const saveFormData = () => {
     return;
   }
 
-  // Deep copy the formFields to avoid directly modifying the reactive data
-  const updatedFields = formFields.value.map(field => {
-    // Only escape string values
-    if (field.value && typeof field.value === "string" && 
-        (field.type === "text" || field.type === "textarea" || field.type === "autocomplete")) {
-      // Create a new field object with the escaped value
-      return { ...field, value: escapeInput(field.value) };
-    }
-
-    // Fix: Ensure checkbox options are saved in the order of the question
-    if (field.type === "checkbox" && Array.isArray(field.value)) {
-      return { 
-        ...field, 
-        value: field.optionValues?.filter(option => field.value.includes(option)) || [] 
-      };
-    }
-
-    // Return the field unmodified
-    return { ...field };
-  });
+  const updatedFields = formFields.value.map(prepareFieldForStorage);
 
   // Update the current tab's formData with the updated fields
   tabs.value[currentTab.value].formData = cloneFormFields(updatedFields);
@@ -1420,7 +1617,7 @@ const saveFormData = () => {
   saveStorageMetadata();
 };
 
-const debounce = (func: (...args: any[]) => void, delay: number) => {
+function debounce<T extends (...args: any[]) => void>(func: T, delay: number) {
   let timer: ReturnType<typeof setTimeout> | undefined;
 
   return (...args: any[]) => {
@@ -1430,7 +1627,7 @@ const debounce = (func: (...args: any[]) => void, delay: number) => {
 
     timer = setTimeout(() => func(...args), delay);
   };
-};
+}
 
 const debouncedSaveFormData = debounce(saveFormData, 300);
 
@@ -1439,36 +1636,29 @@ const saveImagesToLocalStorage = (formId = currentFormId.value) => {
     return;
   }
 
-  localStorage.setItem(
-    getFullRobotImagesStorageKey(formId),
-    JSON.stringify(fullRobotImages.value)
-  );
-  localStorage.setItem(
-    getDriveTrainImagesStorageKey(formId),
-    JSON.stringify(driveTrainImages.value)
-  );
+  (Object.keys(IMAGE_STORAGE_PREFIX) as ImageType[]).forEach((type) => {
+    localStorage.setItem(
+      getImageStorageKey(type, formId),
+      JSON.stringify(getImageCollection(type).value)
+    );
+  });
 };
 
 const loadImagesFromLocalStorage = (formId = currentFormId.value) => {
   if (!formId) {
     fullRobotImages.value = [];
     driveTrainImages.value = [];
+    intakeImages.value = [];
     return;
   }
 
-  const savedFullRobotImages = safeParseJson<ImageData[]>(
-    localStorage.getItem(getFullRobotImagesStorageKey(formId))
-  );
-  const savedDriveTrainImages = safeParseJson<ImageData[]>(
-    localStorage.getItem(getDriveTrainImagesStorageKey(formId))
-  );
+  (Object.keys(IMAGE_STORAGE_PREFIX) as ImageType[]).forEach((type) => {
+    const savedImages = safeParseJson<ImageData[]>(
+      localStorage.getItem(getImageStorageKey(type, formId))
+    );
 
-  fullRobotImages.value = Array.isArray(savedFullRobotImages)
-    ? savedFullRobotImages
-    : [];
-  driveTrainImages.value = Array.isArray(savedDriveTrainImages)
-    ? savedDriveTrainImages
-    : [];
+    getImageCollection(type).value = Array.isArray(savedImages) ? savedImages : [];
+  });
 };
 
 const saveToLocalStorage = () => {
@@ -1514,22 +1704,19 @@ const isAllowedImageType = (file: File): boolean => {
 const validateField = (field: FormField) => {
   if (field.required) {
     if (field.type === "radio" || field.type === "checkbox") {
-      if (
-        !field.value ||
-        (Array.isArray(field.value) && field.value.length === 0)
-      ) {
+      if (isBlankValue(field.value)) {
         field.error = "This field is required";
         return false;
       }
       if (
         (field.value === "Other" ||
           (Array.isArray(field.value) && field.value.includes("Other"))) &&
-        !field.otherValue
+        isBlankValue(field.otherValue)
       ) {
         field.error = "Please specify the other option";
         return false;
       }
-    } else if (!field.value) {
+    } else if (isBlankValue(field.value)) {
       field.error = "This field is required";
       return false;
     }
@@ -1538,15 +1725,17 @@ const validateField = (field: FormField) => {
   return true;
 };
 
-// const validateForm = (): boolean => {
-//   let isValid = true;
-//   formFields.value.forEach((field) => {
-//     if (!validateField(field)) {
-//       isValid = false;
-//     }
-//   });
-//   return isValid;
-// };
+const validateForm = (): boolean => {
+  let isValid = true;
+
+  formFields.value.forEach((field) => {
+    if (!validateField(field)) {
+      isValid = false;
+    }
+  });
+
+  return isValid;
+};
 
 const deviceInfo = ref({
   userAgent: navigator.userAgent,
@@ -1556,16 +1745,97 @@ const deviceInfo = ref({
 
 // Function to submit the form
 const isSubmitting = ref(false);
+const SUBMIT_THROTTLE_MS = 3000;
+const lastSubmitStartedAt = ref(0);
+
+const validateImageRequirements = (): boolean => {
+  if (intakeImages.value.length === 0) {
+    Swal.fire(
+      "Intake Photo Required",
+      "Please upload at least one picture of the intake before submitting.",
+      "warning"
+    );
+    return false;
+  }
+
+  return true;
+};
+
+const uploadPageSpyLog = async (): Promise<string> => {
+  if (!window.$harbor?.upload) {
+    return "";
+  }
+
+  try {
+    return await window.$harbor.upload();
+  } catch (error) {
+    console.error("Failed to upload diagnostic log:", error);
+    return "";
+  }
+};
 
 const submitForm = async () => {
+  if (isSubmitting.value) {
+    Swal.fire({
+      title: "Submission in Progress",
+      text: "Please wait. The current submission is still being processed.",
+      icon: "info",
+      toast: true,
+      position: "top-end",
+      showConfirmButton: false,
+      timer: 1800,
+    });
+    return;
+  }
+
+  if (pendingImageUploads.value > 0) {
+    Swal.fire({
+      title: "Image Uploading",
+      text: "Please wait for image uploads to finish before submitting.",
+      icon: "info",
+      toast: true,
+      position: "top-end",
+      showConfirmButton: false,
+      timer: 1800,
+    });
+    return;
+  }
+
+  if (Date.now() - lastSubmitStartedAt.value < SUBMIT_THROTTLE_MS) {
+    Swal.fire({
+      title: "Please Wait",
+      text: "To avoid duplicate pit scouting submissions, please wait a moment and try again.",
+      icon: "info",
+      toast: true,
+      position: "top-end",
+      showConfirmButton: false,
+      timer: 1800,
+    });
+    return;
+  }
+
+  if (!validateForm()) {
+    Swal.fire("Missing Information", "Please complete all required fields before submitting.", "warning");
+    return;
+  }
+
+  if (!validateImageRequirements()) {
+    return;
+  }
+
   try {
     isSubmitting.value = true;
+    lastSubmitStartedAt.value = Date.now();
     
     // Get the access token
     const token = casdoorService.getToken();
+
+    if (!token) {
+      throw new Error("Authentication token not found");
+    }
     
     // Get the team number from the first field in the form
-    const teamNumber = formFields.value[0]?.value;
+    const teamNumber = parseTeamNumber(formFields.value[0]?.value);
     
     // Build a normalized user identity for submission and logs.
     let submissionUser = buildSubmissionUserData(userData.value);
@@ -1590,26 +1860,7 @@ const submitForm = async () => {
       (a.originalIndex || 0) - (b.originalIndex || 0)
     );
     
-    // Create a sorted form data object
-    const processedFormData = sortedFields.map(field => {
-      const processedField = { ...field };
-      
-      // Process the "Other" option for radio buttons
-      if (field.type === "radio" && field.value === "Other" && field.otherValue) {
-        processedField.value = field.otherValue;
-      }
-      
-      // Process the "Other" option for checkboxes
-      if (field.type === "checkbox" && Array.isArray(field.value)) {
-        if (field.value.includes("Other") && field.otherValue) {
-          processedField.value = field.value.map(val => 
-            val === "Other" ? field.otherValue : val
-          );
-        }
-      }
-      
-      return processedField;
-    });
+    const processedFormData = sortedFields.map(prepareFieldForSubmission);
 
     // Create the submission object
     const submissionData = {
@@ -1623,7 +1874,8 @@ const submitForm = async () => {
       ],
       images: {
         fullRobotImages: fullRobotImages.value,
-        driveTrainImages: driveTrainImages.value
+        driveTrainImages: driveTrainImages.value,
+        intakeImages: intakeImages.value
       },
       deviceInfo: deviceInfo.value,
       // Bind normalized user identity to submission payload.
@@ -1634,14 +1886,16 @@ const submitForm = async () => {
     console.log("Submitting with avatar:", userAvatar);
 
     // Upload the log and get the URL
-    const url = await window.$harbor.upload();
-    submissionData.tabs[0].formData.push({
-      question: "Log URL",
-      type: "text",
-      required: false,
-      value: url,
-      originalIndex: processedFormData.length
-    });
+    const url = await uploadPageSpyLog();
+    if (url) {
+      submissionData.tabs[0].formData.push({
+        question: "Log URL",
+        type: "text",
+        required: false,
+        value: url,
+        originalIndex: processedFormData.length
+      });
+    }
 
     const response = await fetch("https://api.team695.com/survey/submit", {
       method: "POST",
@@ -1657,9 +1911,9 @@ const submitForm = async () => {
       console.log("Form submitted:", data);
       
       // If a team number is provided, update the pit status
-      if (teamNumber) {
+      if (teamNumber !== null) {
         try {
-          await updatePitStatus(parseInt(teamNumber), true);
+          await updatePitStatus(teamNumber, true);
         } catch (pitError) {
           console.error("Error updating pit status:", pitError);
           // Continue processing, do not block form submission success
@@ -1668,8 +1922,9 @@ const submitForm = async () => {
 
       // Clear localStorage for the current form ID
       localStorage.removeItem(getFormDataStorageKey(currentFormId.value));
-      localStorage.removeItem(getFullRobotImagesStorageKey(currentFormId.value));
-      localStorage.removeItem(getDriveTrainImagesStorageKey(currentFormId.value));
+      (Object.keys(IMAGE_STORAGE_PREFIX) as ImageType[]).forEach((type) => {
+        localStorage.removeItem(getImageStorageKey(type, currentFormId.value));
+      });
 
       // Show success message and refresh the page after user confirmation
       Swal.fire({
@@ -1722,8 +1977,6 @@ onMounted(async () => {
 
   // Initialize the store to get user data
   userStore.initializeStore();
-  
-  await loadTeams('');
   await loadEventId();
 
   // Load data from localStorage
@@ -1746,6 +1999,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  teamSearchController?.abort();
   saveToLocalStorage();
   window.removeEventListener("beforeunload", handleBeforeUnload);
 });
@@ -1772,6 +2026,9 @@ const isPitCompleted = (teamNumber: number): boolean => {
 const selectAssignedTeam = (teamNumber: number) => {
   // Set the team number in the first field (team number field)
   if (formFields.value[0]) {
+    teamSearchController?.abort();
+    showTeamSuggestions.value = false;
+    isTeamSearchLoading.value = false;
     formFields.value[0].value = teamNumber.toString();
     // Save the form data after setting the team number
     saveFormData();
@@ -1786,8 +2043,7 @@ const loadUserAssignments = async () => {
       throw new Error('Authentication token not found');
     }
 
-    // Transform eventId format from 2025_JOHNSON to 2025johnson
-    const formattedEventId = eventId.value.replace('_', '').toLowerCase();
+    const formattedEventId = formatEventId(eventId.value);
 
     const response = await fetch(`https://api.team695.com/assignments/user/${formattedEventId}`, {
       headers: {
@@ -1804,7 +2060,7 @@ const loadUserAssignments = async () => {
       userAssignments.value = data.data || [];
       
       // Check which teams have already completed pit scouting
-      checkCompletedPitTeams();
+      await checkCompletedPitTeams();
     } else {
       throw new Error(data.message || 'Failed to load user assignments');
     }
@@ -1816,48 +2072,46 @@ const loadUserAssignments = async () => {
 // Check teams that have completed pit scouting
 const checkCompletedPitTeams = async () => {
   try {
-    // Extract team numbers from all pit-scouting tasks
-    const teamNumbers: number[] = [];
+    const teamNumbers = new Set<number>();
     filteredPitAssignments.value.forEach(assignment => {
       if (assignment.assigned_team_numbers && Array.isArray(assignment.assigned_team_numbers)) {
-        teamNumbers.push(...assignment.assigned_team_numbers);
+        assignment.assigned_team_numbers.forEach((teamNumber: number) => teamNumbers.add(teamNumber));
       }
     });
 
     // Stop early if there are no team numbers to check
-    if (teamNumbers.length === 0) return;
+    if (teamNumbers.size === 0) return;
 
     const token = casdoorService.getToken();
     if (!token) return;
 
     // Normalize the eventId format
-    const formattedEventId = eventId.value.replace('_', '').toLowerCase();
+    const formattedEventId = formatEventId(eventId.value);
 
-    // Check the pit status for each team number
-    const promises = teamNumbers.map(async (teamNumber) => {
-      try {
-        const response = await fetch(`https://api.team695.com/team-matches/event/${formattedEventId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (!response.ok) return;
-
-        const data = await response.json();
-        if (data.success && data.data) {
-          const teams = data.data;
-          const team = teams.find((t: any) => t.team_number === teamNumber);
-          if (team && team.is_pit) {
-            pitCompletedTeams.value.add(teamNumber);
-          }
-        }
-      } catch (err) {
-        console.error(`Error checking pit status for team ${teamNumber}:`, err);
+    const response = await fetch(`https://api.team695.com/team-matches/event/${formattedEventId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
       }
     });
 
-    await Promise.all(promises);
+    if (!response.ok) {
+      throw new Error(`Failed to load pit completion status: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    if (!data.success || !Array.isArray(data.data)) {
+      throw new Error(data.message || 'Failed to load pit completion status');
+    }
+
+    const completedTeams = new Set<number>();
+    data.data.forEach((team: any) => {
+      const normalizedTeamNumber = parseTeamNumber(team?.team_number);
+      if (team?.is_pit && normalizedTeamNumber !== null && teamNumbers.has(normalizedTeamNumber)) {
+        completedTeams.add(normalizedTeamNumber);
+      }
+    });
+
+    pitCompletedTeams.value = completedTeams;
   } catch (error) {
     console.error('Error checking completed pit teams:', error);
   }
@@ -1871,8 +2125,7 @@ const updatePitStatus = async (teamNumber: number, isPit: boolean) => {
       throw new Error('Authentication token not found');
     }
 
-    // Normalize the eventId format
-    const formattedEventId = eventId.value.replace('_', '').toLowerCase();
+    const formattedEventId = formatEventId(eventId.value);
 
     // Send the API request to update the status
     const response = await fetch(`https://api.team695.com/team-matches/pit-status/${formattedEventId}/frc${teamNumber}`, {
@@ -1913,6 +2166,8 @@ onMounted(() => {
   // Get user's IP address
   axios.get('https://api.ipify.org?format=json').then((response) => {
     deviceInfo.value.ip = response.data.ip;
+  }).catch((error) => {
+    console.error("Failed to load device IP:", error);
   });
 
   // Initialize PageSpy
